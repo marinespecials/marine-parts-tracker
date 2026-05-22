@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-&gl#=8nk77#ri2u5l2^e%3^kfxvx6l+sa(z&cg1k*onh-u6cx7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.144']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.144','marine-specials-tracker.onrender.com',]
 
 
 # Application definition
