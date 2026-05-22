@@ -7,6 +7,5 @@ openpyxl==3.1.5
 pillow==12.2.0
 pypdf==6.10.2
 python-dateutil==2.9.0.post0
-pytz==2025.1
 sqlparse==0.5.5
 tzdata==2026.1
