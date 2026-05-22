@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Order</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --text-dark: #1F2937; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
+        .navbar { background-color: var(--marine-blue); color: white; padding: 15px 30px; }
+        .navbar a { color: #93C5FD; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .container { max-width: 600px; margin: 40px auto; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4B5563; }
+        input { width: 100%; padding: 12px; border: 1px solid #CBD5E1; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        .btn { background-color: #10B981; color: white; padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.05rem; margin-top: 10px;}
+        .btn:hover { background-color: #059669; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{% url 'dashboard' %}">← Cancel and return to Dashboard</a>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2 style="margin-top:0; color: var(--marine-blue); border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">Initialize New Order</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Order Reference / Title</label>
+                    <input type="text" name="title" placeholder="e.g., PO-4092 Engine Overhaul" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Customer / Vessel Name</label>
+                    <input type="text" name="customer_name" list="customer-list" placeholder="Select existing or type a new one..." required>
+                    <datalist id="customer-list">
+                        {% for customer in customers %}
+                            <option value="{{ customer.name }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+                
+                <button type="submit" class="btn">Create Order & Open Manifest</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

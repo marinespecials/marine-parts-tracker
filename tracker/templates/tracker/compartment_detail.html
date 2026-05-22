@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Storage Detail</title>
+    <style>
+        body { font-family: sans-serif; background: #F3F4F6; margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; max-width: 800px; margin: auto; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <a href="{% url 'dashboard' %}">← Back to Dashboard</a>
+        <h2>Location: {{ compartment.name }}</h2>
+        <ul>
+            {% for item in items %}
+                <li>{{ item.name }} ({{ item.offer.title }}) - {% if item.is_delivered %}Delivered{% else %}Pending{% endif %}</li>
+            {% empty %}
+                <p>This location is empty.</p>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

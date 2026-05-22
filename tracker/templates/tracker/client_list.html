@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Database</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
+        .navbar { background-color: var(--marine-blue); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;}
+        .navbar a { color: #93C5FD; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .container { max-width: 800px; margin: 40px auto; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #E5E7EB; align-items: center; }
+        .badge { background: var(--marine-blue); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; }
+        .add-form { display: flex; gap: 10px; margin-top: 15px; }
+        .add-form input { flex: 1; padding: 10px; border: 1px solid #CBD5E1; border-radius: 4px; }
+        .add-form button { background: var(--accent-green); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1 style="margin:0; font-size: 1.5rem;">Client Database</h1>
+        <a href="{% url 'dashboard' %}">← Back to Main Dashboard</a>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2 style="margin-top:0; border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">Registered Clients / Vessels</h2>
+            {% for client in customers %}
+                <div class="stat-row">
+                    <div>
+                        <strong style="font-size: 1.1rem;">{{ client.name }}</strong>
+                        <div style="font-size: 0.8rem; margin-top: 4px;">
+                            <a href="{% url 'edit_client' client.id %}" style="color: #3B82F6; text-decoration: none; font-weight: bold; margin-right: 10px;">Edit Name</a>
+                            {% if client.offers.count == 0 %}
+                            <form method="POST" action="{% url 'delete_client' client.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="background:none; border:none; color: #EF4444; font-weight: bold; cursor: pointer; padding:0; text-decoration: underline;" onclick="return confirm('Delete this client?');">Delete</button>
+                            </form>
+                            {% else %}
+                            <span style="color: #9CA3AF; font-style: italic;">Cannot delete (has active orders)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="badge">{{ client.offers.count }} Orders</span>
+                </div>
+            {% empty %}
+                <p style="color: #6B7280; font-style: italic;">No clients registered yet.</p>
+            {% endfor %}
+        </div>
+        
+        <div class="card">
+            <h2 style="margin-top:0;">Add New Client Manually</h2>
+            <form class="add-form" method="POST" action="{% url 'client_list' %}">
+                {% csrf_token %}
+                <input type="text" name="name" placeholder="Client or Vessel Name" required>
+                <button type="submit">+ Add Client</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

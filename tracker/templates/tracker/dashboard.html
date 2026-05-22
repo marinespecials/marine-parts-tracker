@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Operations Dashboard</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; --progress-bg: #E5E7EB; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
+        .navbar { background-color: var(--marine-blue); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }
+        .nav-links a { color: white; text-decoration: none; font-weight: bold; margin-left: 20px; border: 1px solid #93C5FD; padding: 6px 12px; border-radius: 20px; transition: 0.2s;}
+        .nav-links a:hover { background-color: #93C5FD; color: var(--marine-blue); }
+        .search-bar { display: flex; gap: 10px; margin-left: 20px; }
+        .search-bar input { padding: 8px 15px; border-radius: 20px; border: none; width: 250px; outline: none; }
+        .search-bar button { padding: 8px 15px; border-radius: 20px; border: none; background: #93C5FD; color: var(--marine-blue); font-weight: bold; cursor: pointer; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; padding: 30px; max-width: 1200px; margin: auto; }
+        .column { flex: 1; min-width: 300px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border-left: 4px solid var(--marine-blue); }
+        .card h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px; }
+        .offer-link { display: block; padding: 15px; margin-bottom: 12px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 6px; text-decoration: none; color: var(--text-dark); transition: all 0.2s; position: relative;}
+        .offer-link:hover { border-color: var(--marine-blue); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .offer-title-row { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }
+        .progress-container { margin-top: 10px; }
+        .progress-bar-bg { background-color: var(--progress-bg); height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { background-color: var(--marine-blue); height: 100%; border-radius: 4px; transition: width 0.4s ease-out; }
+        .progress-complete { background-color: var(--accent-green); }
+        .badge { background: var(--accent-green); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; float: right; }
+        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #E5E7EB; align-items: center; }
+        .stat-row:last-child { border-bottom: none; }
+        .add-comp-form { display: flex; gap: 10px; margin-top: 15px; }
+        .add-comp-form input { flex: 1; padding: 8px; border: 1px solid #CBD5E1; border-radius: 4px; }
+        .add-comp-form button { background: var(--marine-blue); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Marine Parts Tracker</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="nav-links">
+    <a href="{% url 'item_list' %}">Master Parts List</a>
+    <a href="{% url 'client_list' %}">Manage Clients Database</a>
+</div>
+            <form class="search-bar" method="GET" action="{% url 'dashboard' %}">
+                <input type="text" name="q" placeholder="Search for a part or order..." value="{{ search_query }}">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if search_query %}
+        <div style="width: 100%;">
+            <div class="card" style="border-left-color: var(--accent-green);">
+                <h2>Search Results for "{{ search_query }}"</h2>
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; font-weight: bold; padding-bottom: 10px; border-bottom: 2px solid #E5E7EB; margin-bottom: 10px;">
+                    <span>Part Name</span>
+                    <span>Order / Manifest</span>
+                    <span>Location</span>
+                    <span>Status</span>
+                </div>
+                {% for item in search_results %}
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 8px 0; border-bottom: 1px solid #F3F4F6;">
+                        <span>{{ item.name }} (x{{ item.quantity }})</span>
+                        <a href="{% url 'offer_detail' item.offer.id %}" style="color: var(--marine-blue);">{{ item.offer.title }}</a>
+                        <span>{{ item.compartment.name }}</span>
+                        <span>
+                            {% if item.is_delivered %}<span style="color: var(--accent-green); font-weight: bold;">Delivered</span>
+                            {% else %}<span style="color: #92400E;">Pending</span>{% endif %}
+                        </span>
+                    </div>
+                {% empty %}
+                    <p style="color: #6B7280; font-style: italic;">No parts found matching that search.</p>
+                {% endfor %}
+                <a href="{% url 'dashboard' %}" style="display: inline-block; margin-top: 15px; color: var(--marine-blue);">Clear Search</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="column">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h2 style="margin: 0; border: none; padding: 0;">Active Orders</h2>
+                    <a href="{% url 'add_offer' %}" style="background-color: #10B981; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.9rem;">+ New Order</a>
+                </div>
+                
+                {% for offer in offers %}
+                    <div style="position: relative;">
+                        <a href="{% url 'offer_detail' offer.id %}" class="offer-link">
+                            <div class="offer-title-row">
+                                <span>{{ offer.title }}</span>
+                                <span style="font-size: 0.85rem; color: #4B5563;">{{ offer.progress }}%</span>
+                            </div>
+                            <span style="display: block; font-size: 0.85rem; color: #6B7280; margin-top: 2px; margin-bottom: 8px;">{{ offer.customer.name }}</span>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill {% if offer.progress == 100 %}progress-complete{% endif %}" style="width: {{ offer.progress }}%;"></div>
+                                </div>
+                            </div>
+                        </a>
+                        <!-- The New Edit Order Button -->
+                        <a href="{% url 'edit_offer' offer.id %}" style="position: absolute; top: 15px; right: 55px; font-size: 0.8rem; color: #3B82F6; text-decoration: none; font-weight: bold; background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #E5E7EB;">Edit</a>
+                    </div>
+                {% empty %}
+                    <p style="color: #6B7280; font-style: italic;">No active orders in the system.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="card">
+                <h2>Storage Compartments</h2>
+                {% for compartment in compartments %}
+                    <div class="stat-row">
+                        <div>
+                            <strong>{{ compartment.name }}</strong>
+                            <div style="font-size: 0.75rem; margin-top: 4px;">
+                                <a href="{% url 'edit_compartment' compartment.id %}" style="color: #3B82F6; text-decoration: none; font-weight: bold; margin-right: 10px;">Edit</a>
+                                {% if compartment.items.count == 0 %}
+                                <form method="POST" action="{% url 'delete_compartment' compartment.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none; border:none; color: #EF4444; font-weight: bold; cursor: pointer; padding:0; text-decoration: underline;" onclick="return confirm('Delete this compartment?');">Delete</button>
+                                </form>
+                                {% else %}
+                                <span style="color: #9CA3AF; font-style: italic;">Cannot delete (contains items)</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="badge">{{ compartment.items.count }} Items</span>
+                    </div>
+                {% endfor %}
+                
+                <form class="add-comp-form" method="POST" action="{% url 'add_compartment' %}">
+                    {% csrf_token %}
+                    <input type="text" name="name" placeholder="New Compartment Name" required>
+                    <button type="submit">+ Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
