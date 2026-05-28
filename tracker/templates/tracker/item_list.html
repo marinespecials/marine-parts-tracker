@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Add Part - Marine Parts Tracker</title>
+    <title>Master Parts List</title>
     <style>
         /* Your exact app aesthetic */
         :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; --progress-bg: #E5E7EB; }
@@ -11,23 +11,25 @@
         .nav-links a { color: white; text-decoration: none; font-weight: bold; margin-left: 20px; border: 1px solid #93C5FD; padding: 6px 12px; border-radius: 20px; transition: 0.2s;}
         .nav-links a:hover { background-color: #93C5FD; color: var(--marine-blue); }
         
-        /* Layout & Cards (Narrower for forms) */
-        .container { padding: 30px; max-width: 600px; margin: auto; } 
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid var(--accent-green); }
-        .header-row { display: flex; align-items: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 20px; }
-        .header-row h2 { margin: 0; color: var(--marine-blue); }
+        /* Layout & Cards */
+        .container { padding: 30px; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid var(--marine-blue); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-row h2 { margin: 0; }
         
-        /* Buttons */
-        .btn-green { background-color: var(--accent-green); color: white; padding: 12px 20px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; margin-top: 15px; transition: 0.2s;}
-        .btn-green:hover { background-color: #059669; }
-        .btn-gray { background-color: #6B7280; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-right: 15px; font-size: 0.9rem;}
+        /* Buttons & Badges */
+        .btn-green { background-color: var(--accent-green); color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        .btn-gray { background-color: #6B7280; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-right: 15px; }
+        .badge-success { background: var(--accent-green); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+        .badge-pending { background: #F59E0B; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85rem; font-weight: bold;}
         
-        /* Form Styles */
-        p { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; color: #4B5563; }
-        input[type="text"], input[type="number"], select { padding: 10px; border: 1px solid #CBD5E1; border-radius: 4px; font-size: 1rem; font-family: inherit; width: 100%; box-sizing: border-box;}
-        input[type="text"]:focus, input[type="number"]:focus, select:focus { outline: none; border-color: var(--marine-blue); }
-        input[type="checkbox"] { align-self: flex-start; margin-top: 5px; transform: scale(1.3); cursor: pointer; }
+        /* Custom Table Styling */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; background-color: #F9FAFB; border-bottom: 2px solid #E5E7EB; color: #4B5563; }
+        td { padding: 12px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        tr:hover td { background-color: #F9FAFB; }
+        .qr-img { width: 45px; height: 45px; border: 1px solid #E5E7EB; border-radius: 4px; transition: 0.2s; }
+        .qr-img:hover { transform: scale(1.1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -44,16 +46,55 @@
     <div class="container">
         <div class="card">
             <div class="header-row">
-                <a href="{% url 'item_list' %}" class="btn-gray">&larr; Back</a>
-                <h2>Add New Part</h2>
+                <div style="display: flex; align-items: center;">
+                    <a href="{% url 'dashboard' %}" class="btn-gray">&larr; Back to Dashboard</a>
+                    <h2>Master Parts Inventory</h2>
+                </div>
+                <a href="{% url 'add_master_item' %}" class="btn-green">+ Add New Part</a>
             </div>
 
-            <form method="POST">
-                {% csrf_token %}
-                {{ form.as_p }}
-                
-                <button type="submit" class="btn-green">Save Part & Generate QR</button>
-            </form>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Part Name</th>
+                        <th>Quantity</th>
+                        <th>Location</th>
+                        <th>Assigned Offer</th>
+                        <th>QR Code</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td style="font-weight: bold; color: var(--marine-blue);">{{ item.name }}</td>
+                        <td>x{{ item.quantity }}</td>
+                        <td>{{ item.compartment.name }}</td>
+                        <td>{{ item.offer.title }}</td>
+                        <td>
+                            {% if item.qr_code %}
+                                <a href="{{ item.qr_code.url }}" target="_blank" title="Click to open full size">
+                                    <img src="{{ item.qr_code.url }}" alt="QR Code" class="qr-img">
+                                </a>
+                            {% else %}
+                                <span style="color: #9CA3AF; font-size: 0.85rem; font-style: italic;">No QR</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.is_delivered %}
+                                <span class="badge-success">Delivered</span>
+                            {% else %}
+                                <span class="badge-pending">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #6B7280; padding: 30px;">No parts in inventory yet. Click "+ Add New Part" to start.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
