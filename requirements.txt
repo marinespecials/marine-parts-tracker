@@ -32,3 +32,4 @@ setuptools==82.0.1
 six==1.17.0
 sqlparse==0.5.5
 tzdata==2026.1
+whitenoise==6.8.0
