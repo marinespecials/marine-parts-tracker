@@ -17,7 +17,7 @@
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; }
         
-        /* New Progress Bar Styling */
+        /* Progress Bar Styling */
         .progress-container { margin-top: 5px; }
         .progress-bar-bg { background-color: var(--progress-bg); height: 10px; border-radius: 5px; overflow: hidden; }
         .progress-bar-fill { background-color: var(--marine-blue); height: 100%; border-radius: 5px; transition: width 0.4s ease-out; }
@@ -45,7 +45,6 @@
     </div>
 
     <div class="container">
-        <!-- Upgraded Analytics & Header Card -->
         <div class="card" style="border-left: 5px solid var(--marine-blue);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -53,7 +52,6 @@
                     <p style="margin: 5px 0 15px 0; font-size: 1.1rem; color: #4B5563;">Vessel / Client: <strong>{{ offer.customer.name }}</strong></p>
                 </div>
                 
-                <!-- The New Safe Delete Form -->
                 <form method="POST" action="{% url 'delete_offer' offer.id %}">
                     {% csrf_token %}
                     <button type="submit" class="btn" style="background-color: #FEE2E2; color: #EF4444; border: 1px solid #FCA5A5;" onclick="return confirm('WARNING: Deleting this order will permanently erase all parts inside it. Are you sure?');">Delete Entire Order</button>
@@ -73,7 +71,26 @@
             </div>
         </div>
 
-        <!-- Part Manifest Table -->
+        <div class="card" style="border-left: 5px solid var(--accent-green); padding-bottom: 20px;">
+            <h2 style="margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; color: var(--marine-blue);">Allocate from Warehouse Storage</h2>
+            <form method="POST" action="{% url 'allocate_item' offer.id %}" style="display: flex; gap: 10px; align-items: flex-end;">
+                {% csrf_token %}
+                <div class="form-group" style="flex: 1;">
+                    <select name="item_id" required style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; width: 100%; background-color: #F9FAFB;">
+                        <option value="" disabled selected>-- Select an unassigned part from storage --</option>
+                        {% for storage_item in available_items %}
+                            <option value="{{ storage_item.id }}">
+                                {{ storage_item.name }} (Qty: {{ storage_item.quantity }}) - Located in: {{ storage_item.compartment.name }}
+                            </option>
+                        {% empty %}
+                            <option value="" disabled>Warehouse is empty (No unassigned items available)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-submit" style="width: auto; margin-top: 0; padding: 10px 24px; background-color: var(--accent-green);">Link to Order</button>
+            </form>
+        </div>
+
         <div class="card">
             <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--marine-blue);">Cargo Manifest</h2>
             <table class="manifest-table">
@@ -106,9 +123,15 @@
                                         {% if item.is_delivered %}Mark Pending{% else %}Mark Delivered{% endif %}
                                     </button>
                                 </form>
+                                
+                                <form method="POST" action="{% url 'unallocate_item' item.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn" style="background-color: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; margin-left: 5px;" title="Remove from order and keep in warehouse">Unlink</button>
+                                </form>
+
                                 <form method="POST" action="{% url 'delete_item' item.id %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn" style="background-color: #FEE2E2; color: #EF4444; border: 1px solid #FCA5A5; margin-left: 5px;" onclick="return confirm('Delete {{ item.name }} completely?');">Delete</button>
+                                    <button type="submit" class="btn" style="background-color: #FEE2E2; color: #EF4444; border: 1px solid #FCA5A5; margin-left: 5px;" onclick="return confirm('Delete {{ item.name }} completely from the system?');">Delete</button>
                                 </form>
                             </td>
                         </tr>
@@ -121,7 +144,6 @@
             </table>
         </div>
 
-        <!-- Quick Add Form -->
         <div class="card">
             <h2 style="margin-top: 0; font-size: 1.3rem; color: var(--marine-blue);">Log New Received Item</h2>
             <form method="POST" action="{% url 'add_item' offer.id %}">
@@ -144,7 +166,7 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-submit">Add Item to Manifest</button>
+                <button type="submit" class="btn btn-submit">Add Item Directly to Manifest</button>
             </form>
         </div>
     </div>

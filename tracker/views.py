@@ -54,14 +54,42 @@ def delete_offer(request, offer_id):
         get_object_or_404(Offer, id=offer_id).delete()
     return redirect('dashboard')
 
+# 1. UPDATE THIS EXISTING FUNCTION
 def offer_detail(request, offer_id):
     offer = get_object_or_404(Offer, id=offer_id)
     items = offer.items.all()
+    
+    # NEW: Find all items that do NOT have an offer assigned to them yet
+    available_in_storage = Item.objects.filter(offer__isnull=True)
+    
     context = {
-        'offer': offer, 'items': items, 'compartments': Compartment.objects.all(),
+        'offer': offer, 
+        'items': items, 
+        'compartments': Compartment.objects.all(),
+        'available_items': available_in_storage, # Send storage items to the template
         'progress': int((items.filter(is_delivered=True).count() / items.count()) * 100) if items.count() > 0 else 0
     }
     return render(request, 'tracker/offer_detail.html', context)
+
+# 2. ADD THIS NEW FUNCTION (Assigns an item to an order)
+def allocate_item(request, offer_id):
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        if item_id:
+            item = get_object_or_404(Item, id=item_id)
+            offer = get_object_or_404(Offer, id=offer_id)
+            item.offer = offer
+            item.save()
+    return redirect('offer_detail', offer_id=offer_id)
+
+# 3. ADD THIS NEW FUNCTION (Removes an item from an order back to storage)
+def unallocate_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    offer_id = item.offer.id
+    if request.method == 'POST':
+        item.offer = None # Removes the link, putting it back in storage
+        item.save()
+    return redirect('offer_detail', offer_id=offer_id)
 
 def item_list(request):
     return render(request, 'tracker/item_list.html', {'items': Item.objects.all().order_by('offer__title')})

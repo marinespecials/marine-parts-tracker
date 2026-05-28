@@ -24,4 +24,6 @@ urlpatterns = [
     path('clients/', views.client_list, name='client_list'),
     path('client/<int:client_id>/edit/', views.edit_client, name='edit_client'),
     path('client/<int:client_id>/delete/', views.delete_client, name='delete_client'),
+    path('offer/<int:offer_id>/allocate/', views.allocate_item, name='allocate_item'),
+    path('item/<int:item_id>/unallocate/', views.unallocate_item, name='unallocate_item'),
 ]
