@@ -29,34 +29,33 @@ class Item(models.Model):
     compartment = models.ForeignKey(Compartment, on_delete=models.CASCADE, related_name='items')
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='items')
     
-    # NEW: Field to store the QR code image
+    # The field causing the 500 error because the database doesn't know it exists yet
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Only generate a QR code if it doesn't already have one
-        if not self.qr_code:
-            # Save first to ensure the Item gets a primary key (ID) from the database
-            super().save(*args, **kwargs)
-            
-            # Create the URL for this specific item
-            # Ensure the path matches the URL pattern you set in urls.py
+        is_new = self.pk is None
+        
+        # Save first to ensure the Item gets a primary key (ID)
+        super().save(*args, **kwargs)
+        
+        # Only generate a QR code if it's a brand new item and doesn't have one
+        if is_new and not self.qr_code:
             domain = "https://marine-specials-tracker.onrender.com" 
-            url = f"{domain}/item/update/{self.id}/"
+            url = f"{domain}/items/" 
             
-            # Generate the QR code image
             qr = qrcode.QRCode(version=1, box_size=10, border=5)
             qr.add_data(url)
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             
-            # Save the image to the Django model
             buffer = BytesIO()
             img.save(buffer, format="PNG")
             file_name = f'qr_item_{self.id}.png'
             self.qr_code.save(file_name, ContentFile(buffer.getvalue()), save=False)
-
-        # Final save to commit the new QR code image to the database
-        super().save(*args, **kwargs)
+            
+            # Remove force_insert to prevent database crash on the second save
+            kwargs.pop('force_insert', None)
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} x{self.quantity}"
