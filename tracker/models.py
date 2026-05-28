@@ -27,12 +27,12 @@ class Item(models.Model):
     quantity = models.IntegerField(default=1)
     is_delivered = models.BooleanField(default=False)
     compartment = models.ForeignKey(Compartment, on_delete=models.CASCADE, related_name='items')
-    
-    # THE CRUCIAL CHANGE: Allow this to be blank, and don't delete the item if the offer is deleted
     offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, related_name='items', null=True, blank=True)
     
-    qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    # We no longer need the qr_code ImageField or the custom save() method!
 
+    def __str__(self):
+        return f"{self.name} x{self.quantity}"
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         

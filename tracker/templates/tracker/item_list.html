@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Master Parts List</title>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <style>
         /* Your exact app aesthetic */
         :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; --progress-bg: #E5E7EB; }
@@ -28,8 +29,10 @@
         th { text-align: left; padding: 12px; background-color: #F9FAFB; border-bottom: 2px solid #E5E7EB; color: #4B5563; }
         td { padding: 12px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
         tr:hover td { background-color: #F9FAFB; }
-        .qr-img { width: 45px; height: 45px; border: 1px solid #E5E7EB; border-radius: 4px; transition: 0.2s; }
-        .qr-img:hover { transform: scale(1.1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* New QR Container Style */
+        .qr-container canvas { border: 1px solid #E5E7EB; border-radius: 4px; padding: 2px; background: white; transition: transform 0.2s; }
+        .qr-container canvas:hover { transform: scale(1.1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -57,7 +60,7 @@
                 <thead>
                     <tr>
                         <th>Part Name</th>
-                        <th>Quantity</th>
+                        <th>Qty</th>
                         <th>Location</th>
                         <th>Assigned Offer</th>
                         <th>QR Code</th>
@@ -70,16 +73,22 @@
                         <td style="font-weight: bold; color: var(--marine-blue);">{{ item.name }}</td>
                         <td>x{{ item.quantity }}</td>
                         <td>{{ item.compartment.name }}</td>
-                        <td>{{ item.offer.title }}</td>
+                        <td>{{ item.offer.title|default:"-- Unassigned --" }}</td>
+                        
                         <td>
-                            {% if item.qr_code %}
-                                <a href="{{ item.qr_code.url }}" target="_blank" title="Click to open full size">
-                                    <img src="{{ item.qr_code.url }}" alt="QR Code" class="qr-img">
-                                </a>
-                            {% else %}
-                                <span style="color: #9CA3AF; font-size: 0.85rem; font-style: italic;">No QR</span>
-                            {% endif %}
+                            <div id="qrcode-{{ item.id }}" class="qr-container"></div>
+                            <script>
+                                new QRCode(document.getElementById("qrcode-{{ item.id }}"), {
+                                    text: "https://marine-specials-tracker.onrender.com/items/?id={{ item.id }}",
+                                    width: 45,
+                                    height: 45,
+                                    colorDark : "#0A2540", /* Marine Blue */
+                                    colorLight : "#ffffff",
+                                    correctLevel : QRCode.CorrectLevel.L
+                                });
+                            </script>
                         </td>
+                        
                         <td>
                             {% if item.is_delivered %}
                                 <span class="badge-success">Delivered</span>

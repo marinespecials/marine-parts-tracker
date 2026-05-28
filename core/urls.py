@@ -8,6 +8,5 @@ urlpatterns = [
     path('', include('tracker.urls')),
 ]
 
-# This is the vital part for QR code images
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# This serves media files in development AND production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
