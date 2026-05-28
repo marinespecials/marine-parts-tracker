@@ -23,3 +23,10 @@ urlpatterns = [
     path('edit-client/<int:client_id>/', views.edit_client, name='edit_client'),
     path('delete-client/<int:client_id>/', views.delete_client, name='delete_client'),
 ]
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ... your other urls ...
+    path('item/add/', views.add_item, name='add_item'),
+]
