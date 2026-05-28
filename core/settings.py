@@ -62,25 +62,22 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database - Updated for PostgreSQL
 # core/settings.py
 
+# Replace your existing DATABASES block with this:
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3', # Fallback for local
+        default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         ssl_require=True
     )
 }
 
-# Add this fix to handle the local vs cloud difference:
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600, 
-        ssl_require=True
-    )
-else:
+# Fallback to local SQLite if DATABASE_URL environment variable is missing
+if not DATABASES['default']:
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -94,6 +91,13 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files settings
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Required for Render
+# Static files settings# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files (Your QR Codes)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Required for Render
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
