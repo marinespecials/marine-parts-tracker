@@ -3,66 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Parts Inventory</title>
+    <title>Add Part to Master Inventory</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Master Parts Inventory</h2>
-        
-        <a href="{% url 'add_master_item' %}" class="btn btn-success shadow-sm">
-            + Add New Part
-        </a>
-    </div>
-
-    <div class="card shadow">
-        <div class="card-body p-0">
-            <table class="table table-striped table-hover mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Part Name</th>
-                        <th>Quantity</th>
-                        <th>Location</th>
-                        <th>Assigned Offer</th>
-                        <th>QR Code</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td class="align-middle fw-bold">{{ item.name }}</td>
-                        <td class="align-middle">{{ item.quantity }}</td>
-                        <td class="align-middle">{{ item.compartment.name }}</td>
-                        <td class="align-middle">{{ item.offer.title }}</td>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Add New Part to Master Inventory</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
                         
-                        <td class="align-middle">
-                            {% if item.qr_code %}
-                                <a href="{{ item.qr_code.url }}" target="_blank" title="Click to enlarge">
-                                    <img src="{{ item.qr_code.url }}" alt="QR Code" width="50" height="50" class="border rounded bg-white">
-                                </a>
-                            {% else %}
-                                <span class="text-muted small">No QR</span>
-                            {% endif %}
-                        </td>
+                        {{ form.as_p }}
                         
-                        <td class="align-middle">
-                            {% if item.is_delivered %}
-                                <span class="badge bg-success">Delivered</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4">No parts in inventory yet. Click "Add New Part" to start.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success">Save Part & Generate QR</button>
+                            <a href="{% url 'item_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
