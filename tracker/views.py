@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Offer, Compartment, Item, Customer
 from django.db.models import Q
+from .forms import ItemForm
 
 def dashboard(request):
     query = request.GET.get('q', '')
@@ -65,12 +66,24 @@ def offer_detail(request, offer_id):
 def item_list(request):
     return render(request, 'tracker/item_list.html', {'items': Item.objects.all().order_by('offer__title')})
 
+# Original add_item for specific offers
 def add_item(request, offer_id):
     if request.method == 'POST':
         Item.objects.create(name=request.POST.get('name'), quantity=request.POST.get('quantity'), 
                             compartment=get_object_or_404(Compartment, id=request.POST.get('compartment')), 
                             offer=get_object_or_404(Offer, id=offer_id))
     return redirect('offer_detail', offer_id=offer_id)
+
+# NEW: Add item to the master list via the frontend form
+def add_master_item(request):
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            form.save() 
+            return redirect('item_list') 
+    else:
+        form = ItemForm()
+    return render(request, 'tracker/add_item.html', {'form': form})
 
 def toggle_item(request, item_id):
     item = get_object_or_404(Item, id=item_id)
@@ -113,25 +126,6 @@ def edit_client(request, client_id):
         return redirect('client_list')
     return render(request, 'tracker/edit_client.html', {'client': c})
 
-from django.shortcuts import render, redirect
-from .forms import ItemForm
-
-def add_item(request):
-    # If the user submitted the form
-    if request.method == 'POST':
-        form = ItemForm(request.POST)
-        if form.is_valid():
-            # This saves the item to the database AND triggers your custom QR code logic!
-            form.save() 
-            
-            # Send them back to the main inventory page (replace 'home' with your actual list view name if different)
-            return redirect('home') 
-    
-    # If the user is just visiting the page for the first time
-    else:
-        form = ItemForm()
-
-    return render(request, 'tracker/add_item.html', {'form': form})
 def delete_client(request, client_id):
     c = get_object_or_404(Customer, id=client_id)
     if request.method == 'POST' and c.offers.count() == 0: c.delete()
