@@ -1,7 +1,4 @@
 from django.db import models
-import qrcode
-from io import BytesIO
-from django.core.files.base import ContentFile
 
 class Customer(models.Model):
     name = models.CharField(max_length=200)
@@ -27,42 +24,7 @@ class Item(models.Model):
     quantity = models.IntegerField(default=1)
     is_delivered = models.BooleanField(default=False)
     compartment = models.ForeignKey(Compartment, on_delete=models.CASCADE, related_name='items')
-    
-    # Allows the item to exist without being tied to an offer
     offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, related_name='items', null=True, blank=True)
-
-    # Note: No qr_code field here anymore!
-    # Note: No def save(...) method here anymore!
-
-    def __str__(self):
-        return f"{self.name} x{self.quantity}"
-
-    def __str__(self):
-        return f"{self.name} x{self.quantity}"
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        
-        # Save first to ensure the Item gets a primary key (ID)
-        super().save(*args, **kwargs)
-        
-        # Only generate a QR code if it's a brand new item and doesn't have one
-        if is_new and not self.qr_code:
-            domain = "https://marine-specials-tracker.onrender.com" 
-            url = f"{domain}/items/" 
-            
-            qr = qrcode.QRCode(version=1, box_size=10, border=5)
-            qr.add_data(url)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white")
-            
-            buffer = BytesIO()
-            img.save(buffer, format="PNG")
-            file_name = f'qr_item_{self.id}.png'
-            self.qr_code.save(file_name, ContentFile(buffer.getvalue()), save=False)
-            
-            # Remove force_insert to prevent database crash on the second save
-            kwargs.pop('force_insert', None)
-            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} x{self.quantity}"
