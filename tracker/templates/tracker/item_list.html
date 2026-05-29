@@ -76,7 +76,7 @@
                         <td>{{ item.offer.title|default:"-- Unassigned --" }}</td>
                         
                         <td>
-                            <div id="qrcode-{{ item.id }}" class="qr-container"></div>
+                            <div id="qrcode-{{ item.id }}" class="qr-container" onclick="openModal('{{ item.id }}')" title="Click to enlarge"></div>
                             <script>
                                 new QRCode(document.getElementById("qrcode-{{ item.id }}"), {
                                     text: "https://marine-specials-tracker.onrender.com/items/?id={{ item.id }}",
@@ -106,5 +106,37 @@
             </table>
         </div>
     </div>
+
+    <div id="qrModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;" onclick="this.style.display='none'">
+        <div style="background:white; padding:30px; border-radius:10px; display:flex; flex-direction:column; align-items:center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+            <div id="modal-qr"></div>
+            <p style="text-align:center; font-weight:bold; margin-top:20px; color: var(--marine-blue); font-size: 1.2rem;">Scan to view part details</p>
+            <p style="text-align:center; font-size: 0.9rem; color: #6B7280; margin-top: 5px;">Click anywhere to close</p>
+        </div>
+    </div>
+
+    <script>
+    function openModal(id) {
+        const modal = document.getElementById('qrModal');
+        const modalQr = document.getElementById('modal-qr');
+        
+        // Clear the old QR code
+        modalQr.innerHTML = ""; 
+        
+        // Generate a new, large QR code in the modal
+        new QRCode(modalQr, {
+            text: "https://marine-specials-tracker.onrender.com/items/?id=" + id,
+            width: 300, 
+            height: 300,
+            colorDark : "#0A2540", 
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.L
+        });
+        
+        // Display the modal
+        modal.style.display = 'flex';
+    }
+    </script>
+
 </body>
 </html>
