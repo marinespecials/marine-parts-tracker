@@ -36,6 +36,12 @@
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #4B5563; }
         .form-group input, .form-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; }
+        
+        /* Quantity inline form styling */
+        .qty-input { width: 50px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-weight: bold; color: var(--text-dark); text-align: center; }
+        .qty-input:focus { outline: none; border-color: var(--marine-blue); }
+        .btn-save { background-color: var(--marine-blue); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: background-color 0.2s; }
+        .btn-save:hover { background-color: #11375C; }
     </style>
 </head>
 <body>
@@ -107,7 +113,15 @@
                     {% for item in items %}
                         <tr>
                             <td><strong>{{ item.name }}</strong></td>
-                            <td>{{ item.quantity }}</td>
+                            
+                            <td>
+                                <form action="{% url 'update_item_quantity' item.id %}" method="POST" style="display: inline-flex; align-items: center; gap: 5px; margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="qty-input">
+                                    <button type="submit" class="btn-save">Save</button>
+                                </form>
+                            </td>
+
                             <td><span style="color: #6B7280;">{{ item.compartment.name }}</span></td>
                             <td>
                                 {% if item.is_delivered %}

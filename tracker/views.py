@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Offer, Compartment, Item, Customer
 from django.db.models import Q
@@ -158,3 +160,41 @@ def delete_client(request, client_id):
     c = get_object_or_404(Customer, id=client_id)
     if request.method == 'POST' and c.offers.count() == 0: c.delete()
     return redirect('client_list')
+
+# --- NEW EXPORT FUNCTION ---
+def export_items_to_excel(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="marine_specials_inventory.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Item Name', 'Quantity', 'Compartment', 'Is Delivered', 'Offer/Order Name', 'Client/Customer'])
+
+    items = Item.objects.select_related('compartment', 'offer__customer').all()
+
+    for item in items:
+        offer_title = item.offer.title if item.offer else "No Offer Assigned"
+        customer_name = item.offer.customer.name if (item.offer and item.offer.customer) else "No Client Assigned"
+        
+        writer.writerow([
+            item.name,
+            item.quantity,
+            item.compartment.name,
+            "Yes" if item.is_delivered else "No",
+            offer_title,
+            customer_name
+        ])
+
+    return response
+# --- NEW QUANTITY UPDATE FUNCTION ---
+def update_item_quantity(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == 'POST':
+        new_quantity = request.POST.get('quantity')
+        # Make sure they actually typed a number and it isn't negative
+        if new_quantity and int(new_quantity) >= 0:
+            item.quantity = int(new_quantity)
+            item.save()
+            
+    # This trick safely redirects you back to the exact page you were just looking at
+    previous_page = request.META.get('HTTP_REFERER', 'dashboard')
+    return redirect(previous_page)

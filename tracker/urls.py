@@ -13,7 +13,7 @@ urlpatterns = [
     # Original add item for specific offers
     path('offer/<int:offer_id>/item/add/', views.add_item, name='add_item'),
     
-    # NEW: The Add Master Item URL (fixes your 404 error)
+    # The Add Master Item URL
     path('item/add/', views.add_master_item, name='add_master_item'),
     
     path('item/<int:item_id>/toggle/', views.toggle_item, name='toggle_item'),
@@ -26,4 +26,9 @@ urlpatterns = [
     path('client/<int:client_id>/delete/', views.delete_client, name='delete_client'),
     path('offer/<int:offer_id>/allocate/', views.allocate_item, name='allocate_item'),
     path('item/<int:item_id>/unallocate/', views.unallocate_item, name='unallocate_item'),
+    
+    # --- NEW EXPORT ROUTE ---
+    path('export-inventory/', views.export_items_to_excel, name='export_inventory'),
 ]
+# NEW: Update Quantity Route
+    path('item/<int:item_id>/update-quantity/', views.update_item_quantity, name='update_item_quantity'),
