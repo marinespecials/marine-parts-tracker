@@ -161,30 +161,48 @@ def delete_client(request, client_id):
     if request.method == 'POST' and c.offers.count() == 0: c.delete()
     return redirect('client_list')
 
-# --- NEW EXPORT FUNCTION ---
+# --- UPDATED EXPORT FUNCTION ---
 def export_items_to_excel(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="marine_specials_inventory.csv"'
-
     writer = csv.writer(response)
-    writer.writerow(['Item Name', 'Quantity', 'Compartment', 'Is Delivered', 'Offer/Order Name', 'Client/Customer'])
 
-    items = Item.objects.select_related('compartment', 'offer__customer').all()
+    # Grab all compartments (categories) to group the list
+    compartments = Compartment.objects.prefetch_related('items__offer__customer').all()
 
-    for item in items:
-        offer_title = item.offer.title if item.offer else "No Offer Assigned"
-        customer_name = item.offer.customer.name if (item.offer and item.offer.customer) else "No Client Assigned"
+    for compartment in compartments:
+        # 1. Create a bold visual header for each category
+        writer.writerow([f'=== LOCATION / CATEGORY: {compartment.name.upper()} ==='])
         
-        writer.writerow([
-            item.name,
-            item.quantity,
-            item.compartment.name,
-            "Yes" if item.is_delivered else "No",
-            offer_title,
-            customer_name
-        ])
+        # 2. Write the column titles for this specific section
+        writer.writerow(['Item Name', 'Quantity', 'Status', 'Assigned Order', 'Client'])
+
+        # 3. Get all the items that belong ONLY to this compartment
+        items = compartment.items.all()
+
+        if not items:
+            # If the compartment is empty, note it so you know
+            writer.writerow(['(Empty)', '-', '-', '-', '-'])
+        else:
+            # Loop through the items and write them under the category header
+            for item in items:
+                offer_title = item.offer.title if item.offer else "Unassigned"
+                customer_name = item.offer.customer.name if (item.offer and item.offer.customer) else "Unassigned"
+
+                writer.writerow([
+                    item.name,
+                    item.quantity,
+                    "Delivered" if item.is_delivered else "Pending",
+                    offer_title,
+                    customer_name
+                ])
+        
+        # 4. Add a couple of blank rows to create visual spacing before the next category
+        writer.writerow([])
+        writer.writerow([])
 
     return response
+
 # --- NEW QUANTITY UPDATE FUNCTION ---
 def update_item_quantity(request, item_id):
     item = get_object_or_404(Item, id=item_id)
