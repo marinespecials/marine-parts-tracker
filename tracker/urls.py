@@ -27,8 +27,9 @@ urlpatterns = [
     path('offer/<int:offer_id>/allocate/', views.allocate_item, name='allocate_item'),
     path('item/<int:item_id>/unallocate/', views.unallocate_item, name='unallocate_item'),
     
-    # --- NEW EXPORT ROUTE ---
+    # The Excel Export route
     path('export-inventory/', views.export_items_to_excel, name='export_inventory'),
-]
-# NEW: Update Quantity Route
+    
+    # The Live Quantity Update route
     path('item/<int:item_id>/update-quantity/', views.update_item_quantity, name='update_item_quantity'),
+]
