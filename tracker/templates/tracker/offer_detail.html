@@ -164,7 +164,15 @@
                 {% csrf_token %}
                 <div class="form-group">
                     <label>Part Name / Description</label>
-                    <input type="text" name="name" required placeholder="e.g. Cylinder Liner Cyl.1">
+                    
+                    <!-- UPDATED AUTO-SUGGEST INPUT & DATALIST HERE -->
+                    <input type="text" name="name" list="part-names" required placeholder="e.g. Cylinder Liner Cyl.1" autocomplete="off">
+                    <datalist id="part-names">
+                        {% for part_name in unique_part_names %}
+                            <option value="{{ part_name }}">
+                        {% endfor %}
+                    </datalist>
+
                 </div>
                 <div class="form-grid" style="margin-top: 15px;">
                     <div class="form-group">

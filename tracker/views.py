@@ -56,19 +56,21 @@ def delete_offer(request, offer_id):
         get_object_or_404(Offer, id=offer_id).delete()
     return redirect('dashboard')
 
-# 1. UPDATE THIS EXISTING FUNCTION
+# 1. UPDATED: Send unique part names to the frontend for Auto-Suggest
 def offer_detail(request, offer_id):
     offer = get_object_or_404(Offer, id=offer_id)
     items = offer.items.all()
-    
-    # NEW: Find all items that do NOT have an offer assigned to them yet
     available_in_storage = Item.objects.filter(offer__isnull=True)
+    
+    # NEW: Grab a list of all unique part names ever typed into the system
+    unique_part_names = Item.objects.values_list('name', flat=True).distinct()
     
     context = {
         'offer': offer, 
         'items': items, 
         'compartments': Compartment.objects.all(),
-        'available_items': available_in_storage, # Send storage items to the template
+        'available_items': available_in_storage, 
+        'unique_part_names': unique_part_names, # Sending them to the HTML
         'progress': int((items.filter(is_delivered=True).count() / items.count()) * 100) if items.count() > 0 else 0
     }
     return render(request, 'tracker/offer_detail.html', context)
@@ -96,12 +98,32 @@ def unallocate_item(request, item_id):
 def item_list(request):
     return render(request, 'tracker/item_list.html', {'items': Item.objects.all().order_by('offer__title')})
 
-# Original add_item for specific offers
+# 2. UPDATED: Prevent duplicate rows and merge quantities instead
 def add_item(request, offer_id):
     if request.method == 'POST':
-        Item.objects.create(name=request.POST.get('name'), quantity=request.POST.get('quantity'), 
-                            compartment=get_object_or_404(Compartment, id=request.POST.get('compartment')), 
-                            offer=get_object_or_404(Offer, id=offer_id))
+        name = request.POST.get('name').strip() # .strip() removes accidental spaces
+        quantity = int(request.POST.get('quantity', 1))
+        comp_id = request.POST.get('compartment')
+        
+        # Check if this exact part already exists in this specific order and location
+        existing_item = Item.objects.filter(
+            name__iexact=name, # __iexact means it ignores capital letters when matching
+            compartment_id=comp_id, 
+            offer_id=offer_id
+        ).first()
+        
+        if existing_item:
+            # WMS FEATURE: If it exists, don't make a new row. Just add the quantities!
+            existing_item.quantity += quantity
+            existing_item.save()
+        else:
+            # If it truly doesn't exist yet, create a normal new row
+            Item.objects.create(
+                name=name, 
+                quantity=quantity, 
+                compartment=get_object_or_404(Compartment, id=comp_id), 
+                offer=get_object_or_404(Offer, id=offer_id)
+            )
     return redirect('offer_detail', offer_id=offer_id)
 
 # NEW: Add item to the master list via the frontend form
