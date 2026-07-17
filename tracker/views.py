@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q, Prefetch
 from .models import Offer, Compartment, Item, Customer
 from .forms import ItemForm
+from django.contrib.auth.models import User
 
 def dashboard(request):
     query = request.GET.get('q', '')
@@ -234,3 +235,13 @@ def duplicate_item(request, item_id):
 # --- ENTERPRISE HUB ---
 def app_hub(request):
     return render(request, 'tracker/hub.html')
+
+# --- TEMPORARY ADMIN SETUP ---
+def setup_admin(request):
+    from django.http import HttpResponse
+    # Check if the user already exists so it doesn't crash if you click it twice
+    if not User.objects.filter(username='master').exists():
+        # Creates an admin with Username: master | Password: MarineAdmin2026!
+        User.objects.create_superuser('master', 'admin@marine.com', 'MarineAdmin2026!')
+        return HttpResponse("Success! Go to the Hub and log in with Username: master | Password: MarineAdmin2026!")
+    return HttpResponse("Admin already exists. You are good to log in!")

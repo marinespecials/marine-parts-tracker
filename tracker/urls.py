@@ -5,6 +5,9 @@ urlpatterns = [
     # The new Main Hub is now the homepage (loads when you go to your website's base URL)
     path('', views.app_hub, name='app_hub'),
     
+    # TEMPORARY SECRET ROUTE - Delete this after you create your admin account!
+    path('setup-admin/', views.setup_admin, name='setup_admin'),
+    
     # The Tracker Dashboard moved here (loads at yourwebsite.com/tracker/)
     path('tracker/', views.dashboard, name='dashboard'),
     
