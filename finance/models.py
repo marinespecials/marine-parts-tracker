@@ -34,6 +34,7 @@ class Invoice(models.Model):
         ('OVERDUE', 'Overdue'),
         ('VOID', 'Voided'),
     ]
+    qr_code = models.ImageField(upload_to='invoice_qrs/', null=True, blank=True)
 
     invoice_number = models.CharField(max_length=50, unique=True)
     # Link the invoice to the customer AND the specific order manifest
