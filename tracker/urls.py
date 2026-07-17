@@ -2,7 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
+    # The new Main Hub is now the homepage (loads when you go to your website's base URL)
+    path('', views.app_hub, name='app_hub'),
+    
+    # The Tracker Dashboard moved here (loads at yourwebsite.com/tracker/)
+    path('tracker/', views.dashboard, name='dashboard'),
+    
+    # --- All your existing tracker routes ---
     path('compartment/<int:comp_id>/', views.compartment_detail, name='compartment_detail'),
     path('offer/add/', views.add_offer, name='add_offer'),
     path('offer/<int:offer_id>/edit/', views.edit_offer, name='edit_offer'),

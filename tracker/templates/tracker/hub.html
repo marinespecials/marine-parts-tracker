@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Enterprise Portal</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --text-dark: #1F2937; --accent-blue: #2563EB; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .navbar { background-color: var(--marine-blue); color: white; padding: 20px 40px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .navbar h1 { margin: 0; font-size: 2rem; letter-spacing: 1px; font-weight: 300; }
+        .navbar h1 strong { font-weight: 700; }
+
+        .container { max-width: 1200px; margin: 50px auto; padding: 0 20px; flex-grow: 1; }
+        .portal-header { text-align: center; margin-bottom: 50px; }
+        .portal-header h2 { font-size: 1.8rem; color: var(--marine-blue); margin-bottom: 10px; }
+        .portal-header p { color: #6B7280; font-size: 1.1rem; }
+
+        .app-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        
+        .app-card { background: white; border-radius: 12px; padding: 40px 30px; text-align: center; text-decoration: none; color: var(--text-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid transparent; transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .app-card:hover { transform: translateY(-10px); box-shadow: 0 15px 25px rgba(0,0,0,0.1); }
+        
+        /* Specific App Brand Colors */
+        .card-tracker { border-top-color: #10B981; }
+        .card-tracker:hover .icon { background-color: #D1FAE5; color: #10B981; }
+        
+        .card-finance { border-top-color: #3B82F6; }
+        .card-finance:hover .icon { background-color: #DBEAFE; color: #3B82F6; }
+        
+        .card-ocr { border-top-color: #8B5CF6; }
+        .card-ocr:hover .icon { background-color: #EDE9FE; color: #8B5CF6; }
+
+        .icon { width: 80px; height: 80px; background-color: #F3F4F6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 20px auto; transition: 0.3s; color: #9CA3AF; }
+        .app-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: var(--marine-blue); }
+        .app-desc { font-size: 0.95rem; color: #6B7280; line-height: 1.5; }
+        
+        .status-badge { position: absolute; top: 15px; right: 15px; background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1><strong>Marine</strong> Operations Portal</h1>
+    </div>
+
+    <div class="container">
+        <div class="portal-header">
+            <h2>Select Application</h2>
+            <p>Access your logistics, financials, and automated tools from one unified hub.</p>
+        </div>
+
+        <div class="app-grid">
+            
+            <!-- TRACKER APP -->
+            <a href="{% url 'dashboard' %}" class="app-card card-tracker">
+                <div class="icon">📦</div>
+                <div class="app-title">Warehouse Logistics</div>
+                <div class="app-desc">Manage parts, track physical cargo manifests, and allocate inventory to vessel orders.</div>
+            </a>
+
+            <!-- FINANCE APP -->
+            <a href="/admin/finance/" class="app-card card-finance">
+                <div class="icon">📈</div>
+                <div class="app-title">Financial Intelligence</div>
+                <div class="app-desc">Manage client economics, track historical part pricing, and link invoices to orders.</div>
+            </a>
+
+            <!-- OCR INVOICE APP -->
+            <a href="#" class="app-card card-ocr">
+                <div class="status-badge">Development</div>
+                <div class="icon">📄</div>
+                <div class="app-title">OCR Invoice Engine</div>
+                <div class="app-desc">Automated optical character recognition tool for extracting and digitizing invoice data.</div>
+            </a>
+
+        </div>
+    </div>
+
+</body>
+</html>

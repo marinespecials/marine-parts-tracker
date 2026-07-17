@@ -231,3 +231,6 @@ def duplicate_item(request, item_id):
         )
     previous_page = request.META.get('HTTP_REFERER', 'dashboard')
     return redirect(previous_page)
+# --- ENTERPRISE HUB ---
+def app_hub(request):
+    return render(request, 'tracker/hub.html')
