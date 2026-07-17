@@ -44,7 +44,8 @@
         <div class="card">
             <div class="header-row">
                 <h2>Recent Invoices</h2>
-                <a href="#" class="btn-blue">+ Upload PDF via OCR</a>
+                <!-- THE UPDATED OCR BUTTON IS HERE -->
+                <a href="{% url 'finance:upload_ocr' %}" class="btn-blue">+ Upload PDF via OCR</a>
             </div>
             <table>
                 <thead>

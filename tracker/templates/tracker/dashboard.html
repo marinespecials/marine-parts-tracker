@@ -32,13 +32,20 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Marine Parts Tracker</h1>
+    <div class="navbar no-print">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <!-- NEW HUB BUTTON -->
+            <a href="/" style="background-color: rgba(255,255,255,0.2); color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; transition: 0.2s;">🏠 Hub</a>
+            
+            <a href="{% url 'dashboard' %}" style="text-decoration: none; color: white;"><h1>Marine Parts Tracker</h1></a>
+        </div>
         <div style="display: flex; align-items: center;">
             <div class="nav-links">
-    <a href="{% url 'item_list' %}">Master Parts List</a>
-    <a href="{% url 'client_list' %}">Manage Clients Database</a>
-</div>
+                <a href="{% url 'item_list' %}">Master Parts List</a>
+                <a href="{% url 'client_list' %}">Manage Clients Database</a>
+            </div>
+        </div>
+    </div>
             <form class="search-bar" method="GET" action="{% url 'dashboard' %}">
                 <input type="text" name="q" placeholder="Search for a part or order..." value="{{ search_query }}">
                 <button type="submit">Search</button>

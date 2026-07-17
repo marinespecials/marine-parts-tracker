@@ -4,6 +4,6 @@ from . import views
 app_name = 'finance'
 
 urlpatterns = [
-    # This will be the main dashboard for the finance app
     path('', views.finance_dashboard, name='dashboard'),
+    path('upload-ocr/', views.upload_ocr, name='upload_ocr'), # <-- ADD THIS LINE
 ]

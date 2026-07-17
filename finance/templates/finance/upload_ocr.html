@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OCR Invoice Upload</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F3F4F6; color: #1F2937; padding: 40px; text-align: center; }
+        .upload-card { background: white; max-width: 500px; margin: auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid #8B5CF6; }
+        .btn-upload { background-color: #8B5CF6; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        .file-input { border: 2px dashed #D1D5DB; padding: 40px; width: 100%; box-sizing: border-box; border-radius: 8px; margin-bottom: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <a href="{% url 'finance:dashboard' %}" style="color: #6B7280; text-decoration: none; font-weight: bold;">&larr; Back to Finance</a>
+    <div class="upload-card" style="margin-top: 20px;">
+        <h2 style="margin-top:0; color:#8B5CF6;">📄 OCR Engine</h2>
+        <p style="color: #6B7280; margin-bottom: 30px;">Upload a PDF or Image invoice. The engine will extract the data and generate a draft.</p>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="invoice_file" class="file-input" required accept=".pdf, .png, .jpg, .jpeg">
+            <button type="submit" class="btn-upload">Process Invoice</button>
+        </form>
+    </div>
+</body>
+</html>
