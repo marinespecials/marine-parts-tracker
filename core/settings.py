@@ -1,24 +1,22 @@
 """
 Django settings for core project.
 """
-
 from pathlib import Path
 import os
-import dj_database_url  # Make sure this is installed
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# It is best practice to load this from an environment variable as well
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&gl#=8nk77#ri2u5l2^e%3^kfxvx6l+sa(z&cg1k*onh-u6cx7')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.144', 'marine-specials-tracker.onrender.com']
 
-# Application definition
+# Application definition - Consolidated into one clean list!
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -27,12 +25,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tracker',
+    'finance', # Your new app is officially registered here
 ]
 
 MIDDLEWARE = [
-    
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Recommended for production static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,26 +58,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database - Updated for PostgreSQL
-# core/settings.py
+# Database Setup: Smartly handles Local vs Cloud without warnings
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Replace your existing DATABASES block with this:
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
-
-# Fallback to local SQLite if DATABASE_URL environment variable is missing
-if not DATABASES['default']:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DATABASE_URL:
+    # We are on Render! Use the live PostgreSQL database
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # We are on your local computer! Use a simple SQLite database
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -92,16 +91,11 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files settings# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Media files (Your QR Codes)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# Required for Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# settings.py
+
+# Media files (QR Codes, PDF Invoices)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
