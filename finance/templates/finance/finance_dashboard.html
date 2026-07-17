@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Intelligence</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
+        .navbar { background-color: var(--marine-blue); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }
+        
+        .container { padding: 30px; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; border-top: 4px solid var(--marine-blue); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-row h2 { margin: 0; color: var(--marine-blue); }
+        
+        .btn-gray { background-color: #6B7280; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; margin-right: 15px; }
+        .btn-blue { background-color: #2563EB; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 12px; background-color: #F9FAFB; border-bottom: 2px solid #E5E7EB; color: #4B5563; }
+        td { padding: 12px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        tr:hover td { background-color: #F9FAFB; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+        .status-paid { background: #D1FAE5; color: #065F46; }
+        .status-draft { background: #E5E7EB; color: #374151; }
+        .status-issued { background: #DBEAFE; color: #1E40AF; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/" style="text-decoration: none; color: white;"><h1>Marine Operations Portal</h1></a>
+        <div style="font-weight: bold;">Financial Intelligence</div>
+    </div>
+
+    <div class="container">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <a href="/" class="btn-gray">&larr; Back to Hub</a>
+            <h2 style="margin: 0; font-size: 1.8rem; color: var(--marine-blue);">Finance Dashboard</h2>
+        </div>
+
+        <!-- INVOICES SECTION -->
+        <div class="card">
+            <div class="header-row">
+                <h2>Recent Invoices</h2>
+                <a href="#" class="btn-blue">+ Upload PDF via OCR</a>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Client</th>
+                        <th>Issue Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td style="font-weight: bold; color: var(--marine-blue);">{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.customer.name }}</td>
+                        <td>{{ invoice.issue_date }}</td>
+                        <td>{{ invoice.total_amount }} {{ invoice.currency|default:"EUR" }}</td>
+                        <td>
+                            <span class="status-badge 
+                                {% if invoice.status == 'PAID' %}status-paid{% elif invoice.status == 'DRAFT' %}status-draft{% else %}status-issued{% endif %}">
+                                {{ invoice.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No invoices generated yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PRICE HISTORY SECTION -->
+        <div class="card">
+            <div class="header-row">
+                <h2>Price History Ledger</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Part Name</th>
+                        <th>Type</th>
+                        <th>Unit Price</th>
+                        <th>Supplier / Client</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in recent_prices %}
+                    <tr>
+                        <td style="font-weight: bold;">{{ record.part_name }}</td>
+                        <td>{{ record.transaction_type }}</td>
+                        <td style="color: var(--marine-blue); font-weight: bold;">{{ record.unit_price }} {{ record.currency }}</td>
+                        <td>{{ record.supplier_or_client_name }}</td>
+                        <td>{{ record.date_recorded }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No pricing history recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>
