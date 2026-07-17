@@ -22,18 +22,28 @@ from .models import Invoice, ClientFinancialProfile, PriceRecord
 
 # ... (Keep your existing finance_dashboard function at the top) ...
 
+import random
+from datetime import timedelta
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from tracker.models import Customer
+from .models import Invoice, ClientFinancialProfile, PriceRecord
+
+# ... (Keep your existing finance_dashboard function at the top) ...
+
 def upload_ocr(request):
     if request.method == 'POST' and request.FILES.get('invoice_file'):
         uploaded_file = request.FILES['invoice_file']
         
         # ==========================================
         # ⚙️ YOUR OCR ENGINE GOES HERE
-        # (e.g., using PyPDF2, pdfplumber, or pytesseract)
         # ==========================================
-        # Example of what your engine will extract:
         extracted_invoice_number = f"INV-{random.randint(1000, 9999)}"
         extracted_client_name = "Automated OCR Client"
         extracted_total = 1250.00
+        
+        # Calculate a due date (30 days from today)
+        draft_due_date = timezone.now().date() + timedelta(days=30)
         
         # 1. Find or create the customer based on extracted text
         customer, created = Customer.objects.get_or_create(name=extracted_client_name)
@@ -43,7 +53,8 @@ def upload_ocr(request):
             invoice_number=extracted_invoice_number,
             customer=customer,
             total_amount=extracted_total,
-            status='DRAFT' # Keeps it as a draft so you can review it!
+            status='DRAFT',
+            due_date=draft_due_date  # <-- THIS FIXES THE CRASH!
         )
         
         # Send them back to the dashboard to see the new invoice
