@@ -96,8 +96,9 @@ def unallocate_item(request, item_id):
     return redirect('offer_detail', offer_id=offer_id)
 
 def item_list(request):
-    return render(request, 'tracker/item_list.html', {'items': Item.objects.all().order_by('offer__title')})
-
+    # This fetches all compartments, and their items, in one efficient database hit
+    compartments = Compartment.objects.prefetch_related('items').all()
+    return render(request, 'tracker/item_list.html', {'compartments': compartments})
 # 2. UPDATED: Prevent duplicate rows and merge quantities instead
 def add_item(request, offer_id):
     if request.method == 'POST':

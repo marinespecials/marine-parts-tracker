@@ -63,62 +63,71 @@
                 </div>
             </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Part Name</th>
-                        <th>Qty</th>
-                        <th>Location</th>
-                        <th>Assigned Offer</th>
-                        <th>QR Code</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td style="font-weight: bold; color: var(--marine-blue);">{{ item.name }}</td>
-                        
-                        <td>
-                            <form action="{% url 'update_item_quantity' item.id %}" method="POST" style="display: inline-flex; align-items: center; gap: 5px; margin: 0;">
-                                {% csrf_token %}
-                                <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="qty-input">
-                                <button type="submit" class="btn-save">Save</button>
-                            </form>
-                        </td>
+            <!-- NEW CATEGORIZED LAYOUT STARTS HERE -->
+            {% for compartment in compartments %}
+                <div style="margin-top: 30px; margin-bottom: 10px; border-bottom: 2px solid var(--marine-blue); padding-bottom: 5px;">
+                    <h3 style="margin: 0; color: var(--marine-blue);">{{ compartment.name|upper }}</h3>
+                </div>
+                
+                <table style="margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Part Name</th>
+                            <th>Qty</th>
+                            <th>Assigned Offer</th>
+                            <th>QR Code</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in compartment.items.all %}
+                        <tr>
+                            <td style="font-weight: bold; color: var(--marine-blue);">{{ item.name }}</td>
+                            
+                            <td>
+                                <form action="{% url 'update_item_quantity' item.id %}" method="POST" style="display: inline-flex; align-items: center; gap: 5px; margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="qty-input">
+                                    <button type="submit" class="btn-save">Save</button>
+                                </form>
+                            </td>
 
-                        <td>{{ item.compartment.name }}</td>
-                        <td>{{ item.offer.title|default:"-- Unassigned --" }}</td>
-                        
-                        <td>
-                            <div id="qrcode-{{ item.id }}" class="qr-container" onclick="openModal('{{ item.id }}')" title="Click to enlarge"></div>
-                            <script>
-                                new QRCode(document.getElementById("qrcode-{{ item.id }}"), {
-                                    text: "https://marine-specials-tracker.onrender.com/items/?id={{ item.id }}",
-                                    width: 45,
-                                    height: 45,
-                                    colorDark : "#0A2540",
-                                    colorLight : "#ffffff",
-                                    correctLevel : QRCode.CorrectLevel.L
-                                });
-                            </script>
-                        </td>
-                        
-                        <td>
-                            {% if item.is_delivered %}
-                                <span class="badge-success">Delivered</span>
-                            {% else %}
-                                <span class="badge-pending">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; color: #6B7280; padding: 30px;">No parts in inventory yet. Click "+ Add New Part" to start.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <td>{{ item.offer.title|default:"-- Unassigned --" }}</td>
+                            
+                            <td>
+                                <div id="qrcode-{{ item.id }}" class="qr-container" onclick="openModal('{{ item.id }}')" title="Click to enlarge"></div>
+                                <script>
+                                    new QRCode(document.getElementById("qrcode-{{ item.id }}"), {
+                                        text: "https://marine-specials-tracker.onrender.com/items/?id={{ item.id }}",
+                                        width: 45,
+                                        height: 45,
+                                        colorDark : "#0A2540",
+                                        colorLight : "#ffffff",
+                                        correctLevel : QRCode.CorrectLevel.L
+                                    });
+                                </script>
+                            </td>
+                            
+                            <td>
+                                {% if item.is_delivered %}
+                                    <span class="badge-success">Delivered</span>
+                                {% else %}
+                                    <span class="badge-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No parts in this location yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% empty %}
+                <p style="text-align: center; color: #6B7280; padding: 30px;">No inventory categories found.</p>
+            {% endfor %}
+            <!-- END OF CATEGORIZED LAYOUT -->
+
         </div>
     </div>
 
