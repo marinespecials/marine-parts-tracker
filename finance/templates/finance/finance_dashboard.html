@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Financial Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
@@ -20,95 +21,108 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; padding: 12px; background-color: #F9FAFB; border-bottom: 2px solid #E5E7EB; color: #4B5563; }
         td { padding: 12px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
-        tr:hover td { background-color: #F9FAFB; }
         
-        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
-        .status-paid { background: #D1FAE5; color: #065F46; }
-        .status-draft { background: #E5E7EB; color: #374151; }
-        .status-issued { background: #DBEAFE; color: #1E40AF; }
+        /* New Analytics Grid */
+        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .kpi-box { background: white; padding: 20px; border-radius: 8px; border-left: 5px solid var(--marine-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .kpi-title { font-size: 0.9rem; color: #6B7280; font-weight: bold; text-transform: uppercase; }
+        .kpi-value { font-size: 2rem; font-weight: bold; color: var(--marine-blue); margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <a href="/" style="text-decoration: none; color: white;"><h1>Marine Operations Portal</h1></a>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="/" style="background-color: rgba(255,255,255,0.2); color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.9rem;">🏠 Hub</a>
+            <a href="/" style="text-decoration: none; color: white;"><h1>Marine Operations Portal</h1></a>
+        </div>
         <div style="font-weight: bold;">Financial Intelligence</div>
     </div>
 
     <div class="container">
-        <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <a href="/" class="btn-gray">&larr; Back to Hub</a>
-            <h2 style="margin: 0; font-size: 1.8rem; color: var(--marine-blue);">Finance Dashboard</h2>
-        </div>
-
-        <!-- INVOICES SECTION -->
-        <div class="card">
-            <div class="header-row">
-                <h2>Recent Invoices</h2>
-                <!-- THE UPDATED OCR BUTTON IS HERE -->
-                <a href="{% url 'finance:upload_ocr' %}" class="btn-blue">+ Upload PDF via OCR</a>
+        
+        <!-- TOP KPI ROW -->
+        <div class="analytics-grid">
+            <div class="kpi-box">
+                <div class="kpi-title">Total Invoices Processed</div>
+                <div class="kpi-value">{{ total_invoices }}</div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Invoice #</th>
-                        <th>Client</th>
-                        <th>Issue Date</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for invoice in invoices %}
-                    <tr>
-                        <td style="font-weight: bold; color: var(--marine-blue);">{{ invoice.invoice_number }}</td>
-                        <td>{{ invoice.customer.name }}</td>
-                        <td>{{ invoice.issue_date }}</td>
-                        <td>{{ invoice.total_amount }} {{ invoice.currency|default:"EUR" }}</td>
-                        <td>
-                            <span class="status-badge 
-                                {% if invoice.status == 'PAID' %}status-paid{% elif invoice.status == 'DRAFT' %}status-draft{% else %}status-issued{% endif %}">
-                                {{ invoice.status }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No invoices generated yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- PRICE HISTORY SECTION -->
-        <div class="card">
-            <div class="header-row">
-                <h2>Price History Ledger</h2>
+            <div class="kpi-box" style="border-left-color: var(--accent-green);">
+                <div class="kpi-title">Top Supplier by Volume</div>
+                <div class="kpi-value">{{ top_supplier }}</div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Part Name</th>
-                        <th>Type</th>
-                        <th>Unit Price</th>
-                        <th>Supplier / Client</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in recent_prices %}
-                    <tr>
-                        <td style="font-weight: bold;">{{ record.part_name }}</td>
-                        <td>{{ record.transaction_type }}</td>
-                        <td style="color: var(--marine-blue); font-weight: bold;">{{ record.unit_price }} {{ record.currency }}</td>
-                        <td>{{ record.supplier_or_client_name }}</td>
-                        <td>{{ record.date_recorded }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No pricing history recorded yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
 
+        <!-- CHARTS & DATA ROW -->
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
+            
+            <!-- PIE CHART CARD -->
+            <div class="card">
+                <div class="header-row">
+                    <h2>Top 5 Suppliers</h2>
+                </div>
+                <canvas id="supplierChart" width="100" height="100"></canvas>
+            </div>
+
+            <!-- INVOICES TABLE CARD -->
+            <div class="card">
+                <div class="header-row">
+                    <h2>Recent Invoices</h2>
+                    <a href="{% url 'finance:upload_ocr' %}" class="btn-blue">+ Upload PDF via OCR</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Client</th>
+                            <th>Issue Date</th>
+                            <th>Amount</th>
+                            <th>QR Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices|slice:":5" %}
+                        <tr>
+                            <td style="font-weight: bold; color: var(--marine-blue);">{{ invoice.invoice_number }}</td>
+                            <td>{{ invoice.customer.name }}</td>
+                            <td>{{ invoice.issue_date }}</td>
+                            <td>{{ invoice.total_amount }}</td>
+                            <td>
+                                {% if invoice.qr_code %}
+                                    <a href="{{ invoice.qr_code.url }}" target="_blank" style="color: var(--accent-green); font-weight: bold; text-decoration: none;">View QR</a>
+                                {% else %}
+                                    <span style="color: #9CA3AF;">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No invoices generated yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
+    <!-- INITIALIZE CHART.JS -->
+    <script>
+        const ctx = document.getElementById('supplierChart').getContext('2d');
+        const supplierChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    data: {{ chart_data|safe }},
+                    backgroundColor: ['#0A2540', '#2563EB', '#10B981', '#8B5CF6', '#F59E0B'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
