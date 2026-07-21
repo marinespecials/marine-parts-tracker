@@ -1,6 +1,5 @@
 import random
 import qrcode
-import pdfplumber
 import csv
 from io import BytesIO
 from datetime import timedelta
@@ -38,39 +37,28 @@ def finance_dashboard(request):
     return render(request, 'finance/finance_dashboard.html', context)
 
 
-def upload_ocr(request):
-    if request.method == 'POST' and request.FILES.get('invoice_file'):
-        uploaded_file = request.FILES['invoice_file']
+def create_invoice(request):
+    customers = Customer.objects.all()
+    if request.method == 'POST':
+        invoice_number = request.POST.get('invoice_number', f"INV-{random.randint(1000, 9999)}")
+        customer_id = request.POST.get('customer_id')
+        total_amount = request.POST.get('total_amount', '0.00')
+        due_date = request.POST.get('due_date') or (timezone.now().date() + timedelta(days=30))
+        status = request.POST.get('status', 'DRAFT')
+        google_drive_url = request.POST.get('google_drive_url', '').strip()
         
-        matched_customer, _ = Customer.objects.get_or_create(name="Unknown OCR Client")
-        draft_due_date = timezone.now().date() + timedelta(days=30)
+        customer = get_object_or_404(Customer, id=customer_id)
         
         new_invoice = Invoice.objects.create(
-            invoice_number=f"INV-{random.randint(1000, 9999)}",
-            customer=matched_customer,
-            total_amount=0.00,
-            status='DRAFT',
-            due_date=draft_due_date,
-            ocr_document=uploaded_file
+            invoice_number=invoice_number,
+            customer=customer,
+            total_amount=total_amount,
+            due_date=due_date,
+            status=status,
+            google_drive_url=google_drive_url
         )
         
-        extracted_text = ""
-        try:
-            with pdfplumber.open(new_invoice.ocr_document.path) as pdf:
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        extracted_text += page_text + "\n"
-        except Exception as e:
-            extracted_text = "OCR Failed or Image-Only PDF"
-        
-        all_customers = Customer.objects.all()
-        for client in all_customers:
-            if client.name.lower() in extracted_text.lower():
-                new_invoice.customer = client
-                new_invoice.save()
-                break
-
+        # Generate tracking QR code
         tracking_url = f"https://marine-specials-tracker.onrender.com/admin/finance/invoice/{new_invoice.id}/change/"
         qr = qrcode.QRCode(box_size=10, border=4)
         qr.add_data(tracking_url)
@@ -80,13 +68,17 @@ def upload_ocr(request):
         buffer = BytesIO()
         qr_img.save(buffer, format="PNG")
         new_invoice.qr_code.save(f"QR_{new_invoice.invoice_number}.png", ContentFile(buffer.getvalue()), save=True)
-
-        return redirect('finance:ocr_review', invoice_id=new_invoice.id)
         
-    return render(request, 'finance/upload_ocr.html')
+        return redirect('finance:dashboard')
+        
+    context = {
+        'customers': customers,
+        'action_title': 'Add New Invoice & Link Drive'
+    }
+    return render(request, 'finance/invoice_form.html', context)
 
 
-def ocr_review(request, invoice_id):
+def edit_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     customers = Customer.objects.all()
     
@@ -98,46 +90,24 @@ def ocr_review(request, invoice_id):
         customer_id = request.POST.get('customer_id')
         invoice.customer = get_object_or_404(Customer, id=customer_id)
         invoice.total_amount = request.POST.get('total_amount')
+        invoice.due_date = request.POST.get('due_date')
         invoice.status = request.POST.get('status')
-        
-        # Save Google Drive Link
-        drive_link = request.POST.get('google_drive_url', '').strip()
-        if drive_link:
-            invoice.google_drive_url = drive_link
-        else:
-            invoice.google_drive_url = None
-            
+        invoice.google_drive_url = request.POST.get('google_drive_url', '').strip()
         invoice.save()
-            
+        
         return redirect('finance:dashboard')
-
-    extracted_text = ""
-    if invoice.ocr_document:
-        try:
-            with pdfplumber.open(invoice.ocr_document.path) as pdf:
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        extracted_text += page_text + "\n"
-        except Exception as e:
-            extracted_text = f"Could not read PDF file: {e}"
-            
-    if not extracted_text.strip():
-        extracted_text = "No text extracted. You can link your Google Drive PDF below."
-
+        
     context = {
         'invoice': invoice,
         'customers': customers,
-        'extracted_text': extracted_text
+        'action_title': 'Edit Invoice & Drive Link'
     }
-    return render(request, 'finance/ocr_review.html', context)
+    return render(request, 'finance/invoice_form.html', context)
 
 
 def delete_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
-        if invoice.ocr_document:
-            invoice.ocr_document.delete(save=False)
         if invoice.qr_code:
             invoice.qr_code.delete(save=False)
         invoice.delete()
@@ -190,7 +160,7 @@ def export_finances_csv(request):
     response['Content-Disposition'] = 'attachment; filename="marine_finance_export.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Invoice Number', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Total Amount (EUR)'])
+    writer.writerow(['Invoice Number', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Total Amount (EUR)', 'Google Drive URL'])
     
     invoices = Invoice.objects.all().order_by('-issue_date')
     for inv in invoices:
@@ -200,7 +170,8 @@ def export_finances_csv(request):
             inv.issue_date,
             inv.due_date,
             inv.status,
-            inv.total_amount
+            inv.total_amount,
+            inv.google_drive_url or ''
         ])
         
     return response

@@ -14,15 +14,14 @@ class Invoice(models.Model):
         ('VOID', 'Void'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
-    ocr_document = models.FileField(upload_to='invoices/', blank=True, null=True)
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
     
-    # Google Drive Integration Field
+    # Primary Cloud Document Link
     google_drive_url = models.URLField(
         max_length=500, 
         blank=True, 
         null=True, 
-        help_text="Paste Google Drive shareable link for this invoice"
+        help_text="Google Drive shareable link for this invoice"
     )
 
     def __str__(self):

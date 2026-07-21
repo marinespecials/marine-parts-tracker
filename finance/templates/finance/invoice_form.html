@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ action_title }}</title>
+    <style>
+        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
+        
+        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .container { padding: 30px; max-width: 1200px; margin: auto; }
+        .inspect-grid { display: grid; grid-template-columns: {% if invoice.google_drive_url %}1fr 1fr{% else %}1fr{% endif %}; gap: 25px; align-items: start; }
+        
+        .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .header-row h2 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 600; }
+        
+        .btn { padding: 9px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background-color: var(--accent); color: white; width: 100%; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; margin-top: 6px; color: var(--text); background: #FAFAFA; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; }
+        label { font-size: 0.825rem; font-weight: 600; color: #475569; display: block; margin-top: 14px; }
+        .drive-preview { width: 100%; height: 650px; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <a href="{% url 'finance:dashboard' %}" style="color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem;">&larr; Back to Dashboard</a>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">{{ action_title }}</span>
+        </div>
+        <div>
+            <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="btn" style="background-color: #F59E0B; color: white; padding: 6px 12px; font-size: 0.8rem;">📁 Open Drive Folder</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="inspect-grid">
+            
+            {% if invoice.google_drive_url %}
+            <!-- LEFT COLUMN: LIVE GOOGLE DRIVE PREVIEW -->
+            <div class="card">
+                <div class="header-row">
+                    <h2>Google Drive Viewer</h2>
+                    <a href="{{ invoice.google_drive_url }}" target="_blank" style="font-size: 0.85rem; color: var(--accent); font-weight: 600; text-decoration: none;">Open Fullscreen ↗</a>
+                </div>
+                <iframe src="{{ invoice.google_drive_url }}" class="drive-preview" allow="autoplay"></iframe>
+            </div>
+            {% endif %}
+
+            <!-- RIGHT COLUMN: STREAMLINED FORM -->
+            <div class="card">
+                <div class="header-row">
+                    <h2>Invoice Details & Cloud Link</h2>
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <label>Invoice Number:</label>
+                    <input type="text" name="invoice_number" value="{{ invoice.invoice_number|default:'' }}" placeholder="e.g., INV-4092" required>
+                    
+                    <label>Client / Vessel:</label>
+                    <select name="customer_id" required>
+                        <option value="">-- Select Client --</option>
+                        {% for customer in customers %}
+                            <option value="{{ customer.id }}" {% if invoice.customer.id == customer.id %}selected{% endif %}>
+                                {{ customer.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <label>Total Amount (€):</label>
+                    <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount|default:'' }}" placeholder="0.00" required>
+
+                    <label>Due Date:</label>
+                    <input type="date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}">
+                    
+                    <label style="color: var(--accent); font-weight: 700;">Google Drive Shareable Link:</label>
+                    <input type="url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/.../view">
+                    
+                    <label>Status:</label>
+                    <select name="status">
+                        <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>DRAFT</option>
+                        <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>PAID</option>
+                        <option value="VOID" {% if invoice.status == 'VOID' %}selected{% endif %}>VOID</option>
+                    </select>
+                    
+                    <div style="margin-top: 25px; display: flex; gap: 12px;">
+                        <button type="submit" class="btn btn-primary">Save Invoice & Link</button>
+                        {% if invoice %}
+                            <button type="submit" name="delete_invoice" value="true" class="btn btn-danger" onclick="return confirm('Delete this invoice record?');" style="width: 140px;">Delete</button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

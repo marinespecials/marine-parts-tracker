@@ -5,8 +5,8 @@ app_name = 'finance'
 
 urlpatterns = [
     path('', views.finance_dashboard, name='dashboard'),
-    path('upload-ocr/', views.upload_ocr, name='upload_ocr'),
-    path('invoice/<int:invoice_id>/review/', views.ocr_review, name='ocr_review'),
+    path('create/', views.create_invoice, name='create_invoice'),
+    path('invoice/<int:invoice_id>/edit/', views.edit_invoice, name='edit_invoice'),
     path('client/<int:client_id>/', views.client_ledger, name='client_ledger'),
     path('invoice/<int:invoice_id>/delete/', views.delete_invoice, name='delete_invoice'),
     path('export-finances/', views.export_finances_csv, name='export_finances'),
