@@ -34,3 +34,4 @@ sqlparse==0.5.5
 tzdata==2026.1
 whitenoise==6.8.0
 pdfplumber==0.11.4
+requests
