@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Auto-Extractor Importer</title>
+    <title>Invoice App Filename Importer</title>
     <style>
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
@@ -22,33 +22,33 @@
     <div class="navbar">
         <div style="display: flex; gap: 15px; align-items: center;">
             <a href="{% url 'finance:dashboard' %}" style="color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem;">&larr; Back to Dashboard</a>
-            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Smart Auto-Extractor Importer</span>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Invoice App Filename Importer</span>
         </div>
     </div>
 
     <div class="container">
         <div class="card">
-            <h2>Smart Filename Auto-Extractor</h2>
+            <h2>Import Using invoice_app Naming Convention</h2>
             
             {% if message %}
                 <div class="alert">{{ message }}</div>
             {% endif %}
 
             <div class="instructions">
-                <strong>How it works:</strong> Because your Google Drive files already have the correct names, dates, and invoice numbers, you can paste lines containing your filenames and share links below. 
-                <br>The app will automatically scan the text and <strong>detect the Client Name, Invoice Number, Date, and Amount</strong> on its own!
+                <strong>How it works:</strong> Paste lines containing your formatted filenames (created by your desktop app) along with their Google Drive links. 
+                <br>The importer automatically splits by underscores (<code>_</code>) to extract the <strong>Client Name, Invoice Number, and Date</strong> just like your desktop app!
                 <br><br>
                 <em>Example format to paste:</em><br>
-                <code>Elyros Marine INV-1001 2026-07-01 1250.00 https://drive.google.com/file/d/.../view</code>
+                <code>Elyros-Marine_INV-1001_2026-07-01.pdf &nbsp;&nbsp; https://drive.google.com/file/d/.../view</code>
             </div>
 
             <form method="POST">
                 {% csrf_token %}
 
-                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block;">Paste Filenames & Links below:</label>
-                <textarea name="raw_data" placeholder="Elyros_Marine_INV-1001_2026-07-01_1250.00.pdf    https://drive.google.com/file/d/.../view" required></textarea>
+                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block;">Paste Filenames & Google Drive Links below:</label>
+                <textarea name="raw_data" placeholder="Elyros-Marine_INV-1001_2026-07-01.pdf    https://drive.google.com/file/d/.../view" required></textarea>
 
-                <button type="submit" class="btn">Auto-Extract & Import All Invoices</button>
+                <button type="submit" class="btn">Parse & Import All Invoices</button>
             </form>
         </div>
     </div>

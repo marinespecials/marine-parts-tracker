@@ -96,55 +96,45 @@ def bulk_import_links(request):
             url_match = re.search(r'https?://[^\s]+', line)
             drive_url = url_match.group(0) if url_match else ''
             
-            # Remove URL from the line to analyze the filename/metadata text
+            # 2. Remaining text contains the filename formatted by your desktop app: Supplier_Invoice_Date.pdf
             text_content = line.replace(drive_url, '').strip()
             
-            # 2. Extract Invoice Number
-            inv_match = re.search(r'(INV[-_\s]?\d+|\b[A-Z0-9]{4,10}\b)', text_content, re.IGNORECASE)
-            inv_num = inv_match.group(0).replace(' ', '-').upper() if inv_match else f"INV-{random.randint(1000, 9999)}"
+            # Remove file extension (.pdf) and split by underscores (_)
+            base_name = re.sub(r'\.[^.]+$', '', text_content)
+            parts = [p.strip() for p in base_name.split('_') if p.strip()]
             
-            # 3. Extract Date
-            date_match = re.search(r'\b(20\d{2}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]20\d{2})\b', text_content)
+            supplier = "General Marine Client"
+            inv_num = f"INV-{random.randint(1000, 9999)}"
             issue_date = timezone.now().date()
-            if date_match:
-                date_str = date_match.group(0).replace('/', '-')
+            
+            # Map parts matching invoice_app convention: [Supplier]_[Invoice]_[Date]
+            if len(parts) >= 3:
+                supplier = parts[0].replace('-', ' ').title()
+                inv_num = parts[1]
+                date_str = parts[2].replace('/', '-')
                 try:
-                    if date_str.startswith('20'):
+                    if '20' in date_str:
                         issue_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                     else:
                         issue_date = datetime.strptime(date_str, '%d-%m-%Y').date()
                 except ValueError:
                     pass
-            
-            # 4. Extract Amount
+            elif len(parts) == 2:
+                supplier = parts[0].replace('-', ' ').title()
+                inv_num = parts[1]
+            elif len(parts) == 1 and parts[0]:
+                inv_num = parts[0]
+
+            # Optional: Extract any numeric amount if present in the text line
             amount_match = re.search(r'\b\d+[\.,]\d{2}\b', text_content)
             total_amount = 0.00
             if amount_match:
                 try:
-                    clean_amt = amount_match.group(0).replace(',', '.')
-                    total_amount = float(clean_amt)
+                    total_amount = float(amount_match.group(0).replace(',', '.'))
                 except ValueError:
                     pass
-            
-            # 5. Extract Client Name
-            cleaned_name = text_content
-            if inv_match:
-                cleaned_name = cleaned_name.replace(inv_match.group(0), '')
-            if date_match:
-                cleaned_name = cleaned_name.replace(date_match.group(0), '')
-            if amount_match:
-                cleaned_name = cleaned_name.replace(amount_match.group(0), '')
-            
-            cleaned_name = re.sub(r'[\._-]+', ' ', cleaned_name)
-            cleaned_name = re.sub(r'\b(pdf|jpg|png|invoice|inv)\b', '', cleaned_name, flags=re.IGNORECASE)
-            client_name = cleaned_name.strip()
-            
-            if not client_name or len(client_name) < 2:
-                client_name = "General Marine Client"
-            else:
-                client_name = client_name.title()
-            
-            customer, _ = Customer.objects.get_or_create(name=client_name)
+
+            customer, _ = Customer.objects.get_or_create(name=supplier)
             
             invoice, created = Invoice.objects.get_or_create(
                 invoice_number=inv_num,
@@ -166,7 +156,7 @@ def bulk_import_links(request):
                 
             imported_count += 1
                 
-        message = f"Successfully auto-extracted and imported {imported_count} invoices with smart file text parsing!"
+        message = f"Successfully parsed and imported {imported_count} invoices using your invoice_app format!"
 
     context = {
         'customers': customers,
