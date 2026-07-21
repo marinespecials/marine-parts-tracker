@@ -56,8 +56,12 @@
                     <iframe src="{{ invoice.google_drive_url }}" class="drive-preview" allow="autoplay"></iframe>
                 {% else %}
                     <div style="padding: 60px 20px; text-align: center; color: #64748B;">
-                        <p style="margin-bottom: 15px; font-weight: 600;">No Google Drive link attached yet.</p>
-                        <p style="font-size: 0.85rem; margin-bottom: 20px;">Paste your Google Drive shareable link in the form on the right to link your cloud invoice instantly.</p>
+                        <p style="margin-bottom: 15px; font-weight: 600; font-size: 1.1rem; color: var(--primary);">No Google Drive link linked yet.</p>
+                        <p style="font-size: 0.9rem; line-height: 1.5; max-width: 400px; margin: 0 auto;">
+                            1. Go to your Google Drive invoice.<br>
+                            2. Right-click ➔ <strong>Share</strong> ➔ <strong>Copy link</strong>.<br>
+                            3. Paste the link in the form on the right and click <strong>Save</strong>!
+                        </p>
                     </div>
                 {% endif %}
             </div>
@@ -87,7 +91,7 @@
                         <label>Total Amount (€):</label>
                         <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount }}" required>
                         
-                        <label>Google Drive Shareable Link:</label>
+                        <label style="color: var(--accent); font-weight: 700;">Google Drive Shareable Link:</label>
                         <input type="url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/.../view">
                         
                         <label>Document Status:</label>

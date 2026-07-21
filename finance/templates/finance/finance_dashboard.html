@@ -8,7 +8,6 @@
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
         
-        /* Unified Compact Navbar */
         .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .nav-group { display: flex; gap: 15px; align-items: center; }
         .nav-group a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
@@ -40,7 +39,6 @@
     </style>
 </head>
 <body>
-    <!-- STREAMLINED NAVBAR -->
     <div class="navbar">
         <div class="nav-group">
             <a href="/">🏠 Hub</a>
@@ -55,7 +53,6 @@
     </div>
 
     <div class="container">
-        <!-- KPI METRICS -->
         <div class="kpi-grid">
             <div class="kpi-box">
                 <div class="kpi-title">Total Invoices Processed</div>
@@ -67,9 +64,7 @@
             </div>
         </div>
 
-        <!-- MAIN GRID -->
         <div style="display: grid; grid-template-columns: 320px 1fr; gap: 25px;">
-            <!-- CHART -->
             <div class="card">
                 <div class="header-row">
                     <h2>Supplier Volume</h2>
@@ -77,11 +72,10 @@
                 <canvas id="supplierChart"></canvas>
             </div>
 
-            <!-- INVOICES TABLE -->
             <div class="card">
                 <div class="header-row">
                     <h2>Recent Invoices</h2>
-                    <span style="font-size: 0.85rem; color: #64748B;">Showing latest records</span>
+                    <span style="font-size: 0.85rem; color: #64748B;">Click Review to link Google Drive</span>
                 </div>
                 <table>
                     <thead>
@@ -90,7 +84,7 @@
                             <th>Client</th>
                             <th>Date</th>
                             <th>Amount</th>
-                            <th>QR Code</th>
+                            <th>Drive / QR</th>
                             <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
@@ -102,17 +96,17 @@
                             <td>{{ invoice.issue_date }}</td>
                             <td><strong>{{ invoice.total_amount }} €</strong></td>
                             <td>
-                                {% if invoice.qr_code %}
-                                    <a href="{{ invoice.qr_code.url }}" target="_blank" class="text-link">View</a>
+                                {% if invoice.google_drive_url %}
+                                    <a href="{{ invoice.google_drive_url }}" target="_blank" class="text-link">Drive File</a>
+                                {% elif invoice.qr_code %}
+                                    <a href="{{ invoice.qr_code.url }}" target="_blank" class="text-link">QR Code</a>
                                 {% else %}
                                     <span style="color: #94A3B8;">None</span>
                                 {% endif %}
                             </td>
                             <td style="text-align: right;">
                                 <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
-                                    {% if invoice.ocr_document %}
-                                        <a href="{{ invoice.ocr_document.url }}" target="_blank" class="text-link">PDF</a>
-                                    {% endif %}
+                                    <a href="{% url 'finance:ocr_review' invoice.id %}" class="text-link" style="background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">Review / Link</a>
                                     <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" style="display:inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="text-danger" onclick="return confirm('Delete this invoice?');">Delete</button>
@@ -129,14 +123,21 @@
         </div>
     </div>
 
+    <!-- Safe JSON data injection for VS Code compatibility -->
+    {{ chart_labels|json_script:"chart-labels-data" }}
+    {{ chart_data|json_script:"chart-data-data" }}
+
     <script>
+        const chartLabels = JSON.parse(document.getElementById('chart-labels-data').textContent);
+        const chartData = JSON.parse(document.getElementById('chart-data-data').textContent);
+
         const ctx = document.getElementById('supplierChart').getContext('2d');
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: {{ chart_labels|safe }},
+                labels: chartLabels,
                 datasets: [{
-                    data: {{ chart_data|safe }},
+                    data: chartData,
                     backgroundColor: ['#0F172A', '#2563EB', '#10B981', '#8B5CF6', '#F59E0B'],
                     borderWidth: 0
                 }]

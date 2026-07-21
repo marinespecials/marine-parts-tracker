@@ -104,6 +104,8 @@ def ocr_review(request, invoice_id):
         drive_link = request.POST.get('google_drive_url', '').strip()
         if drive_link:
             invoice.google_drive_url = drive_link
+        else:
+            invoice.google_drive_url = None
             
         invoice.save()
             
