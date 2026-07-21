@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OCR Inspection & Review</title>
+    <title>Invoice & Google Drive Inspector</title>
     <style>
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
@@ -13,7 +13,6 @@
         .nav-group a:hover { color: white; }
         
         .container { padding: 30px; max-width: 1500px; margin: auto; }
-        
         .inspect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; align-items: start; }
         
         .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
@@ -28,8 +27,8 @@
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; }
         label { font-size: 0.825rem; font-weight: 600; color: #475569; display: block; margin-top: 14px; }
         
-        .pdf-container { width: 100%; height: 750px; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; overflow: hidden; }
-        .ocr-text-box { background: #F1F5F9; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; max-height: 220px; overflow-y: auto; white-space: pre-wrap; color: #475569; margin-top: 6px; }
+        .drive-preview { width: 100%; height: 700px; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; }
+        .ocr-text-box { background: #F1F5F9; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; max-height: 160px; overflow-y: auto; white-space: pre-wrap; color: #475569; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -44,45 +43,30 @@
     <div class="container">
         <div class="inspect-grid">
             
-            <!-- LEFT COLUMN: ROBUST PDF VIEWER -->
+            <!-- LEFT COLUMN: GOOGLE DRIVE PREVIEW -->
             <div class="card">
                 <div class="header-row">
-                    <h2>Document Visual Inspector</h2>
-                    {% if invoice.ocr_document %}
-                        <a href="{{ invoice.ocr_document.url }}" target="_blank" style="font-size: 0.85rem; color: var(--accent); font-weight: 600; text-decoration: none;">Open Fullscreen ↗</a>
+                    <h2>Google Drive Document Viewer</h2>
+                    {% if invoice.google_drive_url %}
+                        <a href="{{ invoice.google_drive_url }}" target="_blank" style="font-size: 0.85rem; color: var(--accent); font-weight: 600; text-decoration: none;">Open in Drive ↗</a>
                     {% endif %}
                 </div>
                 
-                {% if invoice.ocr_document %}
-                    <div class="pdf-container">
-                        <object data="{{ invoice.ocr_document.url }}" type="application/pdf" width="100%" height="100%">
-                            <embed src="{{ invoice.ocr_document.url }}" type="application/pdf" width="100%" height="100%" />
-                            <div style="padding: 40px; text-align: center;">
-                                <p style="color: #64748B; margin-bottom: 15px;">Your browser does not support embedded PDF viewing.</p>
-                                <a href="{{ invoice.ocr_document.url }}" target="_blank" class="btn btn-primary" style="width: auto; display: inline-block;">Download & View PDF</a>
-                            </div>
-                        </object>
-                    </div>
+                {% if invoice.google_drive_url %}
+                    <iframe src="{{ invoice.google_drive_url }}" class="drive-preview" allow="autoplay"></iframe>
                 {% else %}
-                    <div style="padding: 50px; text-align: center; color: #94A3B8;">No PDF document attached to this record.</div>
+                    <div style="padding: 60px 20px; text-align: center; color: #64748B;">
+                        <p style="margin-bottom: 15px; font-weight: 600;">No Google Drive link attached yet.</p>
+                        <p style="font-size: 0.85rem; margin-bottom: 20px;">Paste your Google Drive shareable link in the form on the right to link your cloud invoice instantly.</p>
+                    </div>
                 {% endif %}
             </div>
 
-            <!-- RIGHT COLUMN: EXTRACTION & CORRECTION FORM -->
+            <!-- RIGHT COLUMN: VERIFICATION & DRIVE LINK FORM -->
             <div>
-                <!-- RAW EXTRACTED TEXT REFERENCE -->
                 <div class="card">
                     <div class="header-row">
-                        <h2>OCR Text Extraction Log</h2>
-                    </div>
-                    <p style="font-size: 0.825rem; color: #64748B; margin: 0 0 8px 0;">Reference text read from the document parser:</p>
-                    <div class="ocr-text-box">{{ extracted_text }}</div>
-                </div>
-
-                <!-- HUMAN-IN-THE-LOOP CORRECTION FORM -->
-                <div class="card">
-                    <div class="header-row">
-                        <h2>Verify & Correct Data</h2>
+                        <h2>Verify & Connect Drive File</h2>
                     </div>
                     
                     <form method="POST">
@@ -103,6 +87,9 @@
                         <label>Total Amount (€):</label>
                         <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount }}" required>
                         
+                        <label>Google Drive Shareable Link:</label>
+                        <input type="url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/.../view">
+                        
                         <label>Document Status:</label>
                         <select name="status">
                             <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>DRAFT</option>
@@ -111,12 +98,18 @@
                         </select>
                         
                         <div style="margin-top: 25px; display: flex; gap: 12px;">
-                            <button type="submit" class="btn btn-primary">Confirm & Save Record</button>
-                            
-                            <!-- DELETE BUTTON -->
-                            <button type="submit" name="delete_invoice" value="true" class="btn btn-danger" onclick="return confirm('Discard this uploaded invoice and remove it permanently?');" style="width: 140px;">Delete</button>
+                            <button type="submit" class="btn btn-primary">Save & Link Document</button>
+                            <button type="submit" name="delete_invoice" value="true" class="btn btn-danger" onclick="return confirm('Delete this invoice record?');" style="width: 140px;">Delete</button>
                         </div>
                     </form>
+                </div>
+
+                <!-- RAW OCR TEXT REFERENCE -->
+                <div class="card">
+                    <div class="header-row">
+                        <h2>OCR Extraction Log</h2>
+                    </div>
+                    <div class="ocr-text-box">{{ extracted_text }}</div>
                 </div>
             </div>
 

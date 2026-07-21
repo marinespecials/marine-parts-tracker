@@ -42,7 +42,6 @@ def upload_ocr(request):
     if request.method == 'POST' and request.FILES.get('invoice_file'):
         uploaded_file = request.FILES['invoice_file']
         
-        # 1. SAVE THE FILE TO THE DATABASE FIRST
         matched_customer, _ = Customer.objects.get_or_create(name="Unknown OCR Client")
         draft_due_date = timezone.now().date() + timedelta(days=30)
         
@@ -55,7 +54,6 @@ def upload_ocr(request):
             ocr_document=uploaded_file
         )
         
-        # 2. READ THE PHYSICAL FILE FROM THE DISK
         extracted_text = ""
         try:
             with pdfplumber.open(new_invoice.ocr_document.path) as pdf:
@@ -66,7 +64,6 @@ def upload_ocr(request):
         except Exception as e:
             extracted_text = "OCR Failed or Image-Only PDF"
         
-        # 3. UPDATE MATCHED CLIENT BASED ON TEXT
         all_customers = Customer.objects.all()
         for client in all_customers:
             if client.name.lower() in extracted_text.lower():
@@ -74,7 +71,6 @@ def upload_ocr(request):
                 new_invoice.save()
                 break
 
-        # 4. GENERATE QR CODE
         tracking_url = f"https://marine-specials-tracker.onrender.com/admin/finance/invoice/{new_invoice.id}/change/"
         qr = qrcode.QRCode(box_size=10, border=4)
         qr.add_data(tracking_url)
@@ -103,11 +99,16 @@ def ocr_review(request, invoice_id):
         invoice.customer = get_object_or_404(Customer, id=customer_id)
         invoice.total_amount = request.POST.get('total_amount')
         invoice.status = request.POST.get('status')
+        
+        # Save Google Drive Link
+        drive_link = request.POST.get('google_drive_url', '').strip()
+        if drive_link:
+            invoice.google_drive_url = drive_link
+            
         invoice.save()
             
         return redirect('finance:dashboard')
 
-    # Dynamically read live from the physical PDF file on disk
     extracted_text = ""
     if invoice.ocr_document:
         try:
@@ -120,7 +121,7 @@ def ocr_review(request, invoice_id):
             extracted_text = f"Could not read PDF file: {e}"
             
     if not extracted_text.strip():
-        extracted_text = "No text extracted. The PDF might be a scanned image without selectable text layers."
+        extracted_text = "No text extracted. You can link your Google Drive PDF below."
 
     context = {
         'invoice': invoice,
@@ -130,9 +131,6 @@ def ocr_review(request, invoice_id):
     return render(request, 'finance/ocr_review.html', context)
 
 
-# ==========================================
-# 🗑️ GLOBAL DELETE ROUTE
-# ==========================================
 def delete_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
@@ -145,14 +143,10 @@ def delete_invoice(request, invoice_id):
     return redirect(request.META.get('HTTP_REFERER', 'finance:dashboard'))
 
 
-# ==========================================
-# 📊 ENTERPRISE CLIENT LEDGER
-# ==========================================
 def client_ledger(request, client_id):
     client = get_object_or_404(Customer, id=client_id)
     profile, created = ClientFinancialProfile.objects.get_or_create(customer=client)
     
-    # Handle saving notes/ratings updates directly from the ledger page
     if request.method == 'POST' and 'update_profile' in request.POST:
         profile.negotiation_notes = request.POST.get('negotiation_notes', '')
         profile.payment_terms_days = request.POST.get('payment_terms_days', 30)
@@ -189,9 +183,6 @@ def client_ledger(request, client_id):
     return render(request, 'finance/client_ledger.html', context)
 
 
-# ==========================================
-# 📥 MONTH-END FINANCIAL EXPORT
-# ==========================================
 def export_finances_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="marine_finance_export.csv"'
