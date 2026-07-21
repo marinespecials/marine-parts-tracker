@@ -58,7 +58,6 @@ def create_invoice(request):
             google_drive_url=google_drive_url
         )
         
-        # Generate tracking QR code
         tracking_url = f"https://marine-specials-tracker.onrender.com/admin/finance/invoice/{new_invoice.id}/change/"
         qr = qrcode.QRCode(box_size=10, border=4)
         qr.add_data(tracking_url)
@@ -76,6 +75,50 @@ def create_invoice(request):
         'action_title': 'Add New Invoice & Link Drive'
     }
     return render(request, 'finance/invoice_form.html', context)
+
+
+def bulk_import_links(request):
+    customers = Customer.objects.all()
+    message = None
+    
+    if request.method == 'POST':
+        raw_data = request.POST.get('raw_data', '')
+        default_customer_id = request.POST.get('default_customer_id')
+        default_customer = Customer.objects.filter(id=default_customer_id).first() if default_customer_id else customers.first()
+        
+        imported_count = 0
+        lines = raw_data.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line or ',' not in line:
+                continue
+            
+            parts = line.split(',', 1)
+            inv_num = parts[0].strip()
+            drive_url = parts[1].strip()
+            
+            if inv_num and drive_url:
+                invoice, created = Invoice.objects.get_or_create(
+                    invoice_number=inv_num,
+                    defaults={
+                        'customer': default_customer,
+                        'total_amount': 0.00,
+                        'due_date': timezone.now().date() + timedelta(days=30),
+                        'status': 'DRAFT'
+                    }
+                )
+                invoice.google_drive_url = drive_url
+                invoice.save()
+                imported_count += 1
+                
+        message = f"Successfully linked {imported_count} invoices with Google Drive!"
+
+    context = {
+        'customers': customers,
+        'message': message
+    }
+    return render(request, 'finance/bulk_import.html', context)
 
 
 def edit_invoice(request, invoice_id):

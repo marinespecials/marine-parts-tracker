@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulk Link Google Drive Invoices</title>
+    <style>
+        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --text: #334155; --border: #E2E8F0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
+        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .container { padding: 40px; max-width: 900px; margin: auto; }
+        .card { background: var(--surface); padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        h2 { margin-top: 0; color: var(--primary); }
+        textarea { width: 100%; height: 250px; font-family: monospace; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; background: #FAFAFA; margin-top: 8px; }
+        textarea:focus { outline: none; border-color: var(--accent); background: white; }
+        select, .btn { width: 100%; padding: 12px; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; margin-top: 8px; }
+        select { border: 1px solid var(--border); background: #FAFAFA; }
+        .btn { background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background-color: #1D4ED8; }
+        .alert { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; }
+        .instructions { font-size: 0.875rem; color: #64748B; line-height: 1.5; margin-bottom: 20px; background: #F1F5F9; padding: 15px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <a href="{% url 'finance:dashboard' %}" style="color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem;">&larr; Back to Dashboard</a>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Bulk Drive Link Importer</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Batch Link Google Drive Invoices</h2>
+            
+            {% if message %}
+                <div class="alert">{{ message }}</div>
+            {% endif %}
+
+            <div class="instructions">
+                <strong>How to use:</strong> Paste multiple lines below in the format <code>InvoiceNumber, DriveURL</code>. 
+                If an invoice number already exists, it links the Drive file instantly. If it doesn't exist yet, it will create a quick draft record for it using the default client selected below.
+                <br><br><em>Example:</em><br>
+                <code>INV-1011, https://drive.google.com/file/d/1XyZ.../view</code><br>
+                <code>INV-1012, https://drive.google.com/file/d/2AbC.../view</code>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <label style="font-size: 0.825rem; font-weight: 600; color: #475569;">Default Client (if invoice needs to be auto-created):</label>
+                <select name="default_customer_id">
+                    {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block; margin-top: 15px;">Paste Lines (Invoice Number, Drive Shareable Link):</label>
+                <textarea name="raw_data" placeholder="INV-1001, https://drive.google.com/file/d/.../view&#10;INV-1002, https://drive.google.com/file/d/.../view" required></textarea>
+
+                <button type="submit" class="btn">Process & Link All Files</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
