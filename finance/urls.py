@@ -15,4 +15,6 @@ urlpatterns = [
     path('update-db/', views.update_cloud_db, name='update_db'),
     # NEW EXPORT ROUTE
     path('export-finances/', views.export_finances_csv, name='export_finances'),
+    # NEW SAP ENTERPRISE PAGE
+    path('sap-enterprise/', views.sap_overview, name='sap_overview'),
 ]   

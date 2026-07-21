@@ -1,14 +1,17 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('finance/', include('finance.urls')), # Routes traffic to your new Finance UI
-    path('', include('tracker.urls')),         # Your existing tracker/hub routes
+    path('finance/', include('finance.urls')), 
+    path('', include('tracker.urls')),         
+    
+    # 📄 FORCE SERVE MEDIA FILES ON RENDER (Fixes broken PDFs & QRs)
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
 
-# This tells Django to allow browsers to view uploaded media (like QR codes and PDFs)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

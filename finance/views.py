@@ -212,3 +212,15 @@ def export_finances_csv(request):
         ])
         
     return response
+# ==========================================
+# 🏢 SAP ENTERPRISE LEDGER HOME
+# ==========================================
+def sap_overview(request):
+    profiles = ClientFinancialProfile.objects.select_related('customer').all()
+    total_enterprise_revenue = sum(p.lifetime_revenue for p in profiles)
+    
+    context = {
+        'profiles': profiles,
+        'total_enterprise_revenue': total_enterprise_revenue,
+    }
+    return render(request, 'finance/sap_overview.html', context)
