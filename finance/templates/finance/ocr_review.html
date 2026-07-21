@@ -14,7 +14,6 @@
         
         .container { padding: 30px; max-width: 1500px; margin: auto; }
         
-        /* Side-by-Side Layout */
         .inspect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; align-items: start; }
         
         .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
@@ -24,13 +23,12 @@
         .btn { padding: 9px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-primary { background-color: var(--accent); color: white; width: 100%; }
         .btn-danger { background-color: var(--danger); color: white; }
-        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text); }
         
         input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; margin-top: 6px; color: var(--text); background: #FAFAFA; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; }
         label { font-size: 0.825rem; font-weight: 600; color: #475569; display: block; margin-top: 14px; }
         
-        .pdf-viewer { width: 100%; height: 750px; border: 1px solid var(--border); border-radius: 8px; background: #E2E8F0; }
+        .pdf-container { width: 100%; height: 750px; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; overflow: hidden; }
         .ocr-text-box { background: #F1F5F9; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; max-height: 220px; overflow-y: auto; white-space: pre-wrap; color: #475569; margin-top: 6px; }
     </style>
 </head>
@@ -46,7 +44,7 @@
     <div class="container">
         <div class="inspect-grid">
             
-            <!-- LEFT COLUMN: LIVE PDF VIEWER -->
+            <!-- LEFT COLUMN: ROBUST PDF VIEWER -->
             <div class="card">
                 <div class="header-row">
                     <h2>Document Visual Inspector</h2>
@@ -56,7 +54,15 @@
                 </div>
                 
                 {% if invoice.ocr_document %}
-                    <iframe src="{{ invoice.ocr_document.url }}" class="pdf-viewer"></iframe>
+                    <div class="pdf-container">
+                        <object data="{{ invoice.ocr_document.url }}" type="application/pdf" width="100%" height="100%">
+                            <embed src="{{ invoice.ocr_document.url }}" type="application/pdf" width="100%" height="100%" />
+                            <div style="padding: 40px; text-align: center;">
+                                <p style="color: #64748B; margin-bottom: 15px;">Your browser does not support embedded PDF viewing.</p>
+                                <a href="{{ invoice.ocr_document.url }}" target="_blank" class="btn btn-primary" style="width: auto; display: inline-block;">Download & View PDF</a>
+                            </div>
+                        </object>
+                    </div>
                 {% else %}
                     <div style="padding: 50px; text-align: center; color: #94A3B8;">No PDF document attached to this record.</div>
                 {% endif %}
