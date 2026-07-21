@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Bulk Invoice Importer</title>
+    <title>Smart Auto-Extractor Importer</title>
     <style>
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
@@ -22,35 +22,33 @@
     <div class="navbar">
         <div style="display: flex; gap: 15px; align-items: center;">
             <a href="{% url 'finance:dashboard' %}" style="color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem;">&larr; Back to Dashboard</a>
-            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Smart Batch Importer</span>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Smart Auto-Extractor Importer</span>
         </div>
     </div>
 
     <div class="container">
         <div class="card">
-            <h2>Smart Google Drive & Metadata Importer</h2>
+            <h2>Smart Filename Auto-Extractor</h2>
             
             {% if message %}
                 <div class="alert">{{ message }}</div>
             {% endif %}
 
             <div class="instructions">
-                <strong>Pro-Tip (Excel / Google Sheets Copy-Paste):</strong> You can select rows directly from your spreadsheet containing your invoice log and paste them right into the box below! 
+                <strong>How it works:</strong> Because your Google Drive files already have the correct names, dates, and invoice numbers, you can paste lines containing your filenames and share links below. 
+                <br>The app will automatically scan the text and <strong>detect the Client Name, Invoice Number, Date, and Amount</strong> on its own!
                 <br><br>
-                <strong>Expected columns format (Tab or Comma separated):</strong><br>
-                <code>Invoice # &nbsp;&nbsp;|&nbsp;&nbsp; Client Name &nbsp;&nbsp;|&nbsp;&nbsp; Date (YYYY-MM-DD) &nbsp;&nbsp;|&nbsp;&nbsp; Amount (€) &nbsp;&nbsp;|&nbsp;&nbsp; Google Drive Link</code>
-                <br><br>
-                <em>Example:</em><br>
-                <code>INV-1001 &nbsp;&nbsp; Elyros Marine &nbsp;&nbsp; 2026-07-01 &nbsp;&nbsp; 1250.00 &nbsp;&nbsp; https://drive.google.com/file/d/.../view</code>
+                <em>Example format to paste:</em><br>
+                <code>Elyros Marine INV-1001 2026-07-01 1250.00 https://drive.google.com/file/d/.../view</code>
             </div>
 
             <form method="POST">
                 {% csrf_token %}
 
-                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block;">Paste Spreadsheet Rows or CSV text below:</label>
-                <textarea name="raw_data" placeholder="INV-1001    Elyros Marine    2026-07-01    1250.00    https://drive.google.com/file/d/.../view" required></textarea>
+                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block;">Paste Filenames & Links below:</label>
+                <textarea name="raw_data" placeholder="Elyros_Marine_INV-1001_2026-07-01_1250.00.pdf    https://drive.google.com/file/d/.../view" required></textarea>
 
-                <button type="submit" class="btn">Recognize & Import All Invoices</button>
+                <button type="submit" class="btn">Auto-Extract & Import All Invoices</button>
             </form>
         </div>
     </div>

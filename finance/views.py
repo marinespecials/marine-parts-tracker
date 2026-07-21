@@ -1,6 +1,7 @@
 import random
 import qrcode
 import csv
+import re
 from io import BytesIO
 from datetime import timedelta, datetime
 
@@ -91,46 +92,60 @@ def bulk_import_links(request):
             if not line:
                 continue
             
-            # Support both Excel copy-paste (tabs) and CSV format (commas)
-            if '\t' in line:
-                parts = [p.strip() for p in line.split('\t')]
-            elif ',' in line:
-                parts = [p.strip() for p in line.split(',')]
-            else:
-                continue
-                
-            if len(parts) < 2:
-                continue
-                
-            inv_num = parts[0]
+            # 1. Extract Google Drive URL using regex
+            url_match = re.search(r'https?://[^\s]+', line)
+            drive_url = url_match.group(0) if url_match else ''
             
-            # Extract Drive URL (looks for http link)
-            drive_url = next((p for p in parts if 'http' in p), parts[-1])
+            # Remove URL from the line to analyze the filename/metadata text
+            text_content = line.replace(drive_url, '').strip()
             
-            # Extract metadata (Expected: Invoice#, Client Name, Date, Amount, DriveURL)
-            client_name = parts[1] if len(parts) >= 4 and not 'http' in parts[1] else "General Marine Client"
-            date_str = parts[2] if len(parts) >= 4 and '-' in parts[2] else None
-            amount_str = parts[3] if len(parts) >= 4 else "0.00"
+            # 2. Extract Invoice Number
+            inv_match = re.search(r'(INV[-_\s]?\d+|\b[A-Z0-9]{4,10}\b)', text_content, re.IGNORECASE)
+            inv_num = inv_match.group(0).replace(' ', '-').upper() if inv_match else f"INV-{random.randint(1000, 9999)}"
             
-            # Get or create customer profile
-            customer, _ = Customer.objects.get_or_create(name=client_name)
-            
-            # Parse issue date
+            # 3. Extract Date
+            date_match = re.search(r'\b(20\d{2}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]20\d{2})\b', text_content)
             issue_date = timezone.now().date()
-            if date_str:
+            if date_match:
+                date_str = date_match.group(0).replace('/', '-')
                 try:
-                    issue_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    if date_str.startswith('20'):
+                        issue_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    else:
+                        issue_date = datetime.strptime(date_str, '%d-%m-%Y').date()
                 except ValueError:
                     pass
-                    
-            # Parse total amount
-            try:
-                clean_amount = amount_str.replace('€', '').replace('EUR', '').replace(',', '.').strip()
-                total_amount = float(clean_amount)
-            except ValueError:
-                total_amount = 0.00
-                
-            # Create or update invoice with recognized metadata
+            
+            # 4. Extract Amount
+            amount_match = re.search(r'\b\d+[\.,]\d{2}\b', text_content)
+            total_amount = 0.00
+            if amount_match:
+                try:
+                    clean_amt = amount_match.group(0).replace(',', '.')
+                    total_amount = float(clean_amt)
+                except ValueError:
+                    pass
+            
+            # 5. Extract Client Name
+            cleaned_name = text_content
+            if inv_match:
+                cleaned_name = cleaned_name.replace(inv_match.group(0), '')
+            if date_match:
+                cleaned_name = cleaned_name.replace(date_match.group(0), '')
+            if amount_match:
+                cleaned_name = cleaned_name.replace(amount_match.group(0), '')
+            
+            cleaned_name = re.sub(r'[\._-]+', ' ', cleaned_name)
+            cleaned_name = re.sub(r'\b(pdf|jpg|png|invoice|inv)\b', '', cleaned_name, flags=re.IGNORECASE)
+            client_name = cleaned_name.strip()
+            
+            if not client_name or len(client_name) < 2:
+                client_name = "General Marine Client"
+            else:
+                client_name = client_name.title()
+            
+            customer, _ = Customer.objects.get_or_create(name=client_name)
+            
             invoice, created = Invoice.objects.get_or_create(
                 invoice_number=inv_num,
                 defaults={
@@ -151,7 +166,7 @@ def bulk_import_links(request):
                 
             imported_count += 1
                 
-        message = f"Successfully imported and recognized {imported_count} invoices with full details!"
+        message = f"Successfully auto-extracted and imported {imported_count} invoices with smart file text parsing!"
 
     context = {
         'customers': customers,
