@@ -77,7 +77,7 @@
             <div class="card">
                 <div class="header-row">
                     <h2>Recent Invoices</h2>
-                    <span style="font-size: 0.85rem; color: #64748B;">Click Review to link Google Drive</span>
+                    <span style="font-size: 0.85rem; color: #64748B;">Click Drive File to open PDF</span>
                 </div>
                 <table>
                     <thead>
@@ -91,7 +91,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for invoice in invoices|slice:":5" %}
+                        {% for invoice in invoices %}
                         <tr>
                             <td><strong style="color: var(--primary);">{{ invoice.invoice_number }}</strong></td>
                             <td>{{ invoice.customer.name }}</td>
@@ -99,9 +99,9 @@
                             <td><strong>{{ invoice.total_amount }} €</strong></td>
                             <td>
                                 {% if invoice.google_drive_url %}
-                                    <a href="{{ invoice.google_drive_url }}" target="_blank" class="text-link">Drive File</a>
+                                    <a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener noreferrer" class="text-link">Drive File</a>
                                 {% elif invoice.qr_code %}
-                                    <a href="{{ invoice.qr_code.url }}" target="_blank" class="text-link">QR Code</a>
+                                    <a href="{{ invoice.qr_code.url }}" target="_blank" rel="noopener noreferrer" class="text-link">QR Code</a>
                                 {% else %}
                                     <span style="color: #94A3B8;">None</span>
                                 {% endif %}
