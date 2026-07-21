@@ -2,7 +2,7 @@ import random
 import qrcode
 import csv
 from io import BytesIO
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.core.files.base import ContentFile
 from django.utils import timezone
@@ -83,36 +83,75 @@ def bulk_import_links(request):
     
     if request.method == 'POST':
         raw_data = request.POST.get('raw_data', '')
-        default_customer_id = request.POST.get('default_customer_id')
-        default_customer = Customer.objects.filter(id=default_customer_id).first() if default_customer_id else customers.first()
-        
         imported_count = 0
         lines = raw_data.strip().split('\n')
         
         for line in lines:
             line = line.strip()
-            if not line or ',' not in line:
+            if not line:
                 continue
             
-            parts = line.split(',', 1)
-            inv_num = parts[0].strip()
-            drive_url = parts[1].strip()
+            # Support both Excel copy-paste (tabs) and CSV format (commas)
+            if '\t' in line:
+                parts = [p.strip() for p in line.split('\t')]
+            elif ',' in line:
+                parts = [p.strip() for p in line.split(',')]
+            else:
+                continue
+                
+            if len(parts) < 2:
+                continue
+                
+            inv_num = parts[0]
             
-            if inv_num and drive_url:
-                invoice, created = Invoice.objects.get_or_create(
-                    invoice_number=inv_num,
-                    defaults={
-                        'customer': default_customer,
-                        'total_amount': 0.00,
-                        'due_date': timezone.now().date() + timedelta(days=30),
-                        'status': 'DRAFT'
-                    }
-                )
+            # Extract Drive URL (looks for http link)
+            drive_url = next((p for p in parts if 'http' in p), parts[-1])
+            
+            # Extract metadata (Expected: Invoice#, Client Name, Date, Amount, DriveURL)
+            client_name = parts[1] if len(parts) >= 4 and not 'http' in parts[1] else "General Marine Client"
+            date_str = parts[2] if len(parts) >= 4 and '-' in parts[2] else None
+            amount_str = parts[3] if len(parts) >= 4 else "0.00"
+            
+            # Get or create customer profile
+            customer, _ = Customer.objects.get_or_create(name=client_name)
+            
+            # Parse issue date
+            issue_date = timezone.now().date()
+            if date_str:
+                try:
+                    issue_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+                    
+            # Parse total amount
+            try:
+                clean_amount = amount_str.replace('€', '').replace('EUR', '').replace(',', '.').strip()
+                total_amount = float(clean_amount)
+            except ValueError:
+                total_amount = 0.00
+                
+            # Create or update invoice with recognized metadata
+            invoice, created = Invoice.objects.get_or_create(
+                invoice_number=inv_num,
+                defaults={
+                    'customer': customer,
+                    'total_amount': total_amount,
+                    'issue_date': issue_date,
+                    'due_date': issue_date + timedelta(days=30),
+                    'status': 'DRAFT',
+                    'google_drive_url': drive_url
+                }
+            )
+            if not created:
+                invoice.customer = customer
+                invoice.total_amount = total_amount
+                invoice.issue_date = issue_date
                 invoice.google_drive_url = drive_url
                 invoice.save()
-                imported_count += 1
                 
-        message = f"Successfully linked {imported_count} invoices with Google Drive!"
+            imported_count += 1
+                
+        message = f"Successfully imported and recognized {imported_count} invoices with full details!"
 
     context = {
         'customers': customers,
