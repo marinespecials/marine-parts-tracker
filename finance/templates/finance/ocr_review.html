@@ -4,55 +4,104 @@
     <meta charset="UTF-8">
     <title>Review OCR Data</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F3F4F6; color: #1F2937; padding: 40px; }
-        .review-card { background: white; max-width: 600px; margin: auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid #F59E0B; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F3F4F6; color: #1F2937; padding: 30px; margin: 0;}
+        
+        /* Split Screen Grid */
+        .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1400px; margin: auto; }
+        
+        /* Left Column: PDF & Detector */
+        .document-panel { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 85vh; }
+        iframe { width: 100%; flex-grow: 1; border: 2px solid #E5E7EB; border-radius: 8px; margin-bottom: 20px; }
+        .detector-box { height: 180px; background: #1F2937; color: #10B981; padding: 15px; border-radius: 8px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 0.9rem; line-height: 1.4; }
+        
+        /* Right Column: Form */
+        .review-card { background: white; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid #F59E0B; height: fit-content; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #4B5563; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-        .btn-save { background-color: #0A2540; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* Buttons */
+        .btn-save { background-color: #0A2540; color: white; border: none; padding: 14px 24px; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; transition: 0.2s; }
+        .btn-save:hover { background-color: #1E3A8A; }
+        
+        .btn-danger { background-color: white; color: #DC2626; border: 2px solid #DC2626; padding: 12px 24px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; transition: 0.2s; }
+        .btn-danger:hover { background-color: #FEF2F2; }
+        
         .alert { background-color: #FEF3C7; color: #92400E; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="review-card">
-        <h2 style="margin-top:0; color:#0A2540;">🔍 Review Extracted Data</h2>
-        <div class="alert">Please verify the OCR data below. Make any necessary corrections before saving.</div>
+
+    <div class="workspace-grid">
         
-        <form method="POST">
-            {% csrf_token %}
+        <!-- LEFT SIDE: PDF & TEXT HELPER -->
+        <div class="document-panel">
+            <h3 style="margin-top:0; color:#0A2540;">📄 Original Document</h3>
             
-            <div class="form-group">
-                <label>Invoice Number</label>
-                <input type="text" name="invoice_number" value="{{ invoice.invoice_number }}" required>
-            </div>
-
-            <div class="form-group">
-                <label>Matched Client</label>
-                <select name="customer_id" required>
-                    {% for client in customers %}
-                        <option value="{{ client.id }}" {% if invoice.customer.id == client.id %}selected{% endif %}>
-                            {{ client.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Total Amount (€)</label>
-                <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount }}" required>
-            </div>
+            {% if invoice.ocr_document %}
+                <iframe src="{{ invoice.ocr_document.url }}#toolbar=0" type="application/pdf"></iframe>
+            {% else %}
+                <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #F9FAFB; border: 2px dashed #D1D5DB; border-radius: 8px;">
+                    <p style="color: #6B7280; font-weight: bold;">No PDF attached.</p>
+                </div>
+            {% endif %}
             
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status" required>
-                    <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>Draft</option>
-                    <option value="ISSUED" {% if invoice.status == 'ISSUED' %}selected{% endif %}>Issued</option>
-                    <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>Paid</option>
-                </select>
+            <h4 style="color:#0A2540; margin-bottom: 10px;">🤖 Detector Raw Output:</h4>
+            <div class="detector-box">
+                {{ extracted_text|linebreaksbr }}
             </div>
+        </div>
 
-            <button type="submit" class="btn-save">Confirm & Save Invoice</button>
-        </form>
+
+        <!-- RIGHT SIDE: REVIEW FORM -->
+        <div class="review-card">
+            <h2 style="margin-top:0; color:#0A2540; font-size: 1.8rem;">🔍 Verify Data</h2>
+            <div class="alert">Please compare the extracted data below against the PDF. Make corrections before saving.</div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Invoice Number</label>
+                    <input type="text" name="invoice_number" value="{{ invoice.invoice_number }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Matched Client</label>
+                    <select name="customer_id" required>
+                        {% for client in customers %}
+                            <option value="{{ client.id }}" {% if invoice.customer.id == client.id %}selected{% endif %}>
+                                {{ client.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Total Amount (€)</label>
+                    <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                        <option value="ISSUED" {% if invoice.status == 'ISSUED' %}selected{% endif %}>Issued</option>
+                        <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>Paid</option>
+                    </select>
+                </div>
+
+                <!-- SAVE BUTTON (Posts the form normally) -->
+                <button type="submit" name="save_invoice" class="btn-save">Confirm & Save Invoice</button>
+                
+                <!-- DELETE BUTTON (Triggers the delete logic in views.py) -->
+                <button type="submit" name="delete_invoice" class="btn-danger" onclick="return confirm('Are you sure you want to permanently delete this draft and file?');">
+                    🗑️ Trash File & Delete Draft
+                </button>
+            </form>
+        </div>
+
     </div>
+
 </body>
 </html>

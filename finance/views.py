@@ -51,9 +51,15 @@ def upload_ocr(request):
         try:
             with pdfplumber.open(uploaded_file) as pdf:
                 for page in pdf.pages:
-                    extracted_text += page.extract_text() + "\n"
+                    # Extract text and add spacing for readability
+                    page_text = page.extract_text()
+                    if page_text:
+                        extracted_text += page_text + "\n"
         except Exception as e:
             extracted_text = "OCR Failed or Image-Only PDF"
+
+        # Save the raw text to the browser's session memory so the review screen can use it to help you
+        request.session['last_ocr_text'] = extracted_text
 
         # Fallback dummy data if extraction fails
         extracted_invoice_number = f"INV-{random.randint(1000, 9999)}"
@@ -93,34 +99,51 @@ def upload_ocr(request):
         qr_img.save(buffer, format="PNG")
         new_invoice.qr_code.save(f"QR_{new_invoice.invoice_number}.png", ContentFile(buffer.getvalue()), save=True)
 
-        # REDIRECT TO THE REVIEW SCREEN INSTEAD OF DASHBOARD
         return redirect('finance:ocr_review', invoice_id=new_invoice.id)
         
     return render(request, 'finance/upload_ocr.html')
 
 
 # ==========================================
-# 🔍 HUMAN-IN-THE-LOOP REVIEW SCREEN
+# 🔍 UPGRADED: HUMAN-IN-THE-LOOP REVIEW
 # ==========================================
 def ocr_review(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     customers = Customer.objects.all()
     
     if request.method == 'POST':
-        # Get the corrected data from the user
+        
+        # CHECK IF THE USER CLICKED "DELETE"
+        if 'delete_invoice' in request.POST:
+            if invoice.ocr_document:
+                invoice.ocr_document.delete(save=False) # Delete the physical PDF
+            if invoice.qr_code:
+                invoice.qr_code.delete(save=False)      # Delete the physical QR
+            invoice.delete()                            # Delete the database record
+            return redirect('finance:dashboard')
+        
+        # OTHERWISE, SAVE THE CORRECTED DATA
         invoice.invoice_number = request.POST.get('invoice_number')
         customer_id = request.POST.get('customer_id')
         invoice.customer = get_object_or_404(Customer, id=customer_id)
         invoice.total_amount = request.POST.get('total_amount')
         invoice.status = request.POST.get('status')
         
-        # Save the finalized invoice
         invoice.save()
+        
+        # Clear the memory
+        if 'last_ocr_text' in request.session:
+            del request.session['last_ocr_text']
+            
         return redirect('finance:dashboard')
 
+    # GET the text from memory to display in the template
+    extracted_text = request.session.get('last_ocr_text', 'No text extracted. The engine might need an image-based OCR fallback.')
+    
     context = {
         'invoice': invoice,
         'customers': customers,
+        'extracted_text': extracted_text
     }
     return render(request, 'finance/ocr_review.html', context)
 
@@ -132,3 +155,43 @@ def update_cloud_db(request):
         return HttpResponse("✅ Cloud Database Successfully Updated! You can now upload OCR PDFs.")
     except Exception as e:
         return HttpResponse(f"❌ Error updating database: {e}")
+    
+from django.db.models import Sum, Avg
+
+# ==========================================
+# 📊 SAP-STYLE CLIENT LEDGER
+# ==========================================
+def client_ledger(request, client_id):
+    # 1. Get the core client and their private financial profile
+    client = get_object_or_404(Customer, id=client_id)
+    profile, created = ClientFinancialProfile.objects.get_or_create(customer=client)
+    
+    # 2. Get all invoices and calculate total historical revenue
+    client_invoices = Invoice.objects.filter(customer=client).order_by('-issue_date')
+    total_revenue = sum(inv.total_amount for inv in client_invoices if inv.status != 'VOID')
+    
+    # Update the profile automatically
+    if profile.lifetime_revenue != total_revenue:
+        profile.lifetime_revenue = total_revenue
+        profile.save()
+
+    # 3. Get Price History specific to this client
+    # (Matches the client's name in the PriceRecord ledger)
+    price_history = PriceRecord.objects.filter(
+        supplier_or_client_name__icontains=client.name
+    ).order_by('-date_recorded')
+
+    # 4. Calculate "Most Bought Items" & Average Prices
+    top_parts = price_history.values('part_name', 'currency').annotate(
+        purchase_count=Count('id'),
+        avg_price=Avg('unit_price')
+    ).order_by('-purchase_count')[:10]
+
+    context = {
+        'client': client,
+        'profile': profile,
+        'invoices': client_invoices,
+        'price_history': price_history,
+        'top_parts': top_parts,
+    }
+    return render(request, 'finance/client_ledger.html', context)

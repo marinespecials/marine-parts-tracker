@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ client.name }} - Financial Ledger</title>
+    <style>
+        :root { --marine-blue: #0A2540; --steel-gray: #F3F4F6; --accent-green: #10B981; --text-dark: #1F2937; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--steel-gray); margin: 0; color: var(--text-dark); }
+        .navbar { background-color: var(--marine-blue); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .container { padding: 30px; max-width: 1400px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; border-top: 4px solid var(--marine-blue); }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; padding-bottom: 15px; margin-bottom: 20px; }
+        .header-row h2 { margin: 0; color: var(--marine-blue); }
+        
+        .btn-gray { background-color: #6B7280; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .kpi-box { background: white; padding: 20px; border-radius: 8px; border-left: 5px solid var(--marine-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .kpi-title { font-size: 0.85rem; color: #6B7280; font-weight: bold; text-transform: uppercase; }
+        .kpi-value { font-size: 1.8rem; font-weight: bold; color: var(--marine-blue); margin-top: 5px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+        th { text-align: left; padding: 12px; background-color: #F9FAFB; border-bottom: 2px solid #E5E7EB; color: #4B5563; }
+        td { padding: 12px; border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+        tr:hover td { background-color: #F9FAFB; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+        .status-paid { background: #D1FAE5; color: #065F46; }
+        .status-draft { background: #E5E7EB; color: #374151; }
+        
+        .split-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="{% url 'finance:dashboard' %}" class="btn-gray">&larr; Back to Finance</a>
+            <h1 style="margin: 0;">{{ client.name }} - Intelligence File</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- TOP KPI ROW -->
+        <div class="kpi-grid">
+            <div class="kpi-box">
+                <div class="kpi-title">Lifetime Revenue</div>
+                <div class="kpi-value">{{ profile.lifetime_revenue }} €</div>
+            </div>
+            <div class="kpi-box" style="border-left-color: var(--accent-green);">
+                <div class="kpi-title">Internal Rating</div>
+                <div class="kpi-value">{{ profile.get_internal_rating_display }}</div>
+            </div>
+            <div class="kpi-box" style="border-left-color: #F59E0B;">
+                <div class="kpi-title">Payment Terms</div>
+                <div class="kpi-value">Net {{ profile.payment_terms_days }}</div>
+            </div>
+            <div class="kpi-box" style="border-left-color: #8B5CF6;">
+                <div class="kpi-title">Total Invoices</div>
+                <div class="kpi-value">{{ invoices.count }}</div>
+            </div>
+        </div>
+
+        <div class="split-grid">
+            <!-- LEFT COLUMN: PART STATISTICS -->
+            <div>
+                <div class="card">
+                    <div class="header-row"><h2>Most Ordered Parts</h2></div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Orders</th>
+                                <th>Avg Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for part in top_parts %}
+                            <tr>
+                                <td style="font-weight: bold;">{{ part.part_name }}</td>
+                                <td>{{ part.purchase_count }}x</td>
+                                <td style="color: var(--accent-green); font-weight: bold;">{{ part.avg_price|floatformat:2 }} {{ part.currency }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" style="text-align: center; color: #6B7280;">No parts recorded yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card" style="border-top-color: #F59E0B;">
+                    <div class="header-row"><h2 style="color: #F59E0B;">Private Notes</h2></div>
+                    <p style="color: #4B5563; line-height: 1.6;">
+                        {{ profile.negotiation_notes|default:"No active negotiation constraints or operational notes recorded." }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: INVOICE & PRICE HISTORY -->
+            <div>
+                <div class="card">
+                    <div class="header-row"><h2>Invoice Ledger</h2></div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Document</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td style="font-weight: bold; color: var(--marine-blue);">{{ invoice.invoice_number }}</td>
+                                <td>{{ invoice.issue_date }}</td>
+                                <td>{{ invoice.total_amount }}</td>
+                                <td>
+                                    <span class="status-badge {% if invoice.status == 'PAID' %}status-paid{% else %}status-draft{% endif %}">
+                                        {{ invoice.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if invoice.ocr_document %}
+                                        <a href="{{ invoice.ocr_document.url }}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: none;">📄 PDF</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" style="text-align: center; color: #6B7280;">No invoices generated.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
