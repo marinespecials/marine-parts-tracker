@@ -7,42 +7,51 @@
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
         
-        .navbar { background-color: var(--primary); color: white; padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .container { padding: 35px; max-width: 1400px; margin: auto; }
+        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .nav-group { display: flex; gap: 15px; align-items: center; }
+        .nav-group a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
+        .nav-group a:hover { color: white; }
         
+        .container { padding: 30px; max-width: 1400px; margin: auto; }
         .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); }
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
-        .header-row h2 { margin: 0; font-size: 1.15rem; color: var(--primary); font-weight: 600; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .header-row h2 { margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 600; }
         
-        .btn { padding: 9px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.875rem; border: none; cursor: pointer; display: inline-block; }
+        .btn { padding: 7px 14px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.825rem; border: none; cursor: pointer; display: inline-block; }
         .btn-primary { background-color: var(--primary); color: white; }
-        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text); font-weight: 600; }
         
         .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
-        .kpi-box { background: var(--surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .kpi-box { background: var(--surface); padding: 18px 20px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .kpi-title { font-size: 0.75rem; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { text-align: left; padding: 10px 14px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: #64748B; font-weight: 600; }
-        td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: #64748B; font-weight: 600; }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover td { background-color: #FAFCFF; }
         
-        .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-badge { padding: 3px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .status-paid { background: #ECFDF5; color: #065F46; }
         .status-draft { background: #F1F5F9; color: #475569; }
         
-        .split-grid { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
-        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; margin-top: 6px; color: var(--text); background: #FAFAFA; }
+        .split-grid { display: grid; grid-template-columns: 360px 1fr; gap: 25px; }
+        input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 0.875rem; margin-top: 4px; color: var(--text); background: #FAFAFA; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); background: white; }
-        label { font-size: 0.85rem; font-weight: 600; color: #475569; display: block; }
+        label { font-size: 0.8rem; font-weight: 600; color: #475569; display: block; }
+        .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
+        .text-link:hover { text-decoration: underline; }
+        .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.875rem; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.2);">&larr; Back</a>
-            <h1 style="margin: 0; font-size: 1.2rem; font-weight: 600;">{{ client.name }} — Enterprise File</h1>
+        <div class="nav-group">
+            <a href="{% url 'finance:dashboard' %}">&larr; Back to Finance</a>
+            <span style="color: #475569;">|</span>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">{{ client.name }}</span>
+        </div>
+        <div class="nav-group">
+            <a href="{% url 'client_list' %}">Client Directory</a>
         </div>
     </div>
 
@@ -89,7 +98,7 @@
                     </table>
                 </div>
 
-                <!-- MOST ORDERED PARTS -->
+                <!-- FREQUENTLY ORDERED -->
                 <div class="card">
                     <div class="header-row"><h2>Frequently Ordered</h2></div>
                     <table>
@@ -108,12 +117,12 @@
                     </table>
                 </div>
 
-                <!-- EDIT SETTINGS -->
+                <!-- ENTERPRISE SETTINGS -->
                 <div class="card">
                     <div class="header-row"><h2>Enterprise Settings</h2></div>
                     <form method="POST">
                         {% csrf_token %}
-                        <div style="margin-bottom: 14px;">
+                        <div style="margin-bottom: 12px;">
                             <label>Internal Rating</label>
                             <select name="internal_rating">
                                 <option value="A" {% if profile.internal_rating == 'A' %}selected{% endif %}>A - Excellent</option>
@@ -121,11 +130,11 @@
                                 <option value="C" {% if profile.internal_rating == 'C' %}selected{% endif %}>C - Risky</option>
                             </select>
                         </div>
-                        <div style="margin-bottom: 14px;">
+                        <div style="margin-bottom: 12px;">
                             <label>Payment Terms (Days)</label>
                             <input type="number" name="payment_terms_days" value="{{ profile.payment_terms_days }}">
                         </div>
-                        <div style="margin-bottom: 16px;">
+                        <div style="margin-bottom: 14px;">
                             <label>Negotiation Notes</label>
                             <textarea name="negotiation_notes" rows="3">{{ profile.negotiation_notes }}</textarea>
                         </div>
@@ -144,7 +153,7 @@
                         <tbody>
                             {% for record in price_history|slice:":5" %}
                             <tr>
-                                <td style="color: #64748B; font-size: 0.85rem;">{{ record.date_recorded }}</td>
+                                <td style="color: #64748B; font-size: 0.8rem;">{{ record.date_recorded }}</td>
                                 <td><strong>{{ record.part_name }}</strong></td>
                                 <td>{{ record.transaction_type }}</td>
                                 <td><strong>{{ record.unit_price }} {{ record.currency }}</strong></td>
