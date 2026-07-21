@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Review OCR Data</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F3F4F6; color: #1F2937; padding: 40px; }
+        .review-card { background: white; max-width: 600px; margin: auto; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid #F59E0B; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4B5563; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        .btn-save { background-color: #0A2540; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+        .alert { background-color: #FEF3C7; color: #92400E; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="review-card">
+        <h2 style="margin-top:0; color:#0A2540;">🔍 Review Extracted Data</h2>
+        <div class="alert">Please verify the OCR data below. Make any necessary corrections before saving.</div>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>Invoice Number</label>
+                <input type="text" name="invoice_number" value="{{ invoice.invoice_number }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Matched Client</label>
+                <select name="customer_id" required>
+                    {% for client in customers %}
+                        <option value="{{ client.id }}" {% if invoice.customer.id == client.id %}selected{% endif %}>
+                            {{ client.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Total Amount (€)</label>
+                <input type="number" step="0.01" name="total_amount" value="{{ invoice.total_amount }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" required>
+                    <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                    <option value="ISSUED" {% if invoice.status == 'ISSUED' %}selected{% endif %}>Issued</option>
+                    <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>Paid</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-save">Confirm & Save Invoice</button>
+        </form>
+    </div>
+</body>
+</html>
