@@ -86,40 +86,31 @@ def bulk_import_links(request):
     if request.method == 'POST':
         raw_data = request.POST.get('raw_data', '')
         imported_count = 0
-        lines = raw_data.strip().split('\n')
         
-        for line in lines:
-            line = line.strip()
-            if not line:
+        # Automatically find ALL http/https URLs regardless of commas, spaces, or newlines
+        urls = re.findall(r'https?://[^\s,\"\']+', raw_data)
+        
+        for drive_url in urls:
+            drive_url = drive_url.rstrip(',.')
+            if not drive_url:
                 continue
             
-            # 1. Extract Google Drive URL using regex
-            url_match = re.search(r'https?://[^\s]+', line)
-            if not url_match:
-                continue
-            drive_url = url_match.group(0)
-            
-            # Check if there is extra text provided alongside the link
-            text_content = line.replace(drive_url, '').strip()
-            
-            # 2. IF THE USER ONLY PASTED THE LINK: Automatically fetch the filename from Google Drive's public page title!
-            if not text_content:
-                try:
-                    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-                    resp = requests.get(drive_url, headers=headers, timeout=5)
-                    if resp.status_code == 200:
-                        title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
-                        if title_match:
-                            # Google Drive titles usually look like "Elyros-Marine_INV-1001_2026-07-01.pdf - Google Drive"
-                            page_title = title_match.group(1).replace(' - Google Drive', '').strip()
-                            text_content = page_title
-                except Exception as e:
-                    print(f"Could not auto-fetch drive title: {e}")
+            text_content = ""
+            try:
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                resp = requests.get(drive_url, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
+                    if title_match:
+                        page_title = title_match.group(1).replace(' - Google Drive', '').strip()
+                        text_content = page_title
+            except Exception as e:
+                print(f"Could not auto-fetch drive title for {drive_url}: {e}")
             
             if not text_content:
                 text_content = f"General-Marine-Client_INV-{random.randint(1000, 9999)}_{timezone.now().strftime('%Y-%m-%d')}.pdf"
             
-            # 3. Apply your desktop app's underscore convention: Supplier_Invoice_Date.pdf
+            # Parse filename using desktop app underscore convention: Supplier_Invoice_Date.pdf
             base_name = re.sub(r'\.[^.]+$', '', text_content)
             parts = [p.strip() for p in base_name.split('_') if p.strip()]
             
@@ -174,7 +165,7 @@ def bulk_import_links(request):
                 
             imported_count += 1
                 
-        message = f"Successfully imported {imported_count} invoices by automatically reading the Google Drive file names!"
+        message = f"Successfully imported {imported_count} invoices by scanning all comma/space separated links!"
 
     context = {
         'customers': customers,
