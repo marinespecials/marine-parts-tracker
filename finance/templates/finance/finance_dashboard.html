@@ -67,7 +67,11 @@
             <div class="card">
                 <div class="header-row">
                     <h2>Recent Invoices</h2>
-                    <a href="{% url 'finance:upload_ocr' %}" class="btn-blue">+ Upload PDF via OCR</a>
+                    <div>
+                        <!-- EXPORT BUTTON ADDED HERE -->
+                        <a href="{% url 'finance:export_finances' %}" class="btn-gray" style="background-color: var(--accent-green);">📥 Export to CSV</a>
+                        <a href="{% url 'finance:upload_ocr' %}" class="btn-blue">+ Upload PDF via OCR</a>
+                    </div>
                 </div>
                 <table>
                     <thead>
@@ -77,6 +81,7 @@
                             <th>Issue Date</th>
                             <th>Amount</th>
                             <th>QR Label</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,9 +98,15 @@
                                     <span style="color: #9CA3AF;">None</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none; border:none; color: #DC2626; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="return confirm('Permanently delete this invoice?');">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" style="text-align: center; color: #6B7280; padding: 15px;">No invoices generated yet.</td></tr>
+                        <tr><td colspan="6" style="text-align: center; color: #6B7280; padding: 15px;">No invoices generated yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

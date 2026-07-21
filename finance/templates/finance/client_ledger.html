@@ -64,8 +64,28 @@
         </div>
 
         <div class="split-grid">
-            <!-- LEFT COLUMN: PART STATISTICS -->
+            <!-- LEFT COLUMN: STATISTICS & NOTES -->
             <div>
+                <!-- YEARLY SUMMARY -->
+                <div class="card">
+                    <div class="header-row"><h2>Yearly Revenue</h2></div>
+                    <table>
+                        <thead><tr><th>Year</th><th>Invoices</th><th>Total Revenue</th></tr></thead>
+                        <tbody>
+                            {% for data in yearly_data %}
+                            <tr>
+                                <td style="font-weight: bold;">{{ data.issue_date__year }}</td>
+                                <td>{{ data.count }}</td>
+                                <td style="color: var(--marine-blue); font-weight: bold;">{{ data.total|floatformat:2 }} €</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" style="text-align: center; color: #6B7280;">No yearly data yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MOST ORDERED PARTS -->
                 <div class="card">
                     <div class="header-row"><h2>Most Ordered Parts</h2></div>
                     <table>
@@ -98,18 +118,39 @@
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: INVOICE & PRICE HISTORY -->
+            <!-- RIGHT COLUMN: HISTORY & INVOICES -->
             <div>
+                <!-- OLD PRICE HISTORY -->
+                <div class="card" style="border-top-color: #8B5CF6;">
+                    <div class="header-row"><h2 style="color: #8B5CF6;">Historical Part Pricing</h2></div>
+                    <table style="font-size: 0.9rem;">
+                        <thead><tr><th>Date</th><th>Part Name</th><th>Type</th><th>Unit Price</th></tr></thead>
+                        <tbody>
+                            {% for record in price_history|slice:":5" %}
+                            <tr>
+                                <td>{{ record.date_recorded }}</td>
+                                <td style="font-weight: bold;">{{ record.part_name }}</td>
+                                <td>{{ record.transaction_type }}</td>
+                                <td style="font-weight: bold;">{{ record.unit_price }} {{ record.currency }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" style="text-align: center; color: #6B7280;">No historical prices logged.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- INVOICE LEDGER (WITH DELETE BUTTON) -->
                 <div class="card">
                     <div class="header-row"><h2>Invoice Ledger</h2></div>
-                    <table>
+                    <table style="font-size: 0.9rem;">
                         <thead>
                             <tr>
                                 <th>Invoice #</th>
                                 <th>Date</th>
                                 <th>Amount</th>
                                 <th>Status</th>
-                                <th>Document</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -125,8 +166,12 @@
                                 </td>
                                 <td>
                                     {% if invoice.ocr_document %}
-                                        <a href="{{ invoice.ocr_document.url }}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: none;">📄 PDF</a>
+                                        <a href="{{ invoice.ocr_document.url }}" target="_blank" style="color: #2563EB; font-weight: bold; text-decoration: none; margin-right: 10px;">📄 PDF</a>
                                     {% endif %}
+                                    <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" style="background:none; border:none; color: #DC2626; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="return confirm('Delete this invoice?');">Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                             {% empty %}

@@ -26,5 +26,29 @@ class Item(models.Model):
     compartment = models.ForeignKey(Compartment, on_delete=models.CASCADE, related_name='items')
     offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, related_name='items', null=True, blank=True)
 
+# ==========================================
+    # 📦 FACILITY RELOCATION MODULE
+    # ==========================================
+    TRANSFER_STATUSES = [
+        ('ACTIVE', 'Active Stock'),
+        ('UNUTILIZED', 'Unutilized / Purge'),
+        ('PACKED', 'Ready for Transfer'),
+        ('MOVED', 'Transferred to New Facility')
+    ]
+    transfer_status = models.CharField(
+        max_length=20, 
+        choices=TRANSFER_STATUSES, 
+        default='ACTIVE'
+    )
+    current_piraeus_bin = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Current bin location (e.g., Rack A2)"
+    )
+    destination_facility_bin = models.CharField(
+        max_length=50, 
+        blank=True, 
+        help_text="Target location for the reorganization"
+    )
     def __str__(self):
         return f"{self.name} x{self.quantity}"
