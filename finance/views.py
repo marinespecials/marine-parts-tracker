@@ -1,6 +1,7 @@
 import random
 import qrcode
 import pdfplumber
+import csv
 from io import BytesIO
 from datetime import timedelta
 
@@ -51,7 +52,7 @@ def upload_ocr(request):
             total_amount=0.00,
             status='DRAFT',
             due_date=draft_due_date,
-            ocr_document=uploaded_file # File is safely written to disk here
+            ocr_document=uploaded_file
         )
         
         # 2. READ THE PHYSICAL FILE FROM THE DISK
@@ -64,8 +65,6 @@ def upload_ocr(request):
                         extracted_text += page_text + "\n"
         except Exception as e:
             extracted_text = "OCR Failed or Image-Only PDF"
-
-        request.session['last_ocr_text'] = extracted_text
         
         # 3. UPDATE MATCHED CLIENT BASED ON TEXT
         all_customers = Customer.objects.all()
@@ -96,7 +95,6 @@ def ocr_review(request, invoice_id):
     customers = Customer.objects.all()
     
     if request.method == 'POST':
-        # Handled by the global delete function now
         if 'delete_invoice' in request.POST:
             return redirect('finance:delete_invoice', invoice_id=invoice.id)
         
@@ -106,14 +104,24 @@ def ocr_review(request, invoice_id):
         invoice.total_amount = request.POST.get('total_amount')
         invoice.status = request.POST.get('status')
         invoice.save()
-        
-        if 'last_ocr_text' in request.session:
-            del request.session['last_ocr_text']
             
         return redirect('finance:dashboard')
 
-    extracted_text = request.session.get('last_ocr_text', 'No text extracted. The engine might need an image-based OCR fallback.')
-    
+    # Dynamically read live from the physical PDF file on disk
+    extracted_text = ""
+    if invoice.ocr_document:
+        try:
+            with pdfplumber.open(invoice.ocr_document.path) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        extracted_text += page_text + "\n"
+        except Exception as e:
+            extracted_text = f"Could not read PDF file: {e}"
+            
+    if not extracted_text.strip():
+        extracted_text = "No text extracted. The PDF might be a scanned image without selectable text layers."
+
     context = {
         'invoice': invoice,
         'customers': customers,
@@ -129,22 +137,29 @@ def delete_invoice(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
         if invoice.ocr_document:
-            invoice.ocr_document.delete(save=False) # Delete physical PDF
+            invoice.ocr_document.delete(save=False)
         if invoice.qr_code:
-            invoice.qr_code.delete(save=False)      # Delete physical QR
-        invoice.delete()                            # Delete from DB
+            invoice.qr_code.delete(save=False)
+        invoice.delete()
     
-    # Send user back to wherever they clicked the delete button from
     return redirect(request.META.get('HTTP_REFERER', 'finance:dashboard'))
 
 
 # ==========================================
-# 📊 SAP-STYLE CLIENT LEDGER (UPGRADED)
+# 📊 ENTERPRISE CLIENT LEDGER
 # ==========================================
 def client_ledger(request, client_id):
     client = get_object_or_404(Customer, id=client_id)
     profile, created = ClientFinancialProfile.objects.get_or_create(customer=client)
     
+    # Handle saving notes/ratings updates directly from the ledger page
+    if request.method == 'POST' and 'update_profile' in request.POST:
+        profile.negotiation_notes = request.POST.get('negotiation_notes', '')
+        profile.payment_terms_days = request.POST.get('payment_terms_days', 30)
+        profile.internal_rating = request.POST.get('internal_rating', 'B')
+        profile.save()
+        return redirect('finance:client_ledger', client_id=client.id)
+
     client_invoices = Invoice.objects.filter(customer=client).order_by('-issue_date')
     total_revenue = sum(inv.total_amount for inv in client_invoices if inv.status != 'VOID')
     
@@ -152,13 +167,11 @@ def client_ledger(request, client_id):
         profile.lifetime_revenue = total_revenue
         profile.save()
 
-    # 1. New: Yearly Statistics
     yearly_data = client_invoices.values('issue_date__year').annotate(
         total=Sum('total_amount'),
         count=Count('id')
     ).order_by('-issue_date__year')
 
-    # 2. Existing: Most Bought Parts
     price_history = PriceRecord.objects.filter(supplier_or_client_name__icontains=client.name).order_by('-date_recorded')
     top_parts = price_history.values('part_name', 'currency').annotate(
         purchase_count=Count('id'),
@@ -176,30 +189,16 @@ def client_ledger(request, client_id):
     return render(request, 'finance/client_ledger.html', context)
 
 
-def update_cloud_db(request):
-    try:
-        call_command('migrate')
-        return HttpResponse("✅ Cloud Database Successfully Updated!")
-    except Exception as e:
-        return HttpResponse(f"❌ Error updating database: {e}")
-
-import csv
-from django.http import HttpResponse
-
 # ==========================================
 # 📥 MONTH-END FINANCIAL EXPORT
 # ==========================================
 def export_finances_csv(request):
-    # Create the HTTP response with the correct CSV headers
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="marine_finance_export.csv"'
     
     writer = csv.writer(response)
-    
-    # Write the spreadsheet header row
     writer.writerow(['Invoice Number', 'Client Name', 'Issue Date', 'Due Date', 'Status', 'Total Amount (EUR)'])
     
-    # Write data rows
     invoices = Invoice.objects.all().order_by('-issue_date')
     for inv in invoices:
         writer.writerow([
@@ -212,15 +211,11 @@ def export_finances_csv(request):
         ])
         
     return response
-# ==========================================
-# 🏢 SAP ENTERPRISE LEDGER HOME
-# ==========================================
-def sap_overview(request):
-    profiles = ClientFinancialProfile.objects.select_related('customer').all()
-    total_enterprise_revenue = sum(p.lifetime_revenue for p in profiles)
-    
-    context = {
-        'profiles': profiles,
-        'total_enterprise_revenue': total_enterprise_revenue,
-    }
-    return render(request, 'finance/sap_overview.html', context)
+
+
+def update_cloud_db(request):
+    try:
+        call_command('migrate')
+        return HttpResponse("✅ Cloud Database Successfully Updated!")
+    except Exception as e:
+        return HttpResponse(f"❌ Error updating database: {e}")
