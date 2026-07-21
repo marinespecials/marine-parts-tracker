@@ -27,7 +27,12 @@
             {% for client in customers %}
                 <div class="stat-row">
                     <div>
-                        <strong style="font-size: 1.1rem;">{{ client.name }}</strong>
+                        <!-- NEW INTELLIGENCE FILE LINK ADDED HERE -->
+                        <strong style="font-size: 1.1rem;">
+                            <a href="{% url 'finance:client_ledger' client.id %}" style="color: var(--marine-blue); text-decoration: none;" title="Open SAP Intelligence File">
+                                {{ client.name }} ↗️
+                            </a>
+                        </strong>
                         <div style="font-size: 0.8rem; margin-top: 4px;">
                             <a href="{% url 'edit_client' client.id %}" style="color: #3B82F6; text-decoration: none; font-weight: bold; margin-right: 10px;">Edit Name</a>
                             {% if client.offers.count == 0 %}
