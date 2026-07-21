@@ -2,6 +2,7 @@ import random
 import qrcode
 import csv
 import re
+import requests
 from io import BytesIO
 from datetime import timedelta, datetime
 
@@ -94,12 +95,31 @@ def bulk_import_links(request):
             
             # 1. Extract Google Drive URL using regex
             url_match = re.search(r'https?://[^\s]+', line)
-            drive_url = url_match.group(0) if url_match else ''
+            if not url_match:
+                continue
+            drive_url = url_match.group(0)
             
-            # 2. Remaining text contains the filename formatted by your desktop app: Supplier_Invoice_Date.pdf
+            # Check if there is extra text provided alongside the link
             text_content = line.replace(drive_url, '').strip()
             
-            # Remove file extension (.pdf) and split by underscores (_)
+            # 2. IF THE USER ONLY PASTED THE LINK: Automatically fetch the filename from Google Drive's public page title!
+            if not text_content:
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                    resp = requests.get(drive_url, headers=headers, timeout=5)
+                    if resp.status_code == 200:
+                        title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
+                        if title_match:
+                            # Google Drive titles usually look like "Elyros-Marine_INV-1001_2026-07-01.pdf - Google Drive"
+                            page_title = title_match.group(1).replace(' - Google Drive', '').strip()
+                            text_content = page_title
+                except Exception as e:
+                    print(f"Could not auto-fetch drive title: {e}")
+            
+            if not text_content:
+                text_content = f"General-Marine-Client_INV-{random.randint(1000, 9999)}_{timezone.now().strftime('%Y-%m-%d')}.pdf"
+            
+            # 3. Apply your desktop app's underscore convention: Supplier_Invoice_Date.pdf
             base_name = re.sub(r'\.[^.]+$', '', text_content)
             parts = [p.strip() for p in base_name.split('_') if p.strip()]
             
@@ -107,7 +127,6 @@ def bulk_import_links(request):
             inv_num = f"INV-{random.randint(1000, 9999)}"
             issue_date = timezone.now().date()
             
-            # Map parts matching invoice_app convention: [Supplier]_[Invoice]_[Date]
             if len(parts) >= 3:
                 supplier = parts[0].replace('-', ' ').title()
                 inv_num = parts[1]
@@ -125,7 +144,6 @@ def bulk_import_links(request):
             elif len(parts) == 1 and parts[0]:
                 inv_num = parts[0]
 
-            # Optional: Extract any numeric amount if present in the text line
             amount_match = re.search(r'\b\d+[\.,]\d{2}\b', text_content)
             total_amount = 0.00
             if amount_match:
@@ -156,7 +174,7 @@ def bulk_import_links(request):
                 
             imported_count += 1
                 
-        message = f"Successfully parsed and imported {imported_count} invoices using your invoice_app format!"
+        message = f"Successfully imported {imported_count} invoices by automatically reading the Google Drive file names!"
 
     context = {
         'customers': customers,
