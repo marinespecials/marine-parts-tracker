@@ -120,30 +120,31 @@ def bulk_import_links(request):
             
             base_name = re.sub(r'\.[a-zA-Z0-9]+$', '', text_content).strip()
             
-            # 1. Extract Date (Matches 29-01-2026, 7-4-2026, 28-01-2026, etc.)
-            date_match = re.search(r'(\b\d{1,4}[-_\/]\d{1,2}[-_\/]\d{2,4}\b)', base_name)
+            # 1. EXTRACT DATE FROM THE END OF THE FILENAME
+            # Matches tail dates like _05_05_2026, _02.04.2026, _11_5_2026, _08_05_2026
+            date_match = re.search(r'[-_\s\.](\d{1,2}[-_\.]\d{1,2}[-_\.](?:20)?\d{2})$', base_name)
             issue_date = timezone.now().date()
             
             if date_match:
                 date_str = date_match.group(1)
-                clean_date = date_str.replace('_', '-').replace('/', '-')
-                d_parts = clean_date.split('-')
+                d_parts = re.split(r'[-_\.]', date_str)
                 
                 if len(d_parts) == 3:
                     try:
                         p1, p2, p3 = int(d_parts[0]), int(d_parts[1]), int(d_parts[2])
-                        if p1 > 1000:  # YYYY-MM-DD
-                            year, month, day = p1, p2, p3
-                        elif p3 > 1000:  # DD-MM-YYYY
-                            day, month, year = p1, p2, p3
-                        else:  # DD-MM-YY
-                            day, month, year = p1, p2, 2000 + p3
+                        if p3 < 100:
+                            p3 += 2000
                         
-                        issue_date = datetime(year, month, day).date()
+                        # European Format (DD-MM-YYYY)
+                        if p1 <= 31 and p2 <= 12:
+                            issue_date = datetime(p3, p2, p1).date()
+                        elif p1 > 1000: # YYYY-MM-DD
+                            issue_date = datetime(p1, p2, p3).date()
                     except (ValueError, TypeError):
                         pass
                 
-                base_name = base_name.replace(date_str, '').strip(' _-')
+                # Strip the extracted date from the end of base_name
+                base_name = base_name[:date_match.start()].strip(' _-')
 
             # 2. Extract Document Category / Status
             doc_status = 'DRAFT'
@@ -152,22 +153,24 @@ def bulk_import_links(request):
             elif re.search(r'\b(δελτιο|delivery|packing)\b', text_content, re.IGNORECASE):
                 doc_status = 'DELIVERY'
             
-            # 3. Separate Supplier & Invoice Number
-            words = [w.strip(' _-#') for w in re.split(r'[\s_]+', base_name) if w.strip(' _-#')]
+            # 3. Separate Supplier & Invoice Number from remaining base_name
+            remaining_parts = [p.strip(' _-#') for p in re.split(r'[_]', base_name) if p.strip(' _-#')]
             
-            supplier_words = []
-            inv_words = []
+            supplier = "General Marine Client"
+            inv_num = base_name if base_name else f"INV-{random.randint(1000, 9999)}"
             
-            for w in words:
-                if w.lower() in GENERIC_KEYWORDS:
-                    continue
-                if any(c.isdigit() for c in w) or re.match(r'^(#|inv|τδα|δα|ρο)', w, re.IGNORECASE):
-                    inv_words.append(w)
+            if len(remaining_parts) >= 2:
+                if remaining_parts[0].lower() not in GENERIC_KEYWORDS:
+                    supplier = remaining_parts[0].replace('-', ' ').strip().title()
+                    inv_num = "_".join(remaining_parts[1:]).strip()
                 else:
-                    supplier_words.append(w)
-            
-            supplier = " ".join(supplier_words).title() if supplier_words else "General Marine Client"
-            inv_num = "-".join(inv_words) if inv_words else (base_name if base_name else f"INV-{random.randint(1000, 9999)}")
+                    inv_num = "_".join(remaining_parts[1:]).strip()
+            elif len(remaining_parts) == 1:
+                val = remaining_parts[0]
+                if any(c.isdigit() for c in val):
+                    inv_num = val
+                else:
+                    supplier = val.replace('-', ' ').strip().title()
 
             customer, _ = Customer.objects.get_or_create(name=supplier)
             
@@ -183,17 +186,18 @@ def bulk_import_links(request):
                 }
             )
             
-            # Force update issue_date and customer directly in database table
-            invoice.customer = customer
-            invoice.status = doc_status
-            invoice.google_drive_url = drive_url
-            invoice.due_date = issue_date + timedelta(days=30)
-            invoice.save()
-            Invoice.objects.filter(id=invoice.id).update(issue_date=issue_date)
+            # Direct database update for explicit date persistence
+            Invoice.objects.filter(id=invoice.id).update(
+                customer=customer,
+                status=doc_status,
+                google_drive_url=drive_url,
+                issue_date=issue_date,
+                due_date=issue_date + timedelta(days=30)
+            )
                 
             imported_count += 1
                 
-        message = f"Successfully imported {imported_count} files with exact extracted dates and clean supplier names!"
+        message = f"Successfully imported {imported_count} files with exact extracted dates and clean invoice numbers!"
 
     context = {
         'customers': customers,
