@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Count, Sum, Avg
+from django.db.models import Count, Sum, Avg, Q
 from django.core.management import call_command
 from django.http import HttpResponse
 
@@ -227,7 +227,6 @@ def edit_invoice(request, invoice_id):
 
 
 def delete_invoice(request, invoice_id):
-    """Safely deletes an invoice without throwing a 404 error if it was already removed."""
     if request.method == 'POST':
         invoice = Invoice.objects.filter(id=invoice_id).first()
         if invoice:
@@ -238,6 +237,75 @@ def delete_invoice(request, invoice_id):
                     pass
             invoice.delete()
     return redirect('finance:dashboard')
+
+
+def price_history_dashboard(request):
+    query = request.GET.get('q', '').strip()
+    
+    if request.method == 'POST':
+        part_name = request.POST.get('part_name', '').strip()
+        part_code = request.POST.get('part_code', '').strip()
+        supplier_name = request.POST.get('supplier_name', '').strip()
+        unit_price = request.POST.get('unit_price', '0.00')
+        currency = request.POST.get('currency', 'EUR')
+        date_recorded = request.POST.get('date_recorded') or timezone.now().date()
+        notes = request.POST.get('notes', '').strip()
+
+        customer, _ = Customer.objects.get_or_create(name=supplier_name) if supplier_name else (None, False)
+
+        PriceRecord.objects.create(
+            part_name=part_name,
+            part_code=part_code,
+            supplier_or_client_name=supplier_name,
+            customer=customer,
+            unit_price=unit_price,
+            currency=currency,
+            date_recorded=date_recorded,
+            notes=notes
+        )
+        return redirect('finance:price_history')
+
+    records = PriceRecord.objects.all().order_by('-date_recorded')
+
+    if query:
+        records = records.filter(
+            Q(part_name__icontains=query) |
+            Q(part_code__icontains=query) |
+            Q(supplier_or_client_name__icontains=query)
+        )
+
+    unique_parts_count = PriceRecord.objects.values('part_name').distinct().count()
+    total_records = records.count()
+    
+    parts_list = PriceRecord.objects.values_list('part_name', flat=True).distinct()[:5]
+    chart_datasets = []
+    colors = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+    
+    for idx, part in enumerate(parts_list):
+        part_records = PriceRecord.objects.filter(part_name=part).order_by('date_recorded')
+        chart_datasets.append({
+            'label': part,
+            'data': [{'x': r.date_recorded.strftime('%Y-%m-%d'), 'y': float(r.unit_price)} for r in part_records],
+            'borderColor': colors[idx % len(colors)],
+            'backgroundColor': colors[idx % len(colors)],
+            'tension': 0.2,
+            'fill': False
+        })
+
+    context = {
+        'records': records,
+        'unique_parts_count': unique_parts_count,
+        'total_records': total_records,
+        'query': query,
+        'chart_datasets': chart_datasets,
+    }
+    return render(request, 'finance/price_history.html', context)
+
+
+def delete_price_record(request, record_id):
+    if request.method == 'POST':
+        PriceRecord.objects.filter(id=record_id).delete()
+    return redirect('finance:price_history')
 
 
 def client_ledger(request, client_id):

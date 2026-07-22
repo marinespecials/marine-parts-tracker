@@ -46,6 +46,7 @@
             <a href="/">🏠 Hub</a>
             <span style="color: #475569;">|</span>
             <a href="{% url 'finance:dashboard' %}" class="active">Financial Intelligence</a>
+            <a href="{% url 'finance:price_history' %}">⚙️ Spare Parts & Prices</a>
             <a href="{% url 'client_list' %}">Client Ledgers</a>
         </div>
         <div class="nav-group">
@@ -165,12 +166,10 @@
             }
         });
 
-        // Smart Google Drive ID Extractor for In-App Frame Embeds
         function openModal(driveUrl) {
             if (!driveUrl) return;
             let fileId = '';
             
-            // Extract the Drive File ID using Regex
             const match = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
             if (match && match[1]) {
                 fileId = match[1];

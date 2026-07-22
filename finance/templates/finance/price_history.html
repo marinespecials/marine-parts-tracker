@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spare Parts & Price History Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
+        
+        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .nav-group { display: flex; gap: 15px; align-items: center; }
+        .nav-group a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
+        .nav-group a:hover, .nav-group a.active { color: white; }
+        
+        .container { padding: 30px; max-width: 1350px; margin: auto; }
+        .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
+        .kpi-box { background: var(--surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .kpi-title { font-size: 0.75rem; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
+        
+        .grid-split { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+        
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 4px; }
+        input, select, textarea { width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+        
+        .btn { width: 100%; padding: 10px; border-radius: 6px; font-size: 0.875rem; background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
+        .btn:hover { background-color: #1D4ED8; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: #64748B; font-weight: 600; }
+        td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover td { background-color: #FAFCFF; }
+        
+        .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-group">
+            <a href="/">🏠 Hub</a>
+            <span style="color: #475569;">|</span>
+            <a href="{% url 'finance:dashboard' %}">Financial Intelligence</a>
+            <a href="{% url 'finance:price_history' %}" class="active">⚙️ Spare Parts & Prices</a>
+            <a href="{% url 'client_list' %}">Client Ledgers</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="kpi-grid">
+            <div class="kpi-box">
+                <div class="kpi-title">Unique Spare Parts Tracked</div>
+                <div class="kpi-value">{{ unique_parts_count }}</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-title">Total Price History Logs</div>
+                <div class="kpi-value">{{ total_records }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary);">📈 Spare Part Unit Price Fluctuations Over Time</h3>
+            <div style="height: 280px; width: 100%;">
+                <canvas id="priceTrendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid-split">
+            <div class="card">
+                <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary);">+ Log Part Price</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Part Name *</label>
+                        <input type="text" name="part_name" placeholder="e.g. Oil Filter, Impeller, Gasket" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Part / OEM Code</label>
+                        <input type="text" name="part_code" placeholder="e.g. 35-802893Q01">
+                    </div>
+                    <div class="form-group">
+                        <label>Supplier Name *</label>
+                        <input type="text" name="supplier_name" placeholder="e.g. Idealakku, Offgridtec" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Unit Price (€) *</label>
+                            <input type="number" step="0.01" name="unit_price" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Currency</label>
+                            <select name="currency">
+                                <option value="EUR">EUR (€)</option>
+                                <option value="USD">USD ($)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Recorded *</label>
+                        <input type="date" name="date_recorded" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes / Specifications</label>
+                        <textarea name="notes" rows="2" placeholder="e.g. Volume discount or urgent delivery rate"></textarea>
+                    </div>
+                    <button type="submit" class="btn">Log Price Record</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--primary);">Price History Ledger</h3>
+                    <form method="GET" style="display: flex; gap: 10px;">
+                        <input type="text" name="q" value="{{ query }}" placeholder="Search part or supplier..." style="width: 220px; padding: 6px 10px;">
+                        <button type="submit" class="btn" style="width: auto; padding: 6px 14px;">Search</button>
+                    </form>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Part Name / Code</th>
+                            <th>Supplier</th>
+                            <th>Unit Price</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td>
+                                <strong>{{ record.part_name }}</strong>
+                                {% if record.part_code %}
+                                    <br><span style="font-size:0.75rem; color:#64748B;">Code: {{ record.part_code }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ record.supplier_or_client_name }}</td>
+                            <td><strong style="color:var(--accent);">{{ record.unit_price }} {{ record.currency }}</strong></td>
+                            <td>{{ record.date_recorded|date:"d-m-Y" }}</td>
+                            <td style="font-size:0.8rem; color:#64748B;">{{ record.notes|default:"-" }}</td>
+                            <td style="text-align: right;">
+                                <form method="POST" action="{% url 'finance:delete_price_record' record.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-danger" onclick="return confirm('Delete this record?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align: center; color: #94A3B8; padding: 30px;">No price history recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{ chart_datasets|json_script:"chart-datasets-data" }}
+
+    <script>
+        const chartDatasets = JSON.parse(document.getElementById('chart-datasets-data').textContent);
+
+        const ctx = document.getElementById('priceTrendChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: { datasets: chartDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'time', time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } } },
+                    y: { beginAtZero: false, title: { display: true, text: 'Unit Price (€)' } }
+                },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    </script>
+</body>
+</html>
