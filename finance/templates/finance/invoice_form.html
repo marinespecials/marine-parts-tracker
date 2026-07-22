@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ action_title|default:"Invoice Details" }}</title>
+    <title>{{ action_title|default:"Review & Link Invoice" }}</title>
     <style>
         :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
@@ -11,21 +11,27 @@
         .navbar a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
         .navbar a:hover { color: white; }
         
-        .container { padding: 40px; max-width: 800px; margin: auto; }
-        .card { background: var(--surface); padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        /* Split Screen Container */
+        .container { padding: 25px; max-width: 1500px; margin: auto; }
+        .split-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 25px; align-items: start; }
         
-        h2 { margin-top: 0; color: var(--primary); font-size: 1.3rem; margin-bottom: 24px; }
+        .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         
-        .form-group { margin-bottom: 20px; }
+        /* Left Side Document Viewer */
+        .preview-container { height: calc(100vh - 120px); min-height: 650px; display: flex; flex-direction: column; position: sticky; top: 20px; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .preview-header h3 { margin: 0; font-size: 1.05rem; color: var(--primary); font-weight: 600; }
+        .preview-frame { width: 100%; height: 100%; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; }
+        .empty-preview { width: 100%; height: 100%; border: 2px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #94A3B8; font-weight: 600; background: #FAFAFA; text-align: center; padding: 20px; box-sizing: border-box; }
+        
+        /* Form Styling */
+        h2 { margin-top: 0; color: var(--primary); font-size: 1.25rem; margin-bottom: 20px; }
+        .form-group { margin-bottom: 18px; }
         label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
         input[type="text"], input[type="number"], input[type="date"], input[type="url"], select {
             width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; box-sizing: border-box; background: #FAFAFA;
         }
         input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
-        
-        .input-with-btn { display: flex; gap: 10px; align-items: center; }
-        .btn-preview { padding: 10px 16px; font-size: 0.85rem; background-color: #059669; color: white; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; white-space: nowrap; }
-        .btn-preview:hover { background-color: #047857; }
         
         .btn-submit { width: 100%; padding: 12px; border-radius: 6px; font-size: 0.9rem; background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; }
         .btn-submit:hover { background-color: #1D4ED8; }
@@ -39,111 +45,122 @@
         <div style="display: flex; gap: 15px; align-items: center;">
             <a href="{% url 'finance:dashboard' %}">&larr; Back to Dashboard</a>
             <span style="color: #475569;">|</span>
-            <span style="color: white; font-weight: 600; font-size: 0.9rem;">{{ action_title|default:"Edit Invoice" }}</span>
+            <span style="color: white; font-weight: 600; font-size: 0.9rem;">{{ action_title|default:"Review & Link Invoice" }}</span>
         </div>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h2>{{ action_title|default:"Invoice Details" }}</h2>
-
-            <form method="POST">
-                {% csrf_token %}
-
-                <div class="form-group">
-                    <label for="invoice_number">Invoice Number</label>
-                    <input type="text" id="invoice_number" name="invoice_number" value="{{ invoice.invoice_number|default:'' }}" required>
+        <div class="split-layout">
+            
+            <!-- LEFT COLUMN: Embedded Google Drive Document Preview -->
+            <div class="card preview-container">
+                <div class="preview-header">
+                    <h3>Document Preview</h3>
+                    {% if invoice.google_drive_url %}
+                        <a href="{{ invoice.google_drive_url }}" target="_blank" style="color: var(--accent); font-size: 0.825rem; font-weight: 600; text-decoration: none;">Open Full Tab ↗</a>
+                    {% endif %}
                 </div>
-
-                <div class="form-group">
-                    <label for="customer_id">Client / Supplier Name</label>
-                    <select id="customer_id" name="customer_id" required>
-                        {% for customer in customers %}
-                            <option value="{{ customer.id }}" {% if invoice.customer.id == customer.id %}selected{% endif %}>
-                                {{ customer.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                
+                <iframe id="pdfFrame" class="preview-frame" src="" style="display: none;"></iframe>
+                
+                <div id="emptyPreview" class="empty-preview">
+                    <span>No Google Drive Link Provided.<br>Paste a valid link on the right to load preview.</span>
                 </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label for="total_amount">Total Amount (€)</label>
-                        <input type="number" step="0.01" id="total_amount" name="total_amount" value="{{ invoice.total_amount|default:'0.00' }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="due_date">Due Date</label>
-                        <input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="status">Document Type / Status</label>
-                    <select id="status" name="status">
-                        <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>DRAFT / INVOICE</option>
-                        <option value="ORDER" {% if invoice.status == 'ORDER' %}selected{% endif %}>ORDER (Παραγγελία)</option>
-                        <option value="DELIVERY" {% if invoice.status == 'DELIVERY' %}selected{% endif %}>DELIVERY NOTE (Δελτίο Αποστολής)</option>
-                        <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>PAID</option>
-                        <option value="VOID" {% if invoice.status == 'VOID' %}selected{% endif %}>VOID</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="google_drive_url">Google Drive Link</label>
-                    <div class="input-with-btn">
-                        <input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/...">
-                        <button type="button" onclick="openModal()" class="btn-preview">Preview</button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">Save Changes</button>
-            </form>
-
-            {% if invoice %}
-                <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" onsubmit="return confirm('Are you sure you want to delete this invoice?');">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-delete">Delete Invoice</button>
-                </form>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- In-App Drive PDF Preview Modal -->
-    <div id="pdfModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.75); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:white; width:85%; height:85%; border-radius:10px; position:relative; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#0F172A; font-weight:600;">Document Drive Preview</h3>
-                <button onclick="closeModal()" style="background:#DC2626; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600;">✕ Close</button>
             </div>
-            <iframe id="pdfFrame" src="" style="width:100%; height:100%; border:1px solid #E2E8F0; border-radius:6px; background:#F8FAFC;"></iframe>
+
+            <!-- RIGHT COLUMN: Invoice Fields Form -->
+            <div class="card">
+                <h2>{{ action_title|default:"Invoice Details" }}</h2>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="invoice_number">Invoice Number</label>
+                        <input type="text" id="invoice_number" name="invoice_number" value="{{ invoice.invoice_number|default:'' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customer_id">Client / Supplier Name</label>
+                        <select id="customer_id" name="customer_id" required>
+                            {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if invoice.customer.id == customer.id %}selected{% endif %}>
+                                    {{ customer.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label for="total_amount">Total Amount (€)</label>
+                            <input type="number" step="0.01" id="total_amount" name="total_amount" value="{{ invoice.total_amount|default:'0.00' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="due_date">Due Date</label>
+                            <input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Document Type / Status</label>
+                        <select id="status" name="status">
+                            <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>DRAFT / INVOICE</option>
+                            <option value="ORDER" {% if invoice.status == 'ORDER' %}selected{% endif %}>ORDER (Παραγγελία)</option>
+                            <option value="DELIVERY" {% if invoice.status == 'DELIVERY' %}selected{% endif %}>DELIVERY NOTE (Δελτίο Αποστολής)</option>
+                            <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>PAID</option>
+                            <option value="VOID" {% if invoice.status == 'VOID' %}selected{% endif %}>VOID</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="google_drive_url">Google Drive Link</label>
+                        <input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/..." oninput="updatePreview()">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Save Changes</button>
+                </form>
+
+                {% if invoice %}
+                    <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" onsubmit="return confirm('Are you sure you want to delete this invoice?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-delete">Delete Invoice</button>
+                    </form>
+                {% endif %}
+            </div>
+
         </div>
     </div>
 
     <script>
-        function openModal() {
+        function updatePreview() {
             const driveUrl = document.getElementById('google_drive_url').value.trim();
+            const frame = document.getElementById('pdfFrame');
+            const emptyState = document.getElementById('emptyPreview');
+
             if (!driveUrl) {
-                alert('Please enter a Google Drive link first.');
+                frame.style.display = 'none';
+                emptyState.style.display = 'flex';
                 return;
             }
 
             let fileId = '';
             const match = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+            
             if (match && match[1]) {
                 fileId = match[1];
-                document.getElementById('pdfFrame').src = `https://drive.google.com/file/d/${fileId}/preview`;
+                frame.src = `https://drive.google.com/file/d/${fileId}/preview`;
             } else {
-                document.getElementById('pdfFrame').src = driveUrl;
+                frame.src = driveUrl;
             }
 
-            document.getElementById('pdfModal').style.display = 'flex';
+            frame.style.display = 'block';
+            emptyState.style.display = 'none';
         }
 
-        function closeModal() {
-            document.getElementById('pdfModal').style.display = 'none';
-            document.getElementById('pdfFrame').src = '';
-        }
+        // Auto-load preview on page render
+        window.addEventListener('DOMContentLoaded', updatePreview);
     </script>
 </body>
 </html>
