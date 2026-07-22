@@ -22,6 +22,8 @@
         .btn { padding: 7px 14px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.825rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background-color: var(--accent); color: white; }
         .btn-success { background-color: var(--success); color: white; }
+        .btn-preview { padding: 4px 10px; font-size: 0.78rem; background-color: #059669; color: white; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-preview:hover { background-color: #047857; }
         
         table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
         th { text-align: left; padding: 10px 14px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: #64748B; font-weight: 600; }
@@ -77,7 +79,7 @@
             <div class="card">
                 <div class="header-row">
                     <h2>Recent Invoices</h2>
-                    <span style="font-size: 0.85rem; color: #64748B;">Click Drive File to open PDF</span>
+                    <span style="font-size: 0.85rem; color: #64748B;">Click Preview for in-app pop-up viewer</span>
                 </div>
                 <table>
                     <thead>
@@ -99,7 +101,10 @@
                             <td><strong>{{ invoice.total_amount }} €</strong></td>
                             <td>
                                 {% if invoice.google_drive_url %}
-                                    <a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener noreferrer" class="text-link">Drive File</a>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button onclick="openModal('{{ invoice.google_drive_url }}')" class="btn-preview">👁️ Preview</button>
+                                        <a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener noreferrer" class="text-link" style="font-size: 0.8rem;">Open Tab ↗</a>
+                                    </div>
                                 {% elif invoice.qr_code %}
                                     <a href="{{ invoice.qr_code.url }}" target="_blank" rel="noopener noreferrer" class="text-link">QR Code</a>
                                 {% else %}
@@ -122,6 +127,17 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- In-App Drive PDF Preview Modal -->
+    <div id="pdfModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.75); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:white; width:85%; height:85%; border-radius:10px; position:relative; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:1.1rem; color:#0F172A; font-weight:600;">📄 Document Drive Preview</h3>
+                <button onclick="closeModal()" style="background:#DC2626; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600;">✕ Close</button>
+            </div>
+            <iframe id="pdfFrame" src="" style="width:100%; height:100%; border:1px solid #E2E8F0; border-radius:6px; background:#F8FAFC;"></iframe>
         </div>
     </div>
 
@@ -148,6 +164,25 @@
                 plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
             }
         });
+
+        // In-App Preview Modal Handler
+        function openModal(driveUrl) {
+            if (!driveUrl) return;
+            // Convert /view or sharing links into /preview so Google Drive allows iframe embedding
+            let embedUrl = driveUrl;
+            if (driveUrl.includes('/view')) {
+                embedUrl = driveUrl.replace(/\/view.*$/, '/preview');
+            } else if (!driveUrl.endsWith('/preview')) {
+                embedUrl = driveUrl.replace(/\/$/, '') + '/preview';
+            }
+            document.getElementById('pdfFrame').src = embedUrl;
+            document.getElementById('pdfModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('pdfModal').style.display = 'none';
+            document.getElementById('pdfFrame').src = '';
+        }
     </script>
 </body>
 </html>
