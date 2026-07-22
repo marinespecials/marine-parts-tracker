@@ -87,7 +87,6 @@ def bulk_import_links(request):
         raw_data = request.POST.get('raw_data', '')
         imported_count = 0
         
-        # Extract all URLs regardless of commas, spaces, or newlines
         urls = re.findall(r'https?://[^\s,\"\']+', raw_data)
         
         for drive_url in urls:
@@ -102,7 +101,9 @@ def bulk_import_links(request):
                 if resp.status_code == 200:
                     title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
                     if title_match:
-                        page_title = title_match.group(1).replace(' - Google Drive', '').strip()
+                        page_title = title_match.group(1)
+                        # Strip ALL Google Drive suffixes regardless of language (e.g. - Google Drive, - Google Диск)
+                        page_title = re.sub(r'\s*-\s*Google.*$', '', page_title, flags=re.IGNORECASE).strip()
                         text_content = page_title
             except Exception as e:
                 print(f"Could not auto-fetch drive title for {drive_url}: {e}")
@@ -110,10 +111,10 @@ def bulk_import_links(request):
             if not text_content:
                 text_content = f"General-Marine-Client_INV-{random.randint(1000, 9999)}_{timezone.now().strftime('%Y-%m-%d')}.pdf"
             
-            # Remove file extension (.pdf, .jpg, etc.)
+            # Clean file extension (.pdf, .jpg)
             base_name = re.sub(r'\.[a-zA-Z0-9]+$', '', text_content).strip()
             
-            # 1. Extract Date using regex matching patterns like 23_6_2026, 23-06-2026, or 2026-06-23
+            # 1. Extract Date (Matches 29-01-2026, 7-4-2026, 2026-01-29, etc.)
             date_match = re.search(r'(\b\d{1,4}[-_\/]\d{1,2}[-_\/]\d{2,4}\b)', base_name)
             issue_date = timezone.now().date()
             
@@ -136,33 +137,36 @@ def bulk_import_links(request):
                     except (ValueError, TypeError):
                         pass
                 
-                # Remove extracted date from string to prevent breaking supplier/invoice split
+                # Remove date from text so it doesn't break invoice number parsing
                 base_name = base_name.replace(date_str, '').strip(' _-')
+
+            # 2. Extract Document Category / Status
+            doc_status = 'DRAFT'
+            if re.search(r'\b(παραγγελια|order|po)\b', text_content, re.IGNORECASE):
+                doc_status = 'ORDER'
+            elif re.search(r'\b(δελτιο|delivery|packing)\b', text_content, re.IGNORECASE):
+                doc_status = 'DELIVERY'
             
-            # 2. Extract Supplier & Invoice Number from the remaining text
-            remaining_parts = [p.strip() for p in re.split(r'[_]', base_name) if p.strip()]
+            # Filter out generic words so they don't become the Supplier Name
+            filter_words = r'\b(invoice|τιμολογιο|παραγγελια|order|δελτιο|pdf|doc)\b'
+            clean_name_for_supplier = re.sub(filter_words, '', base_name, flags=re.IGNORECASE).strip(' _-')
+            
+            # 3. Separate Supplier & Invoice Number
+            remaining_parts = [p.strip() for p in re.split(r'[_]', clean_name_for_supplier) if p.strip()]
             
             supplier = "General Marine Client"
-            inv_num = f"INV-{random.randint(1000, 9999)}"
+            inv_num = base_name if base_name else f"INV-{random.randint(1000, 9999)}"
             
             if len(remaining_parts) >= 2:
-                supplier = remaining_parts[0].replace('-', ' ').strip()
+                supplier = remaining_parts[0].replace('-', ' ').strip().title()
                 inv_num = "-".join(remaining_parts[1:]).strip()
             elif len(remaining_parts) == 1:
                 val = remaining_parts[0]
+                # If part contains numbers, it's an invoice #, otherwise it's a supplier name
                 if any(char.isdigit() for char in val):
                     inv_num = val
                 else:
-                    supplier = val.replace('-', ' ').strip()
-
-            # 3. Optional Amount Extraction if present in text
-            amount_match = re.search(r'\b\d+[\.,]\d{2}\b', text_content)
-            total_amount = 0.00
-            if amount_match:
-                try:
-                    total_amount = float(amount_match.group(0).replace(',', '.'))
-                except ValueError:
-                    pass
+                    supplier = val.replace('-', ' ').strip().title()
 
             customer, _ = Customer.objects.get_or_create(name=supplier)
             
@@ -170,23 +174,23 @@ def bulk_import_links(request):
                 invoice_number=inv_num,
                 defaults={
                     'customer': customer,
-                    'total_amount': total_amount,
+                    'total_amount': 0.00,
                     'issue_date': issue_date,
                     'due_date': issue_date + timedelta(days=30),
-                    'status': 'DRAFT',
+                    'status': doc_status,
                     'google_drive_url': drive_url
                 }
             )
             if not created:
                 invoice.customer = customer
-                invoice.total_amount = total_amount
                 invoice.issue_date = issue_date
+                invoice.status = doc_status
                 invoice.google_drive_url = drive_url
                 invoice.save()
                 
             imported_count += 1
                 
-        message = f"Successfully imported {imported_count} invoices with smart date & Greek text parsing!"
+        message = f"Successfully imported {imported_count} files with clean names and document categories!"
 
     context = {
         'customers': customers,
