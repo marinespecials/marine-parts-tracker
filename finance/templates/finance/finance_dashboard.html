@@ -102,7 +102,7 @@
                             <td>
                                 {% if invoice.google_drive_url %}
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <button onclick="openModal('{{ invoice.google_drive_url }}')" class="btn-preview">👁️ Preview</button>
+                                        <button onclick="openModal('{{ invoice.google_drive_url }}')" class="btn-preview">Preview</button>
                                         <a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener noreferrer" class="text-link" style="font-size: 0.8rem;">Open Tab ↗</a>
                                     </div>
                                 {% elif invoice.qr_code %}
@@ -134,7 +134,7 @@
     <div id="pdfModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.75); z-index:9999; justify-content:center; align-items:center;">
         <div style="background:white; width:85%; height:85%; border-radius:10px; position:relative; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#0F172A; font-weight:600;">📄 Document Drive Preview</h3>
+                <h3 style="margin:0; font-size:1.1rem; color:#0F172A; font-weight:600;">Document Drive Preview</h3>
                 <button onclick="closeModal()" style="background:#DC2626; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600;">✕ Close</button>
             </div>
             <iframe id="pdfFrame" src="" style="width:100%; height:100%; border:1px solid #E2E8F0; border-radius:6px; background:#F8FAFC;"></iframe>
@@ -165,17 +165,20 @@
             }
         });
 
-        // In-App Preview Modal Handler
+        // Smart Google Drive ID Extractor for In-App Frame Embeds
         function openModal(driveUrl) {
             if (!driveUrl) return;
-            // Convert /view or sharing links into /preview so Google Drive allows iframe embedding
-            let embedUrl = driveUrl;
-            if (driveUrl.includes('/view')) {
-                embedUrl = driveUrl.replace(/\/view.*$/, '/preview');
-            } else if (!driveUrl.endsWith('/preview')) {
-                embedUrl = driveUrl.replace(/\/$/, '') + '/preview';
+            let fileId = '';
+            
+            // Extract the Drive File ID using Regex
+            const match = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+                fileId = match[1];
+                document.getElementById('pdfFrame').src = `https://drive.google.com/file/d/${fileId}/preview`;
+            } else {
+                document.getElementById('pdfFrame').src = driveUrl;
             }
-            document.getElementById('pdfFrame').src = embedUrl;
+            
             document.getElementById('pdfModal').style.display = 'flex';
         }
 

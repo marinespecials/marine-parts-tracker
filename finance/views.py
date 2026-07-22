@@ -109,7 +109,6 @@ def bulk_import_links(request):
                     title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
                     if title_match:
                         page_title = title_match.group(1)
-                        # Strip ALL Google Drive suffixes
                         page_title = re.sub(r'\s*-\s*Google.*$', '', page_title, flags=re.IGNORECASE).strip()
                         text_content = page_title
             except Exception as e:
@@ -120,8 +119,7 @@ def bulk_import_links(request):
             
             base_name = re.sub(r'\.[a-zA-Z0-9]+$', '', text_content).strip()
             
-            # 1. EXTRACT DATE FROM THE END OF THE FILENAME
-            # Matches tail dates like _05_05_2026, _02.04.2026, _11_5_2026, _08_05_2026
+            # Extract tail date
             date_match = re.search(r'[-_\s\.](\d{1,2}[-_\.]\d{1,2}[-_\.](?:20)?\d{2})$', base_name)
             issue_date = timezone.now().date()
             
@@ -135,25 +133,21 @@ def bulk_import_links(request):
                         if p3 < 100:
                             p3 += 2000
                         
-                        # European Format (DD-MM-YYYY)
                         if p1 <= 31 and p2 <= 12:
                             issue_date = datetime(p3, p2, p1).date()
-                        elif p1 > 1000: # YYYY-MM-DD
+                        elif p1 > 1000:
                             issue_date = datetime(p1, p2, p3).date()
                     except (ValueError, TypeError):
                         pass
                 
-                # Strip the extracted date from the end of base_name
                 base_name = base_name[:date_match.start()].strip(' _-')
 
-            # 2. Extract Document Category / Status
             doc_status = 'DRAFT'
             if re.search(r'\b(παραγγελια|order|po)\b', text_content, re.IGNORECASE):
                 doc_status = 'ORDER'
             elif re.search(r'\b(δελτιο|delivery|packing)\b', text_content, re.IGNORECASE):
                 doc_status = 'DELIVERY'
             
-            # 3. Separate Supplier & Invoice Number from remaining base_name
             remaining_parts = [p.strip(' _-#') for p in re.split(r'[_]', base_name) if p.strip(' _-#')]
             
             supplier = "General Marine Client"
@@ -186,7 +180,6 @@ def bulk_import_links(request):
                 }
             )
             
-            # Direct database update for explicit date persistence
             Invoice.objects.filter(id=invoice.id).update(
                 customer=customer,
                 status=doc_status,
@@ -234,13 +227,17 @@ def edit_invoice(request, invoice_id):
 
 
 def delete_invoice(request, invoice_id):
-    invoice = get_object_or_404(Invoice, id=invoice_id)
+    """Safely deletes an invoice without throwing a 404 error if it was already removed."""
     if request.method == 'POST':
-        if invoice.qr_code:
-            invoice.qr_code.delete(save=False)
-        invoice.delete()
-    
-    return redirect(request.META.get('HTTP_REFERER', 'finance:dashboard'))
+        invoice = Invoice.objects.filter(id=invoice_id).first()
+        if invoice:
+            if invoice.qr_code:
+                try:
+                    invoice.qr_code.delete(save=False)
+                except Exception:
+                    pass
+            invoice.delete()
+    return redirect('finance:dashboard')
 
 
 def client_ledger(request, client_id):
