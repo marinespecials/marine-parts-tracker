@@ -87,7 +87,7 @@ def bulk_import_links(request):
         raw_data = request.POST.get('raw_data', '')
         imported_count = 0
         
-        # Automatically find ALL http/https URLs regardless of commas, spaces, or newlines
+        # Extract all URLs regardless of commas, spaces, or newlines
         urls = re.findall(r'https?://[^\s,\"\']+', raw_data)
         
         for drive_url in urls:
@@ -110,31 +110,52 @@ def bulk_import_links(request):
             if not text_content:
                 text_content = f"General-Marine-Client_INV-{random.randint(1000, 9999)}_{timezone.now().strftime('%Y-%m-%d')}.pdf"
             
-            # Parse filename using desktop app underscore convention: Supplier_Invoice_Date.pdf
-            base_name = re.sub(r'\.[^.]+$', '', text_content)
-            parts = [p.strip() for p in base_name.split('_') if p.strip()]
+            # Remove file extension (.pdf, .jpg, etc.)
+            base_name = re.sub(r'\.[a-zA-Z0-9]+$', '', text_content).strip()
+            
+            # 1. Extract Date using regex matching patterns like 23_6_2026, 23-06-2026, or 2026-06-23
+            date_match = re.search(r'(\b\d{1,4}[-_\/]\d{1,2}[-_\/]\d{2,4}\b)', base_name)
+            issue_date = timezone.now().date()
+            
+            if date_match:
+                date_str = date_match.group(1)
+                clean_date = date_str.replace('_', '-').replace('/', '-')
+                d_parts = clean_date.split('-')
+                
+                if len(d_parts) == 3:
+                    try:
+                        p1, p2, p3 = int(d_parts[0]), int(d_parts[1]), int(d_parts[2])
+                        if p1 > 1000:  # YYYY-MM-DD
+                            year, month, day = p1, p2, p3
+                        elif p3 > 1000:  # DD-MM-YYYY
+                            day, month, year = p1, p2, p3
+                        else:  # DD-MM-YY
+                            day, month, year = p1, p2, 2000 + p3
+                        
+                        issue_date = datetime(year, month, day).date()
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Remove extracted date from string to prevent breaking supplier/invoice split
+                base_name = base_name.replace(date_str, '').strip(' _-')
+            
+            # 2. Extract Supplier & Invoice Number from the remaining text
+            remaining_parts = [p.strip() for p in re.split(r'[_]', base_name) if p.strip()]
             
             supplier = "General Marine Client"
             inv_num = f"INV-{random.randint(1000, 9999)}"
-            issue_date = timezone.now().date()
             
-            if len(parts) >= 3:
-                supplier = parts[0].replace('-', ' ').title()
-                inv_num = parts[1]
-                date_str = parts[2].replace('/', '-')
-                try:
-                    if '20' in date_str:
-                        issue_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    else:
-                        issue_date = datetime.strptime(date_str, '%d-%m-%Y').date()
-                except ValueError:
-                    pass
-            elif len(parts) == 2:
-                supplier = parts[0].replace('-', ' ').title()
-                inv_num = parts[1]
-            elif len(parts) == 1 and parts[0]:
-                inv_num = parts[0]
+            if len(remaining_parts) >= 2:
+                supplier = remaining_parts[0].replace('-', ' ').strip()
+                inv_num = "-".join(remaining_parts[1:]).strip()
+            elif len(remaining_parts) == 1:
+                val = remaining_parts[0]
+                if any(char.isdigit() for char in val):
+                    inv_num = val
+                else:
+                    supplier = val.replace('-', ' ').strip()
 
+            # 3. Optional Amount Extraction if present in text
             amount_match = re.search(r'\b\d+[\.,]\d{2}\b', text_content)
             total_amount = 0.00
             if amount_match:
@@ -165,7 +186,7 @@ def bulk_import_links(request):
                 
             imported_count += 1
                 
-        message = f"Successfully imported {imported_count} invoices by scanning all comma/space separated links!"
+        message = f"Successfully imported {imported_count} invoices with smart date & Greek text parsing!"
 
     context = {
         'customers': customers,
