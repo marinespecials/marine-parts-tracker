@@ -89,6 +89,13 @@ def bulk_import_links(request):
         
         urls = re.findall(r'https?://[^\s,\"\']+', raw_data)
         
+        GENERIC_KEYWORDS = [
+            'invoice', 'invoices', 'τιμολογιο', 'τιμολογια',
+            'παραγγελια', 'παραγγελιες', 'order', 'orders', 'po',
+            'δελτιο', 'δελτια', 'αποστολης', 'delivery', 'packing',
+            'pdf', 'doc', 'docx', 'jpg', 'png'
+        ]
+        
         for drive_url in urls:
             drive_url = drive_url.rstrip(',.')
             if not drive_url:
@@ -102,7 +109,7 @@ def bulk_import_links(request):
                     title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
                     if title_match:
                         page_title = title_match.group(1)
-                        # Strip ALL Google Drive suffixes regardless of language (e.g. - Google Drive, - Google Диск)
+                        # Strip ALL Google Drive suffixes
                         page_title = re.sub(r'\s*-\s*Google.*$', '', page_title, flags=re.IGNORECASE).strip()
                         text_content = page_title
             except Exception as e:
@@ -111,10 +118,9 @@ def bulk_import_links(request):
             if not text_content:
                 text_content = f"General-Marine-Client_INV-{random.randint(1000, 9999)}_{timezone.now().strftime('%Y-%m-%d')}.pdf"
             
-            # Clean file extension (.pdf, .jpg)
             base_name = re.sub(r'\.[a-zA-Z0-9]+$', '', text_content).strip()
             
-            # 1. Extract Date (Matches 29-01-2026, 7-4-2026, 2026-01-29, etc.)
+            # 1. Extract Date (Matches 29-01-2026, 7-4-2026, 28-01-2026, etc.)
             date_match = re.search(r'(\b\d{1,4}[-_\/]\d{1,2}[-_\/]\d{2,4}\b)', base_name)
             issue_date = timezone.now().date()
             
@@ -137,7 +143,6 @@ def bulk_import_links(request):
                     except (ValueError, TypeError):
                         pass
                 
-                # Remove date from text so it doesn't break invoice number parsing
                 base_name = base_name.replace(date_str, '').strip(' _-')
 
             # 2. Extract Document Category / Status
@@ -147,26 +152,22 @@ def bulk_import_links(request):
             elif re.search(r'\b(δελτιο|delivery|packing)\b', text_content, re.IGNORECASE):
                 doc_status = 'DELIVERY'
             
-            # Filter out generic words so they don't become the Supplier Name
-            filter_words = r'\b(invoice|τιμολογιο|παραγγελια|order|δελτιο|pdf|doc)\b'
-            clean_name_for_supplier = re.sub(filter_words, '', base_name, flags=re.IGNORECASE).strip(' _-')
-            
             # 3. Separate Supplier & Invoice Number
-            remaining_parts = [p.strip() for p in re.split(r'[_]', clean_name_for_supplier) if p.strip()]
+            words = [w.strip(' _-#') for w in re.split(r'[\s_]+', base_name) if w.strip(' _-#')]
             
-            supplier = "General Marine Client"
-            inv_num = base_name if base_name else f"INV-{random.randint(1000, 9999)}"
+            supplier_words = []
+            inv_words = []
             
-            if len(remaining_parts) >= 2:
-                supplier = remaining_parts[0].replace('-', ' ').strip().title()
-                inv_num = "-".join(remaining_parts[1:]).strip()
-            elif len(remaining_parts) == 1:
-                val = remaining_parts[0]
-                # If part contains numbers, it's an invoice #, otherwise it's a supplier name
-                if any(char.isdigit() for char in val):
-                    inv_num = val
+            for w in words:
+                if w.lower() in GENERIC_KEYWORDS:
+                    continue
+                if any(c.isdigit() for c in w) or re.match(r'^(#|inv|τδα|δα|ρο)', w, re.IGNORECASE):
+                    inv_words.append(w)
                 else:
-                    supplier = val.replace('-', ' ').strip().title()
+                    supplier_words.append(w)
+            
+            supplier = " ".join(supplier_words).title() if supplier_words else "General Marine Client"
+            inv_num = "-".join(inv_words) if inv_words else (base_name if base_name else f"INV-{random.randint(1000, 9999)}")
 
             customer, _ = Customer.objects.get_or_create(name=supplier)
             
@@ -181,16 +182,18 @@ def bulk_import_links(request):
                     'google_drive_url': drive_url
                 }
             )
-            if not created:
-                invoice.customer = customer
-                invoice.issue_date = issue_date
-                invoice.status = doc_status
-                invoice.google_drive_url = drive_url
-                invoice.save()
+            
+            # Force update issue_date and customer directly in database table
+            invoice.customer = customer
+            invoice.status = doc_status
+            invoice.google_drive_url = drive_url
+            invoice.due_date = issue_date + timedelta(days=30)
+            invoice.save()
+            Invoice.objects.filter(id=invoice.id).update(issue_date=issue_date)
                 
             imported_count += 1
                 
-        message = f"Successfully imported {imported_count} files with clean names and document categories!"
+        message = f"Successfully imported {imported_count} files with exact extracted dates and clean supplier names!"
 
     context = {
         'customers': customers,
