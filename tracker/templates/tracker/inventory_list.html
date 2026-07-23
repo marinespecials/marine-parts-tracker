@@ -1,7 +1,7 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}Warehouse & Inventory Logistics{% endblock %}
-{% block page_title %}📦 Warehouse Stock & Logistics{% endblock %}
+{% block title %}Logistics & Stock{% endblock %}
+{% block page_title %}📦 Warehouse Logistics Tracker{% endblock %}
 
 {% block content %}
 <style>
@@ -17,13 +17,13 @@
     
     .quick-add-form {
         display: grid;
-        grid-template-columns: 1.5fr 1fr 140px 90px 120px 100px 100px;
-        gap: 10px;
+        grid-template-columns: 2fr 1fr 1fr 100px 120px 100px;
+        gap: 12px;
         align-items: center;
     }
 
     /* Filter Tabs */
-    .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; flex-wrap: wrap; }
+    .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; }
     .tab-item { padding: 9px 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; }
     .tab-item:hover { color: var(--primary); background: #F1F5F9; }
     .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
@@ -52,84 +52,57 @@
     }
     .stepper-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
 
-    .badge-low {
-        background: #FEE2E2;
-        color: #991B1B;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 2px 6px;
-        border-radius: 4px;
-        margin-left: 4px;
-    }
-
+    .badge-low { background: #FEE2E2; color: #991B1B; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
     .text-link { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.825rem; }
     .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
 </style>
 
-<!-- FAST INLINE ITEM ADDITION -->
+<!-- FAST INLINE ITEM LOGGER -->
 <div class="quick-add-card">
     <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-        + Quick Add Item / Battery to Warehouse
+        + Fast Log Item to Stock
     </div>
     <form method="POST" class="quick-add-form">
         {% csrf_token %}
         <input type="hidden" name="add_item" value="1">
 
-        <input type="text" name="part_name" placeholder="Item / Battery Name *" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required>
+        <input type="text" name="part_name" placeholder="Item Name *" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required>
 
-        <input type="text" name="part_code" placeholder="OEM / Part #" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
+        <input type="text" name="part_code" placeholder="Part # / OEM" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
 
-        <select name="category" style="padding: 7px 9px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
-            {% for code, label in category_choices %}
-                <option value="{{ code }}" {% if code == 'Electrical' %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
+        <input type="text" name="location" placeholder="Location / Bin" value="Piraeus Warehouse" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
 
         <input type="number" name="quantity" value="1" min="0" placeholder="Qty" style="padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required>
-
-        <input type="text" name="location" placeholder="Bin / Shelf" value="Piraeus Warehouse" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
 
         <input type="number" step="0.01" name="unit_cost" placeholder="Cost (€)" style="padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
 
         <button type="submit" class="btn btn-primary" style="padding: 7px; justify-content: center; font-size: 0.85rem;">
-            Save SKU
+            Save
         </button>
     </form>
 </div>
 
-<!-- MAIN LOGISTICS WORKSPACE -->
+<!-- MAIN LOGISTICS LIST -->
 <div class="card" style="padding: 18px 22px;">
     <!-- Filter Tabs -->
     <div class="tab-bar">
-        <a href="?category=" class="tab-item {% if selected_category == '' %}active{% endif %}">
+        <a href="?filter=ALL" class="tab-item {% if filter_type == 'ALL' %}active{% endif %}">
             📦 All Items <span class="tab-badge">{{ counts.ALL }}</span>
         </a>
-        <a href="?category=Electrical" class="tab-item {% if selected_category == 'Electrical' %}active{% endif %}">
-            ⚡ Electrical & Batteries <span class="tab-badge">{{ counts.Electrical }}</span>
-        </a>
-        <a href="?category=Filters" class="tab-item {% if selected_category == 'Filters' %}active{% endif %}">
-            ⛽ Filters & Separators <span class="tab-badge">{{ counts.Filters }}</span>
-        </a>
-        <a href="?category=Pumps" class="tab-item {% if selected_category == 'Pumps' %}active{% endif %}">
-            ⚓ Pumps & Impellers <span class="tab-badge">{{ counts.Pumps }}</span>
-        </a>
-        <a href="?category=Valves" class="tab-item {% if selected_category == 'Valves' %}active{% endif %}">
-            🔧 Valves & Plumbing <span class="tab-badge">{{ counts.Valves }}</span>
-        </a>
-        <a href="?category=LOW_STOCK" class="tab-item {% if selected_category == 'LOW_STOCK' %}active{% endif %}" style="color: var(--danger);">
-            ⚠️ Low Stock Alert <span class="tab-badge" style="background:#FEE2E2; color:#991B1B;">{{ counts.LOW_STOCK }}</span>
+        <a href="?filter=LOW_STOCK" class="tab-item {% if filter_type == 'LOW_STOCK' %}active{% endif %}" style="color: var(--danger);">
+            ⚠️ Low Stock <span class="tab-badge" style="background:#FEE2E2; color:#991B1B;">{{ counts.LOW_STOCK }}</span>
         </a>
     </div>
 
     <!-- Search Controls -->
     <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
         <form method="GET" style="display: flex; gap: 8px;">
-            <input type="hidden" name="category" value="{{ selected_category }}">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search part #, battery name, bin location..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); width: 320px; font-size: 0.85rem;">
+            <input type="hidden" name="filter" value="{{ filter_type }}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by name, part # or location..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); width: 280px; font-size: 0.85rem;">
             <button type="submit" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.825rem;">Search</button>
         </form>
         <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
-            Total Asset Value: <strong style="color: var(--primary);">{{ total_warehouse_value }} €</strong>
+            Total Value: <strong style="color: var(--primary);">{{ total_warehouse_value }} €</strong>
         </div>
     </div>
 
@@ -137,25 +110,19 @@
     <table>
         <thead>
             <tr>
-                <th>Part / Battery Name</th>
-                <th>Category</th>
-                <th>Bin / Location</th>
-                <th style="text-align: center;">Stock Quantity</th>
-                <th>Unit Cost</th>
-                <th>Total Value</th>
+                <th>Item Name</th>
+                <th>Part / OEM #</th>
+                <th>Location / Bin</th>
+                <th style="text-align: center;">Stock Qty</th>
+                <th>Cost</th>
                 <th style="text-align: right;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr>
-                <td>
-                    <strong style="color: var(--primary); font-size: 0.9rem;">{{ item.part_name }}</strong>
-                    {% if item.part_code %}
-                        <br><span style="font-size: 0.75rem; color: var(--text-secondary);">OEM: {{ item.part_code }}</span>
-                    {% endif %}
-                </td>
-                <td><span class="badge">{{ item.get_category_display }}</span></td>
+                <td><strong style="color: var(--primary); font-size: 0.9rem;">{{ item.part_name }}</strong></td>
+                <td>{{ item.part_code|default:"-" }}</td>
                 <td><span style="font-weight: 600; color: #475569;">📍 {{ item.location }}</span></td>
                 <td style="text-align: center;">
                     <div style="display: inline-flex; align-items: center; gap: 8px;">
@@ -163,37 +130,31 @@
                             {% csrf_token %}
                             <button type="submit" class="stepper-btn">-</button>
                         </form>
-
                         <strong style="font-size: 1rem; min-width: 24px; display: inline-block; text-align: center; color: {% if item.is_low_stock %}var(--danger){% else %}var(--primary){% endif %};">
                             {{ item.quantity }}
                         </strong>
-
                         <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="stepper-btn">+</button>
                         </form>
-
-                        {% if item.is_low_stock %}
-                            <span class="badge-low">LOW</span>
-                        {% endif %}
+                        {% if item.is_low_stock %}<span class="badge-low">LOW</span>{% endif %}
                     </div>
                 </td>
                 <td>{{ item.unit_cost }} €</td>
-                <td><strong>{{ item.total_stock_value }} €</strong></td>
                 <td style="text-align: right;">
                     <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
                         <a href="{% url 'edit_inventory_item' item.id %}" class="text-link">Edit</a>
                         <form method="POST" action="{% url 'delete_inventory_item' item.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="text-danger" onclick="return confirm('Delete this SKU?');">Delete</button>
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete this item?');">Delete</button>
                         </form>
                     </div>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 35px;">
-                    No items found under <strong>{% if selected_category %}{{ selected_category }}{% else %}All Items{% endif %}</strong>. Use the fast logger above to add a new battery or spare part!
+                <td colspan="6" style="text-align: center; color: #94A3B8; padding: 35px;">
+                    No items found. Use the logger above to list your first item!
                 </td>
             </tr>
             {% endfor %}
