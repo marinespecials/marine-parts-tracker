@@ -1,5 +1,5 @@
 import random
-from datetime import timedelta
+from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Q, F
 from django.utils import timezone
@@ -49,8 +49,17 @@ def orders_dashboard(request):
     if request.method == 'POST' and 'create_order' in request.POST:
         customer_name = request.POST.get('customer_name', '').strip()
         order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
-        issue_date = request.POST.get('issue_date') or timezone.now().date()
+        raw_date = request.POST.get('issue_date')
         status = request.POST.get('status', 'PENDING')
+
+        # Fix: Parse string date into date object to avoid timedelta crash
+        if raw_date:
+            try:
+                issue_date = date.fromisoformat(raw_date)
+            except ValueError:
+                issue_date = timezone.now().date()
+        else:
+            issue_date = timezone.now().date()
 
         if customer_name:
             customer, _ = Customer.objects.get_or_create(name=customer_name)
@@ -98,15 +107,16 @@ def add_order_item(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     if request.method == 'POST':
         inventory_id = request.POST.get('inventory_id')
-        quantity = int(request.POST.get('quantity', 1))
+        quantity = int(request.POST.get('quantity') or 1)
+        custom_price = request.POST.get('unit_price')
         
         if inventory_id:
             inv_item = get_object_or_404(InventoryItem, id=inventory_id)
             desc = f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name
-            unit_price = inv_item.unit_cost
+            unit_price = float(custom_price) if custom_price else float(inv_item.unit_cost)
         else:
-            desc = request.POST.get('description', 'Custom Item')
-            unit_price = float(request.POST.get('unit_price', 0.00))
+            desc = request.POST.get('description', '').strip() or 'Custom Item'
+            unit_price = float(custom_price or 0.00)
             inv_item = None
 
         OrderItem.objects.create(
@@ -117,8 +127,10 @@ def add_order_item(request, order_id):
             unit_price=unit_price
         )
         
+        # Auto-recalculate the order total
         order.total_amount = sum(item.total_price for item in order.order_items.all())
         order.save()
+        
     return redirect('order_detail', order_id=order.id)
 
 
@@ -173,9 +185,9 @@ def inventory_list(request):
     if request.method == 'POST' and 'add_item' in request.POST:
         part_name = request.POST.get('part_name', '').strip()
         part_code = request.POST.get('part_code', '').strip()
-        quantity = int(request.POST.get('quantity', 1))
+        quantity = int(request.POST.get('quantity') or 1)
         location = request.POST.get('location', 'Piraeus Warehouse').strip()
-        unit_cost = float(request.POST.get('unit_cost', 0.00))
+        unit_cost = float(request.POST.get('unit_cost') or 0.00)
 
         if part_name:
             InventoryItem.objects.create(
@@ -225,9 +237,9 @@ def edit_inventory_item(request, item_id):
     if request.method == 'POST':
         item.part_name = request.POST.get('part_name', item.part_name)
         item.part_code = request.POST.get('part_code', item.part_code)
-        item.quantity = int(request.POST.get('quantity', item.quantity))
+        item.quantity = int(request.POST.get('quantity') or item.quantity)
         item.location = request.POST.get('location', item.location)
-        item.unit_cost = float(request.POST.get('unit_cost', item.unit_cost))
+        item.unit_cost = float(request.POST.get('unit_cost') or item.unit_cost)
         item.save()
         return redirect('inventory_list')
     return render(request, 'tracker/inventory_edit.html', {'item': item})

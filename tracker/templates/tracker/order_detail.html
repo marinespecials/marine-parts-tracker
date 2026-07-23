@@ -5,101 +5,172 @@
 
 {% block content %}
 <style>
-    .info-card { background: var(--surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; }
-    .status-btns form { display: inline; }
-    .btn-status { padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; font-size: 0.8rem; }
-    .btn-status:hover { background: #F8FAFC; }
+    .info-card { 
+        background: var(--surface); 
+        padding: 20px 24px; 
+        border-radius: 10px; 
+        border: 1px solid var(--border); 
+        margin-bottom: 20px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+    }
+
+    .status-btn-group { display: flex; gap: 6px; margin-top: 8px; }
+    .btn-status { 
+        padding: 6px 12px; 
+        border-radius: 6px; 
+        font-weight: 600; 
+        cursor: pointer; 
+        border: 1px solid var(--border); 
+        background: white; 
+        font-size: 0.8rem; 
+        transition: all 0.15s;
+    }
+    .btn-status:hover { background: #F1F5F9; border-color: var(--accent); }
+
+    /* Clean Add Item Form Card */
+    .add-item-card {
+        background: var(--surface);
+        padding: 18px 22px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .add-item-grid {
+        display: grid;
+        grid-template-columns: 2fr 1.5fr 100px 120px 120px;
+        gap: 12px;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .add-item-grid select, .add-item-grid input {
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 0.875rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); }
-    td { padding: 12px; border-bottom: 1px solid var(--border); }
-    .add-row { background: #F8FAFC; }
-    input, select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; box-sizing: border-box; }
+    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+
+    .text-danger { color: var(--danger); font-weight: bold; background: none; border: none; cursor: pointer; font-size: 1rem; }
 </style>
 
-<a href="{% url 'orders_dashboard' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to Orders</a>
+<a href="{% url 'orders_dashboard' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to All Orders</a>
 
+<!-- Order Overview Header -->
 <div class="info-card">
     <div>
-        <h2 style="margin: 0 0 5px 0; color: var(--primary);">{{ order.customer.name }}</h2>
-        <div style="color: var(--text-secondary); font-size: 0.9rem;">Date: {{ order.issue_date|date:"d/m/Y" }}</div>
+        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Client / Vessel</span>
+        <h2 style="margin: 2px 0 6px 0; color: var(--primary);">{{ order.customer.name }}</h2>
+        <div style="color: var(--text-secondary); font-size: 0.875rem;">Date: <strong>{{ order.issue_date|date:"d/m/Y" }}</strong></div>
     </div>
     <div style="text-align: right;">
-        <h2 style="margin: 0 0 5px 0; color: var(--primary);">{{ order.total_amount }} €</h2>
-        <div class="status-btns">
-            Current Status: <strong>{{ order.status }}</strong> &nbsp;|&nbsp;
-            <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}">{% csrf_token %}<button class="btn-status">🕒 Set Pending</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}">{% csrf_token %}<button class="btn-status">⚙️ Set Processing</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}">{% csrf_token %}<button class="btn-status">🚚 Set Delivered</button></form>
+        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Order Value</span>
+        <h2 style="margin: 2px 0 8px 0; color: var(--primary);">{{ order.total_amount }} €</h2>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            Status: <strong style="color: var(--accent);">{{ order.status }}</strong>
+        </div>
+        <div class="status-btn-group">
+            <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🕒 Pending</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">⚙️ Processing</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Delivered</button></form>
         </div>
     </div>
 </div>
 
-<div class="card" style="padding: 0;">
+<!-- DEDICATED ADD ITEM FORM CARD -->
+<div class="add-item-card">
+    <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+        + Add Part / Item to Order
+    </div>
+    
+    <form method="POST" action="{% url 'add_order_item' order.id %}" class="add-item-grid">
+        {% csrf_token %}
+        
+        <div>
+            <select name="inventory_id">
+                <option value="">-- Choose from Master Warehouse List --</option>
+                {% for inv in master_items %}
+                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} €</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <input type="text" name="description" placeholder="Or type custom item name...">
+        </div>
+
+        <div>
+            <input type="number" name="quantity" value="1" min="1" style="text-align: center;" required placeholder="Qty">
+        </div>
+
+        <div>
+            <input type="number" step="0.01" name="unit_price" placeholder="Price (€)">
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 9px; font-size: 0.875rem;">
+                + Add Item
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- ORDER ITEMS TABLE -->
+<div class="card" style="padding: 0; overflow: hidden;">
     <table>
         <thead>
             <tr>
-                <th style="width: 50px; text-align: center;">Packed</th>
-                <th>Item Description / Master Part</th>
-                <th style="width: 100px; text-align: center;">Qty</th>
-                <th style="width: 120px;">Unit Price (€)</th>
-                <th style="width: 120px;">Total (€)</th>
-                <th style="width: 80px; text-align: right;">Action</th>
+                <th style="width: 60px; text-align: center;">Packed</th>
+                <th>Item Description / Part</th>
+                <th style="width: 90px; text-align: center;">Qty</th>
+                <th style="width: 130px;">Unit Price (€)</th>
+                <th style="width: 130px;">Total (€)</th>
+                <th style="width: 70px; text-align: right;">Delete</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Existing Items -->
             {% for item in order.order_items.all %}
-            <tr style="{% if item.is_packed %}opacity: 0.6; background-color: #F8FAFC;{% endif %}">
+            <tr style="{% if item.is_packed %}opacity: 0.65; background-color: #F8FAFC;{% endif %}">
                 <td style="text-align: center;">
-                    <form method="POST" action="{% url 'toggle_item_packed' item.id %}">
+                    <form method="POST" action="{% url 'toggle_item_packed' item.id %}" style="display:inline;">
                         {% csrf_token %}
-                        <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.2rem;">
+                        <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.25rem;">
                             {% if item.is_packed %}✅{% else %}⬜{% endif %}
                         </button>
                     </form>
                 </td>
                 <td>
-                    <strong style="{% if item.is_packed %}text-decoration: line-through; color: #94A3B8;{% endif %}">
+                    <strong style="{% if item.is_packed %}text-decoration: line-through; color: #94A3B8;{% endif %} font-size: 0.925rem;">
                         {{ item.description }}
                     </strong>
                 </td>
-                <td style="text-align: center;">{{ item.quantity }}</td>
-                <td>{{ item.unit_price }}</td>
-                <td><strong>{{ item.total_price }}</strong></td>
+                <td style="text-align: center;"><strong>{{ item.quantity }}</strong></td>
+                <td>{{ item.unit_price }} €</td>
+                <td><strong style="color: var(--primary);">{{ item.total_price }} €</strong></td>
                 <td style="text-align: right;">
-                    <form method="POST" action="{% url 'delete_order_item' item.id %}">
+                    <form method="POST" action="{% url 'delete_order_item' item.id %}" style="display:inline;">
                         {% csrf_token %}
-                        <button type="submit" style="color: var(--danger); background: none; border: none; cursor: pointer; font-weight: bold;">✕</button>
+                        <button type="submit" class="text-danger" title="Remove item" onclick="return confirm('Remove this item from the order?');">✕</button>
                     </form>
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" style="text-align: center; padding: 30px; color: #94A3B8;">No items added to this order yet.</td></tr>
-            {% endfor %}
-
-            <!-- Add New Item Row -->
-            <tr class="add-row">
-                <td></td>
-                <form method="POST" action="{% url 'add_order_item' order.id %}">
-                    {% csrf_token %}
-                    <td>
-                        <div style="margin-bottom: 5px; font-size: 0.75rem; font-weight: bold; color: var(--primary);">Select from Master List (Warehouse):</div>
-                        <select name="inventory_id">
-                            <option value="">-- Or type custom item below --</option>
-                            {% for inv in master_items %}
-                                <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }}€</option>
-                            {% endfor %}
-                        </select>
-                        <input type="text" name="description" placeholder="Or type custom description..." style="margin-top: 5px;">
-                    </td>
-                    <td><input type="number" name="quantity" value="1" min="1" style="text-align: center;" required></td>
-                    <td><input type="number" step="0.01" name="unit_price" placeholder="0.00" title="Leave blank if using Master List"></td>
-                    <td>-</td>
-                    <td style="text-align: right;">
-                        <button type="submit" class="btn btn-primary" style="padding: 8px 12px;">+ Add</button>
-                    </td>
-                </form>
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #94A3B8;">
+                    No items added to this order yet. Use the form above to add your first part or item!
+                </td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
