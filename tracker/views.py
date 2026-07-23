@@ -25,16 +25,14 @@ def hub_view(request):
     }
     return render(request, 'tracker/hub.html', context)
 
-# Alias for url compatibility
 app_hub = hub_view
 
 
 def orders_dashboard(request):
-    """Ultra-clean Order & Delivery Note Manager."""
+    """Clean Order & Delivery Note Manager."""
     status_filter = request.GET.get('status', 'ORDER').upper()
     query = request.GET.get('q', '').strip()
 
-    # Fast Manual Order Creation
     if request.method == 'POST' and 'create_order' in request.POST:
         customer_name = request.POST.get('customer_name', '').strip()
         order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
@@ -83,7 +81,6 @@ def orders_dashboard(request):
 
 
 def convert_order_status(request, order_id):
-    """1-Click status progression: ORDER -> DELIVERY"""
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
         if order.status == 'ORDER':
@@ -99,35 +96,37 @@ def delete_order(request, order_id):
 
 
 def inventory_list(request):
-    """Clean Warehouse stock manager."""
+    """Streamlined Warehouse & Stock Logistics Manager."""
     query = request.GET.get('q', '').strip()
     selected_category = request.GET.get('category', '').strip()
 
-    if request.method == 'POST':
+    # Inline Quick Add
+    if request.method == 'POST' and 'add_item' in request.POST:
         part_name = request.POST.get('part_name', '').strip()
         part_code = request.POST.get('part_code', '').strip()
         category = request.POST.get('category', 'General')
-        quantity = int(request.POST.get('quantity', 0))
-        reorder_level = int(request.POST.get('reorder_level', 5))
+        quantity = int(request.POST.get('quantity', 1))
         location = request.POST.get('location', 'Piraeus Warehouse').strip()
         unit_cost = float(request.POST.get('unit_cost', 0.00))
-        supplier_id = request.POST.get('supplier_id')
 
-        supplier = Customer.objects.filter(id=supplier_id).first() if supplier_id else None
-
-        InventoryItem.objects.create(
-            part_name=part_name,
-            part_code=part_code,
-            category=category,
-            quantity=quantity,
-            reorder_level=reorder_level,
-            location=location,
-            unit_cost=unit_cost,
-            supplier=supplier
-        )
+        if part_name:
+            InventoryItem.objects.create(
+                part_name=part_name,
+                part_code=part_code,
+                category=category,
+                quantity=quantity,
+                reorder_level=5,
+                location=location,
+                unit_cost=unit_cost
+            )
         return redirect('inventory_list')
 
     items = InventoryItem.objects.all()
+
+    if selected_category == 'LOW_STOCK':
+        items = items.filter(quantity__lte=F('reorder_level'))
+    elif selected_category:
+        items = items.filter(category=selected_category)
 
     if query:
         items = items.filter(
@@ -136,20 +135,37 @@ def inventory_list(request):
             Q(location__icontains=query)
         )
 
-    if selected_category:
-        items = items.filter(category=selected_category)
+    counts = {
+        'ALL': InventoryItem.objects.count(),
+        'Electrical': InventoryItem.objects.filter(category='Electrical').count(),
+        'Filters': InventoryItem.objects.filter(category='Filters').count(),
+        'Pumps': InventoryItem.objects.filter(category='Pumps').count(),
+        'Valves': InventoryItem.objects.filter(category='Valves').count(),
+        'LOW_STOCK': InventoryItem.objects.filter(quantity__lte=F('reorder_level')).count(),
+    }
 
     context = {
         'items': items,
+        'counts': counts,
         'total_items': items.count(),
         'total_warehouse_value': sum(item.total_stock_value for item in items),
-        'low_stock_count': items.filter(quantity__lte=F('reorder_level')).count(),
         'query': query,
         'selected_category': selected_category,
         'category_choices': InventoryItem.CATEGORY_CHOICES,
-        'customers': Customer.objects.all(),
     }
     return render(request, 'tracker/inventory_list.html', context)
+
+
+def adjust_stock(request, item_id, action):
+    """In-row 1-click quantity stepper ([+] or [-])."""
+    if request.method == 'POST':
+        item = get_object_or_404(InventoryItem, id=item_id)
+        if action == 'increase':
+            item.quantity += 1
+        elif action == 'decrease' and item.quantity > 0:
+            item.quantity -= 1
+        item.save()
+    return redirect('inventory_list')
 
 
 def edit_inventory_item(request, item_id):
@@ -162,17 +178,12 @@ def edit_inventory_item(request, item_id):
         item.reorder_level = int(request.POST.get('reorder_level', item.reorder_level))
         item.location = request.POST.get('location', item.location)
         item.unit_cost = float(request.POST.get('unit_cost', item.unit_cost))
-        
-        supplier_id = request.POST.get('supplier_id')
-        item.supplier = Customer.objects.filter(id=supplier_id).first() if supplier_id else None
-        
         item.save()
         return redirect('inventory_list')
 
     return render(request, 'tracker/inventory_edit.html', {
         'item': item,
         'category_choices': InventoryItem.CATEGORY_CHOICES,
-        'customers': Customer.objects.all(),
     })
 
 
