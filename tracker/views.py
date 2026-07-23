@@ -100,7 +100,6 @@ def create_order(request):
                 google_drive_url=''
             )
 
-            # Optional initial line item
             inventory_id = request.POST.get('inventory_id')
             custom_desc = request.POST.get('custom_description', '').strip()
             quantity = int(request.POST.get('quantity') or 1)
@@ -126,7 +125,6 @@ def create_order(request):
                 order.total_amount = sum(item.total_price for item in order.order_items.all())
                 order.save()
 
-            # Redirect straight to Item Manager for this order
             return redirect('order_detail', order_id=order.id)
 
     master_items = InventoryItem.objects.all().order_by('part_name')
@@ -204,11 +202,64 @@ def delete_order_item(request, item_id):
 
 
 def change_order_status(request, order_id, new_status):
+    """Changes order status & AUTOMATICALLY DEDUCTS WAREHOUSE STOCK on DELIVERED."""
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
-        order.status = new_status.upper()
+        target_status = new_status.upper()
+
+        # FEATURE 2: Auto stock deduction when transitioning to DELIVERED
+        if target_status == 'DELIVERED' and order.status != 'DELIVERED':
+            for item in order.order_items.all():
+                if item.inventory_item:
+                    inv = item.inventory_item
+                    inv.quantity = max(0, inv.quantity - item.quantity)
+                    inv.save()
+
+        order.status = target_status
         order.save()
+
     return redirect('orders_dashboard')
+
+
+def convert_order_to_invoice(request, order_id):
+    """FEATURE 1: Clones a logistics order into a financial invoice in 1 click."""
+    if request.method == 'POST':
+        original_order = get_object_or_404(Invoice, id=order_id)
+        
+        # Build invoice number
+        raw_num = original_order.invoice_number.replace('ORD-', '')
+        inv_num = f"INV-{raw_num}"
+        if Invoice.objects.filter(invoice_number=inv_num).exists():
+            inv_num = f"INV-{random.randint(1000, 9999)}"
+
+        issue_date = timezone.now().date()
+        due_date = issue_date + timedelta(days=30)
+
+        # Create new financial invoice
+        new_invoice = Invoice.objects.create(
+            invoice_number=inv_num,
+            customer=original_order.customer,
+            total_amount=original_order.total_amount,
+            issue_date=issue_date,
+            due_date=due_date,
+            status='UNPAID',
+            google_drive_url=original_order.google_drive_url
+        )
+
+        # Clone line items
+        for item in original_order.order_items.all():
+            OrderItem.objects.create(
+                order=new_invoice,
+                inventory_item=item.inventory_item,
+                description=item.description,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                is_packed=True
+            )
+
+        return redirect('finance:invoice_detail', invoice_id=new_invoice.id)
+    
+    return redirect('order_detail', order_id=order_id)
 
 
 def delete_order(request, order_id):
@@ -260,6 +311,33 @@ def inventory_list(request):
     })
 
 
+def client_pricelist(request):
+    """Client-facing Price Catalog."""
+    query = request.GET.get('q', '').strip()
+    category_filter = request.GET.get('category', 'ALL')
+
+    items = InventoryItem.objects.all().order_by('part_name')
+
+    if category_filter != 'ALL':
+        items = items.filter(category=category_filter)
+
+    if query:
+        items = items.filter(
+            Q(part_name__icontains=query) |
+            Q(part_code__icontains=query) |
+            Q(category__icontains=query)
+        )
+
+    categories = InventoryItem.objects.values_list('category', flat=True).distinct()
+
+    return render(request, 'tracker/client_pricelist.html', {
+        'items': items,
+        'query': query,
+        'category_filter': category_filter,
+        'categories': categories,
+    })
+
+
 def adjust_stock(request, item_id, action):
     if request.method == 'POST':
         item = get_object_or_404(InventoryItem, id=item_id)
@@ -293,29 +371,3 @@ def delete_inventory_item(request, item_id):
 def client_list(request):
     clients = Customer.objects.annotate(invoice_count=Count('invoice')).order_by('name')
     return render(request, 'tracker/client_list.html', {'clients': clients})
-def client_pricelist(request):
-    """Client-facing Price Catalog with clean search, category filtering, and print/PDF mode."""
-    query = request.GET.get('q', '').strip()
-    category_filter = request.GET.get('category', 'ALL')
-
-    items = InventoryItem.objects.all().order_by('part_name')
-
-    if category_filter != 'ALL':
-        items = items.filter(category=category_filter)
-
-    if query:
-        items = items.filter(
-            Q(part_name__icontains=query) |
-            Q(part_code__icontains=query) |
-            Q(category__icontains=query)
-        )
-
-    # Extract distinct categories for filter dropdown
-    categories = InventoryItem.objects.values_list('category', flat=True).distinct()
-
-    return render(request, 'tracker/client_pricelist.html', {
-        'items': items,
-        'query': query,
-        'category_filter': category_filter,
-        'categories': categories,
-    })

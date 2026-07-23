@@ -14,6 +14,7 @@ urlpatterns = [
     path('orders/create/', views.create_order, name='create_order'),
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
     path('orders/<int:order_id>/add_item/', views.add_order_item, name='add_order_item'),
+    path('orders/<int:order_id>/convert/', views.convert_order_to_invoice, name='convert_order_to_invoice'), # <-- NEW
     path('orders/item/<int:item_id>/delete/', views.delete_order_item, name='delete_order_item'),
     path('orders/item/<int:item_id>/toggle/', views.toggle_item_packed, name='toggle_item_packed'),
     path('orders/<int:order_id>/status/<str:new_status>/', views.change_order_status, name='change_order_status'),
@@ -25,9 +26,7 @@ urlpatterns = [
     path('warehouse/<int:item_id>/edit/', views.edit_inventory_item, name='edit_inventory_item'),
     path('warehouse/<int:item_id>/delete/', views.delete_inventory_item, name='delete_inventory_item'),
     
-    # NEW: Client Price Catalog
+    # Client Catalog & Directory
     path('catalog/', views.client_pricelist, name='client_pricelist'),
-
-    # Client Directory
     path('clients/', views.client_list, name='client_list'),
 ]

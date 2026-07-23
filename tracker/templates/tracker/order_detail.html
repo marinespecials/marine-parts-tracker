@@ -16,7 +16,7 @@
         align-items: center; 
     }
 
-    .status-btn-group { display: flex; gap: 6px; margin-top: 8px; }
+    .status-btn-group { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
     .btn-status { 
         padding: 6px 12px; 
         border-radius: 6px; 
@@ -78,10 +78,19 @@
         <div style="font-size: 0.85rem; color: var(--text-secondary);">
             Status: <strong style="color: var(--accent);">{{ order.status }}</strong>
         </div>
+
         <div class="status-btn-group">
             <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🕒 Pending</button></form>
             <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">⚙️ Processing</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Delivered</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Set Delivered (Auto-Deduct Stock)</button></form>
+
+            <!-- 1-CLICK CONVERT TO INVOICE BUTTON -->
+            <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" style="display:inline; margin-left: 8px;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="background-color: var(--success); font-size: 0.8rem; padding: 6px 12px;" onclick="return confirm('Convert this order into an Unpaid Financial Invoice?');">
+                    🧾 Convert to Invoice ➔
+                </button>
+            </form>
         </div>
     </div>
 </div>
