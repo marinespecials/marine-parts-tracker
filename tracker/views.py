@@ -43,65 +43,9 @@ def active_board(request):
 
 
 def orders_dashboard(request):
+    """Orders Dashboard with clean search & filters."""
     status_filter = request.GET.get('status', 'PENDING').upper()
     query = request.GET.get('q', '').strip()
-
-    if request.method == 'POST' and 'create_order' in request.POST:
-        customer_name = request.POST.get('customer_name', '').strip()
-        order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
-        raw_date = request.POST.get('issue_date')
-        status = request.POST.get('status', 'PENDING')
-
-        if raw_date:
-            try:
-                issue_date = date.fromisoformat(raw_date)
-            except ValueError:
-                issue_date = timezone.now().date()
-        else:
-            issue_date = timezone.now().date()
-
-        if customer_name:
-            customer, _ = Customer.objects.get_or_create(name=customer_name)
-            order = Invoice.objects.create(
-                invoice_number=order_number,
-                customer=customer,
-                total_amount=0.00,
-                issue_date=issue_date,
-                due_date=issue_date + timedelta(days=30),
-                status=status,
-                google_drive_url=''
-            )
-
-            # Optional initial item selection on creation
-            inventory_id = request.POST.get('inventory_id')
-            custom_item_name = request.POST.get('custom_item_name', '').strip()
-            item_qty = int(request.POST.get('item_quantity') or 1)
-            item_price = request.POST.get('item_unit_price')
-
-            if inventory_id or custom_item_name:
-                if inventory_id:
-                    inv_item = InventoryItem.objects.filter(id=inventory_id).first()
-                    desc = custom_item_name or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-                    unit_price = float(item_price) if item_price else float(inv_item.unit_cost if inv_item else 0.0)
-                else:
-                    inv_item = None
-                    desc = custom_item_name
-                    unit_price = float(item_price or 0.00)
-
-                OrderItem.objects.create(
-                    order=order,
-                    inventory_item=inv_item,
-                    description=desc,
-                    quantity=item_qty,
-                    unit_price=unit_price
-                )
-                order.total_amount = sum(item.total_price for item in order.order_items.all())
-                order.save()
-
-            # Redirect directly to manage items for this order
-            return redirect('order_detail', order_id=order.id)
-
-        return redirect(f"{request.path}?status={status}")
 
     records = Invoice.objects.exclude(status='DRAFT').order_by('-issue_date')
 
@@ -122,8 +66,74 @@ def orders_dashboard(request):
         'status_filter': status_filter,
         'query': query,
         'counts': counts,
-        'customers': Customer.objects.all(),
-        'master_items': InventoryItem.objects.all().order_by('part_name'),
+    })
+
+
+def create_order(request):
+    """Full-page Order Creation view."""
+    if request.method == 'POST':
+        customer_name = request.POST.get('customer_name', '').strip()
+        order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
+        raw_issue_date = request.POST.get('issue_date')
+        raw_due_date = request.POST.get('due_date')
+        status = request.POST.get('status', 'PENDING')
+
+        try:
+            issue_date = date.fromisoformat(raw_issue_date) if raw_issue_date else timezone.now().date()
+        except ValueError:
+            issue_date = timezone.now().date()
+
+        try:
+            due_date = date.fromisoformat(raw_due_date) if raw_due_date else issue_date + timedelta(days=14)
+        except ValueError:
+            due_date = issue_date + timedelta(days=14)
+
+        if customer_name:
+            customer, _ = Customer.objects.get_or_create(name=customer_name)
+            order = Invoice.objects.create(
+                invoice_number=order_number,
+                customer=customer,
+                total_amount=0.00,
+                issue_date=issue_date,
+                due_date=due_date,
+                status=status,
+                google_drive_url=''
+            )
+
+            # Optional initial line item
+            inventory_id = request.POST.get('inventory_id')
+            custom_desc = request.POST.get('custom_description', '').strip()
+            quantity = int(request.POST.get('quantity') or 1)
+            unit_price = request.POST.get('unit_price')
+
+            if inventory_id or custom_desc:
+                if inventory_id:
+                    inv_item = InventoryItem.objects.filter(id=inventory_id).first()
+                    desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
+                    price = float(unit_price) if unit_price else float(inv_item.unit_cost if inv_item else 0.0)
+                else:
+                    inv_item = None
+                    desc = custom_desc
+                    price = float(unit_price or 0.0)
+
+                OrderItem.objects.create(
+                    order=order,
+                    inventory_item=inv_item,
+                    description=desc,
+                    quantity=quantity,
+                    unit_price=price
+                )
+                order.total_amount = sum(item.total_price for item in order.order_items.all())
+                order.save()
+
+            # Redirect straight to Item Manager for this order
+            return redirect('order_detail', order_id=order.id)
+
+    master_items = InventoryItem.objects.all().order_by('part_name')
+    customers = Customer.objects.all().order_by('name')
+    return render(request, 'tracker/order_form.html', {
+        'master_items': master_items,
+        'customers': customers,
     })
 
 
@@ -157,7 +167,6 @@ def add_order_item(request, order_id):
             unit_price=unit_price
         )
         
-        # Auto-recalculate the order total
         order.total_amount = sum(item.total_price for item in order.order_items.all())
         order.save()
         
