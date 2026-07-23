@@ -245,3 +245,4 @@ def price_history(request):
 
 def export_finances(request):
     return redirect('finance:dashboard')
+    

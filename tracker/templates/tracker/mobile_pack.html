@@ -1,0 +1,175 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Packing - {{ order.invoice_number }}{% endblock %}
+{% block page_title %}📱 Warehouse Packing Mode{% endblock %}
+
+{% block content %}
+<style>
+    /* Mobile-first touch-friendly styles */
+    .mobile-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .vessel-card {
+        background: var(--primary);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+
+    .progress-bar-bg {
+        background: rgba(255, 255, 255, 0.2);
+        height: 12px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .progress-bar-fill {
+        background: #10B981;
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    /* Large touch-friendly item cards */
+    .pack-item-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .pack-item-card.packed {
+        border-color: #10B981;
+        background-color: #ECFDF5;
+    }
+
+    .check-btn {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.1s active;
+    }
+
+    .pack-item-card.packed .check-btn {
+        background: #10B981;
+        border-color: #10B981;
+        color: white;
+    }
+
+    .item-details { flex-grow: 1; }
+
+    .location-tag {
+        display: inline-block;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-weight: 700;
+        font-size: 0.775rem;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+    }
+
+    .qty-badge {
+        background: var(--primary);
+        color: white;
+        font-weight: 800;
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        float: right;
+    }
+
+    .btn-finish {
+        width: 100%;
+        padding: 14px;
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: center;
+        border-radius: 10px;
+        margin-top: 20px;
+        display: block;
+        text-decoration: none;
+    }
+</style>
+
+<div class="mobile-container">
+    <a href="{% url 'order_detail' order.id %}" style="display: inline-block; margin-bottom: 12px; color: var(--accent); font-weight: 600; text-decoration: none;">← Exit Packing Mode</a>
+
+    <!-- VESSEL HEADER & PROGRESS -->
+    <div class="vessel-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Target Vessel / Client</span>
+                <h2 style="margin: 2px 0 0 0; font-size: 1.3rem;">{{ order.customer.name }}</h2>
+            </div>
+            <span style="font-weight: 800; font-size: 1.1rem; color: #34D399;">{{ progress }}%</span>
+        </div>
+
+        <div style="font-size: 0.825rem; color: #CBD5E1; margin-top: 6px;">
+            Order: <strong>{{ order.invoice_number }}</strong> | <strong>{{ packed_items }}/{{ total_items }}</strong> Packed
+        </div>
+
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: {{ progress }}%;"></div>
+        </div>
+    </div>
+
+    <!-- PACKING CHECKLIST ITEMS -->
+    {% for item in items %}
+    <div class="pack-item-card {% if item.is_packed %}packed{% endif %}">
+        <form method="POST" action="{% url 'toggle_item_packed' item.id %}">
+            {% csrf_token %}
+            <button type="submit" class="check-btn" title="Tap to toggle pack state">
+                {% if item.is_packed %}✓{% else %}⬜{% endif %}
+            </button>
+        </form>
+
+        <div class="item-details">
+            {% if item.inventory_item.location %}
+                <span class="location-tag">📍 Bin: {{ item.inventory_item.location }}</span>
+            {% else %}
+                <span class="location-tag" style="background: #F1F5F9; color: #64748B;">📍 Piraeus Warehouse</span>
+            {% endif %}
+
+            <span class="qty-badge">QTY: {{ item.quantity }}</span>
+
+            <div style="font-weight: 700; font-size: 1rem; color: var(--primary); margin-top: 2px; {% if item.is_packed %}text-decoration: line-through; color: #64748B;{% endif %}">
+                {{ item.description }}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 40px; color: #94A3B8; background: white; border-radius: 12px; border: 1px solid var(--border);">
+        No items assigned to this packing ticket yet.
+    </div>
+    {% endfor %}
+
+    <!-- FINISH / RETURN BUTTON -->
+    {% if progress == 100 %}
+        <a href="{% url 'order_detail' order.id %}" class="btn btn-success btn-finish">
+            ✅ Order 100% Packed! Return to Order
+        </a>
+    {% else %}
+        <a href="{% url 'order_detail' order.id %}" class="btn btn-outline btn-finish" style="background: white;">
+            Save Progress & Exit
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -71,7 +71,13 @@
         <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Client / Vessel</span>
         <h2 style="margin: 2px 0 6px 0; color: var(--primary);">{{ order.customer.name }}</h2>
         <div style="color: var(--text-secondary); font-size: 0.875rem;">Date: <strong>{{ order.issue_date|date:"d/m/Y" }}</strong></div>
+        
+        <!-- MOBILE PACKING MODE LAUNCH BUTTON -->
+        <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-outline" style="margin-top: 10px; padding: 5px 12px; font-size: 0.8rem; background: #EFF6FF; color: var(--accent); border-color: #BFDBFE;">
+            📱 Open Mobile Packing Checklist ➔
+        </a>
     </div>
+
     <div style="text-align: right;">
         <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Order Value</span>
         <h2 style="margin: 2px 0 8px 0; color: var(--primary);">{{ order.total_amount }} €</h2>

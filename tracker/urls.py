@@ -16,6 +16,7 @@ urlpatterns = [
     path('orders/', views.orders_dashboard, name='orders_dashboard'),
     path('orders/create/', views.create_order, name='create_order'),
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
+    path('orders/<int:order_id>/pack/', views.mobile_packing_list, name='mobile_packing_list'), # <-- NEW MOBILE PACKING MODE
     path('orders/<int:order_id>/add_item/', views.add_order_item, name='add_order_item'),
     path('orders/<int:order_id>/convert/', views.convert_order_to_invoice, name='convert_order_to_invoice'),
     path('orders/item/<int:item_id>/delete/', views.delete_order_item, name='delete_order_item'),

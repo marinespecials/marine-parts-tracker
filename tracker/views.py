@@ -172,6 +172,7 @@ def add_order_item(request, order_id):
 
 
 def toggle_item_packed(request, item_id):
+    """Toggles item packed state and redirects back to whichever page triggered it."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         item.is_packed = not item.is_packed
@@ -188,6 +189,10 @@ def toggle_item_packed(request, item_id):
         
         order.save()
         
+        referer = request.META.get('HTTP_REFERER')
+        if referer:
+            return redirect(referer)
+            
     return redirect('order_detail', order_id=item.order.id)
 
 
@@ -207,7 +212,6 @@ def change_order_status(request, order_id, new_status):
         order = get_object_or_404(Invoice, id=order_id)
         target_status = new_status.upper()
 
-        # FEATURE 2: Auto stock deduction when transitioning to DELIVERED
         if target_status == 'DELIVERED' and order.status != 'DELIVERED':
             for item in order.order_items.all():
                 if item.inventory_item:
@@ -222,11 +226,10 @@ def change_order_status(request, order_id, new_status):
 
 
 def convert_order_to_invoice(request, order_id):
-    """FEATURE 1: Clones a logistics order into a financial invoice in 1 click."""
+    """Clones a logistics order into an unpaid financial invoice."""
     if request.method == 'POST':
         original_order = get_object_or_404(Invoice, id=order_id)
         
-        # Build invoice number
         raw_num = original_order.invoice_number.replace('ORD-', '')
         inv_num = f"INV-{raw_num}"
         if Invoice.objects.filter(invoice_number=inv_num).exists():
@@ -235,7 +238,6 @@ def convert_order_to_invoice(request, order_id):
         issue_date = timezone.now().date()
         due_date = issue_date + timedelta(days=30)
 
-        # Create new financial invoice
         new_invoice = Invoice.objects.create(
             invoice_number=inv_num,
             customer=original_order.customer,
@@ -246,7 +248,6 @@ def convert_order_to_invoice(request, order_id):
             google_drive_url=original_order.google_drive_url
         )
 
-        # Clone line items
         for item in original_order.order_items.all():
             OrderItem.objects.create(
                 order=new_invoice,
@@ -372,6 +373,7 @@ def client_list(request):
     clients = Customer.objects.annotate(invoice_count=Count('invoice')).order_by('name')
     return render(request, 'tracker/client_list.html', {'clients': clients})
 
+
 def global_search(request):
     """Universal search across Orders, Financial Invoices, Warehouse Parts, and Clients."""
     query = request.GET.get('q', '').strip()
@@ -400,4 +402,21 @@ def global_search(request):
         'invoices': invoices,
         'inventory': inventory,
         'clients': clients,
+    })
+
+
+def mobile_packing_list(request, order_id):
+    """Mobile-optimized packing checklist view for warehouse floor staff."""
+    order = get_object_or_404(Invoice, id=order_id)
+    items = order.order_items.all()
+    total_items = items.count()
+    packed_items = items.filter(is_packed=True).count()
+    progress = int((packed_items / total_items) * 100) if total_items > 0 else 0
+
+    return render(request, 'tracker/mobile_pack.html', {
+        'order': order,
+        'items': items,
+        'total_items': total_items,
+        'packed_items': packed_items,
+        'progress': progress,
     })
