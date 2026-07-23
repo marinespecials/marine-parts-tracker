@@ -201,18 +201,28 @@
         <nav class="sidebar-menu">
             <div class="menu-section">
                 <div class="menu-section-title">Main</div>
-                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <span>🏠 Financial Dashboard</span>
+                <a href="{% url 'hub' %}" class="nav-item {% if request.resolver_match.url_name == 'hub' %}active{% endif %}">
+                    <span>🏠 Main Portal Hub</span>
                 </a>
             </div>
 
             <div class="menu-section">
-                <div class="menu-section-title">Financial Operations</div>
+                <div class="menu-section-title">Warehouse & Operations</div>
+                <a href="{% url 'inventory_list' %}" class="nav-item {% if request.resolver_match.url_name == 'inventory_list' %}active{% endif %}">
+                    <span>📦 Warehouse Inventory</span>
+                </a>
+                <a href="{% url 'client_list' %}" class="nav-item {% if request.resolver_match.url_name == 'client_list' %}active{% endif %}">
+                    <span>👥 Client Ledgers</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Financial Intelligence</div>
+                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span>📊 Finance Dashboard</span>
+                </a>
                 <a href="{% url 'finance:bulk_import' %}" class="nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
                     <span>⚡ Smart Bulk Import</span>
-                </a>
-                <a href="{% url 'client_list' %}" class="nav-item">
-                    <span>👥 Client Ledgers</span>
                 </a>
             </div>
 

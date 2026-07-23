@@ -1,74 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Client Database</title>
-    <style>
-        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
-        .navbar { background-color: var(--primary); color: white; padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .navbar a { color: white; text-decoration: none; font-weight: 600; font-size: 0.875rem; background: rgba(255,255,255,0.08); padding: 8px 14px; border-radius: 6px; }
-        
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-        .card { background: var(--surface); padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); }
-        
-        .stat-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); align-items: center; }
-        .stat-row:last-child { border-bottom: none; }
-        
-        .badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        
-        .add-form { display: flex; gap: 12px; margin-top: 15px; }
-        .add-form input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: #FAFAFA; }
-        .add-form input:focus { outline: none; border-color: var(--accent); background: white; }
-        .add-form button { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        
-        .client-link { color: var(--primary); font-size: 1.1rem; font-weight: 600; text-decoration: none; }
-        .client-link:hover { color: var(--accent); text-decoration: underline; }
-        
-        .action-links { font-size: 0.85rem; margin-top: 6px; display: flex; gap: 12px; align-items: center; }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <h1 style="margin:0; font-size: 1.25rem; font-weight: 600;">Client & Vessel Directory</h1>
-        <a href="{% url 'finance:dashboard' %}">&larr; Back to Finance</a>
-    </div>
-    <div class="container">
-        <div class="card">
-            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 14px; font-size: 1.15rem; color: var(--primary);">Registered Portfolios</h2>
-            {% for client in customers %}
-                <div class="stat-row">
-                    <div>
-                        <a href="{% url 'finance:client_ledger' client.id %}" class="client-link">
-                            {{ client.name }}
-                        </a>
-                        <div class="action-links">
-                            <a href="{% url 'edit_client' client.id %}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Edit Name</a>
-                            {% if client.offers.count == 0 %}
-                            <form method="POST" action="{% url 'delete_client' client.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" style="background:none; border:none; color: var(--danger); font-weight: 600; cursor: pointer; padding:0;" onclick="return confirm('Delete this client?');">Delete</button>
-                            </form>
-                            {% else %}
-                            <span style="color: #94A3B8; font-style: italic;">Locked (active orders)</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <span class="badge">{{ client.offers.count }} Orders</span>
-                </div>
+{% extends 'finance/base.html' %}
+
+{% block title %}Client Ledgers{% endblock %}
+{% block page_title %}👥 Client Ledgers Directory{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary); margin-bottom:20px;">All Accounts</h3>
+    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+        <thead>
+            <tr style="background:#F8FAFC; text-align:left;">
+                <th style="padding:12px;">Client / Supplier Name</th>
+                <th style="padding:12px;">Invoices Processed</th>
+                <th style="padding:12px; text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:12px;"><strong style="font-size:0.95rem;">{{ client.name }}</strong></td>
+                <td style="padding:12px;"><span class="badge">{{ client.invoice_count }} Invoices</span></td>
+                <td style="padding:12px; text-align:right;">
+                    <a href="{% url 'finance:client_ledger' client.id %}" class="btn btn-primary" style="padding:4px 12px; font-size:0.8rem;">Open Ledger ↗</a>
+                </td>
+            </tr>
             {% empty %}
-                <p style="color: #94A3B8; font-style: italic;">No clients registered yet.</p>
+            <tr><td colspan="3" style="text-align:center; padding:30px; color:#94A3B8;">No clients or suppliers found.</td></tr>
             {% endfor %}
-        </div>
-        
-        <div class="card">
-            <h2 style="margin-top:0; font-size: 1.15rem; color: var(--primary);">Add New Client / Vessel</h2>
-            <form class="add-form" method="POST" action="{% url 'client_list' %}">
-                {% csrf_token %}
-                <input type="text" name="name" placeholder="Enter Client or Vessel Name..." required>
-                <button type="submit">+ Add Client</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

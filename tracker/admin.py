@@ -1,8 +1,13 @@
 from django.contrib import admin
-# Fixed: Imported 'Item' instead of 'OrderItem'
-from .models import Customer, Offer, Compartment, Item
+from .models import Customer, InventoryItem
 
-admin.site.register(Customer)
-admin.site.register(Offer)
-admin.site.register(Compartment)
-admin.site.register(Item)
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'created_at')
+    search_fields = ('name', 'email', 'phone')
+
+@admin.register(InventoryItem)
+class InventoryItemAdmin(admin.ModelAdmin):
+    list_display = ('part_name', 'part_code', 'category', 'quantity', 'location', 'unit_cost')
+    list_filter = ('category', 'location')
+    search_fields = ('part_name', 'part_code', 'location')

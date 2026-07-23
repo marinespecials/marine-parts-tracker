@@ -1,54 +1,48 @@
 from django.db import models
+from django.utils import timezone
 
 class Customer(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
 
-class Offer(models.Model):
-    title = models.CharField(max_length=200)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='offers')
-
-    def __str__(self):
-        return self.title
-
-class Compartment(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-class Item(models.Model):
-    name = models.CharField(max_length=200)
-    quantity = models.IntegerField(default=1)
-    is_delivered = models.BooleanField(default=False)
-    compartment = models.ForeignKey(Compartment, on_delete=models.CASCADE, related_name='items')
-    offer = models.ForeignKey(Offer, on_delete=models.SET_NULL, related_name='items', null=True, blank=True)
-
-# ==========================================
-    # 📦 FACILITY RELOCATION MODULE
-    # ==========================================
-    TRANSFER_STATUSES = [
-        ('ACTIVE', 'Active Stock'),
-        ('UNUTILIZED', 'Unutilized / Purge'),
-        ('PACKED', 'Ready for Transfer'),
-        ('MOVED', 'Transferred to New Facility')
+class InventoryItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('Filters', 'Filters & Separators'),
+        ('Electrical', 'Electrical & Batteries'),
+        ('Pumps', 'Pumps & Impellers'),
+        ('Valves', 'Valves & Plumbing'),
+        ('Engine Spares', 'Engine Spares'),
+        ('General', 'General Hardware'),
     ]
-    transfer_status = models.CharField(
-        max_length=20, 
-        choices=TRANSFER_STATUSES, 
-        default='ACTIVE'
-    )
-    current_piraeus_bin = models.CharField(
-        max_length=50, 
-        blank=True, 
-        help_text="Current bin location (e.g., Rack A2)"
-    )
-    destination_facility_bin = models.CharField(
-        max_length=50, 
-        blank=True, 
-        help_text="Target location for the reorganization"
-    )
+
+    part_name = models.CharField(max_length=255)
+    part_code = models.CharField(max_length=100, blank=True, null=True, help_text="OEM / Part Number")
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='General')
+    quantity = models.IntegerField(default=0)
+    reorder_level = models.IntegerField(default=5, help_text="Alert trigger when stock drops below this level")
+    location = models.CharField(max_length=100, default='Piraeus Warehouse', help_text="Shelf / Bin / Rack")
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    supplier = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'part_name']
+
+    @property
+    def total_stock_value(self):
+        return round(float(self.quantity) * float(self.unit_cost), 2)
+
+    @property
+    def is_low_stock(self):
+        return self.quantity <= self.reorder_level
+
     def __str__(self):
-        return f"{self.name} x{self.quantity}"
+        return f"{self.part_name} ({self.quantity} in stock at {self.location})"

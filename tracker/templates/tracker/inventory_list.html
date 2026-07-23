@@ -1,0 +1,160 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Warehouse Inventory{% endblock %}
+{% block page_title %}📦 Warehouse Inventory Management{% endblock %}
+
+{% block content %}
+<style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+    .kpi-box { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .kpi-title { font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
+    
+    .grid-split { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+    
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+    
+    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
+</style>
+
+<div class="kpi-grid">
+    <div class="kpi-box">
+        <div class="kpi-title">Total SKUs in Stock</div>
+        <div class="kpi-value">{{ total_items }}</div>
+    </div>
+    <div class="kpi-box">
+        <div class="kpi-title">Total Warehouse Asset Value</div>
+        <div class="kpi-value">{{ total_warehouse_value }} €</div>
+    </div>
+    <div class="kpi-box">
+        <div class="kpi-title">Low Stock Alerts</div>
+        <div class="kpi-value" style="color: {% if low_stock_count > 0 %}var(--danger){% else %}var(--primary){% endif %};">{{ low_stock_count }}</div>
+    </div>
+</div>
+
+<div class="grid-split">
+    <!-- Left: Add New Inventory Item -->
+    <div class="card">
+        <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary);">+ Add Warehouse Stock</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Part Name *</label>
+                <input type="text" name="part_name" placeholder="e.g. Raw Water Pump Impeller" required>
+            </div>
+            <div class="form-group">
+                <label>Part / OEM Code</label>
+                <input type="text" name="part_code" placeholder="e.g. JAB-1210-0001">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                    {% for code, label in category_choices %}
+                        <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Quantity *</label>
+                    <input type="number" name="quantity" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Reorder Level</label>
+                    <input type="number" name="reorder_level" value="5" required>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Unit Cost (€)</label>
+                    <input type="number" step="0.01" name="unit_cost" value="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Location / Bin</label>
+                    <input type="text" name="location" value="Piraeus Warehouse">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Preferred Supplier</label>
+                <select name="supplier_id">
+                    <option value="">None</option>
+                    {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Save to Warehouse</button>
+        </form>
+    </div>
+
+    <!-- Right: Inventory Table with Filters -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="margin:0; font-size:1.1rem; color:var(--primary);">Warehouse Stock List</h3>
+        </div>
+
+        <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <select name="category" onchange="this.form.submit()" style="width: 180px;">
+                <option value="">All Categories</option>
+                {% for code, label in category_choices %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="q" value="{{ query }}" placeholder="Search part #, name, location..." style="width: 220px;">
+            <button type="submit" class="btn btn-outline" style="width: auto;">Filter</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Part Name / Code</th>
+                    <th>Location</th>
+                    <th>Qty</th>
+                    <th>Unit Cost</th>
+                    <th>Stock Value</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <strong>{{ item.part_name }}</strong>
+                        {% if item.part_code %}
+                            <br><span style="font-size:0.75rem; color:var(--text-secondary);">OEM: {{ item.part_code }}</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge">{{ item.location }}</span></td>
+                    <td>
+                        <strong style="color: {% if item.is_low_stock %}var(--danger){% else %}var(--primary){% endif %}; font-size:1rem;">
+                            {{ item.quantity }}
+                        </strong>
+                        {% if item.is_low_stock %}
+                            <span style="font-size:0.7rem; color:var(--danger); font-weight:bold; display:block;">Low Stock!</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.unit_cost }} €</td>
+                    <td><strong>{{ item.total_stock_value }} €</strong></td>
+                    <td style="text-align: right;">
+                        <form method="POST" action="{% url 'delete_inventory_item' item.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete this item from warehouse?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center; color: #94A3B8; padding: 30px;">No warehouse inventory logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
