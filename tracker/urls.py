@@ -25,6 +25,9 @@ urlpatterns = [
     path('warehouse/<int:item_id>/edit/', views.edit_inventory_item, name='edit_inventory_item'),
     path('warehouse/<int:item_id>/delete/', views.delete_inventory_item, name='delete_inventory_item'),
     
+    # NEW: Client Price Catalog
+    path('catalog/', views.client_pricelist, name='client_pricelist'),
+
     # Client Directory
     path('clients/', views.client_list, name='client_list'),
 ]

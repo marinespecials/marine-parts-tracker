@@ -1,0 +1,109 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Client Spare Parts Catalog{% endblock %}
+{% block page_title %}📋 Spare Parts Price Catalog{% endblock %}
+
+{% block content %}
+<style>
+    .catalog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .search-bar-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .search-bar-group input, .search-bar-group select {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 0.875rem;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+
+    .badge-in-stock { background: #D1FAE5; color: #065F46; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+    .badge-out-stock { background: #FEE2E2; color: #991B1B; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+
+    /* PRINT STYLING - Hides sidebars and topbars when printing to PDF */
+    @media print {
+        .sidebar, .topbar, .header-actions-bar, .search-bar-group, .btn-print, .no-print {
+            display: none !important;
+        }
+        .main-wrapper { margin-left: 0 !important; width: 100% !important; }
+        .content-body { padding: 0 !important; }
+        .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+        .print-header { display: block !important; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #0F172A; padding-bottom: 10px; }
+    }
+
+    .print-header { display: none; }
+</style>
+
+<!-- PRINT HEADER (ONLY VISIBLE ON PDF/PRINT) -->
+<div class="print-header">
+    <h1 style="margin: 0; font-size: 1.8rem; color: #0F172A;">⚓ MARINE SPECIALS</h1>
+    <p style="margin: 4px 0 0 0; color: #64748B; font-size: 0.9rem;">Piraeus, Greece | Spare Parts & Equipment Catalog</p>
+</div>
+
+<div class="catalog-header no-print">
+    <form method="GET" class="search-bar-group">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by part name or OEM #..." style="width: 260px;">
+        <select name="category" onchange="this.form.submit()">
+            <option value="ALL">All Categories</option>
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline">Search</button>
+    </form>
+
+    <button onclick="window.print();" class="btn btn-primary btn-print" style="padding: 9px 18px;">
+        🖨️ Print / Save as PDF Catalog
+    </button>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table>
+        <thead>
+            <tr>
+                <th>Part / Component Name</th>
+                <th>OEM / Part Number</th>
+                <th>Category</th>
+                <th>Availability</th>
+                <th style="text-align: right;">Unit Price (€)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><strong style="color: var(--primary); font-size: 0.95rem;">{{ item.part_name }}</strong></td>
+                <td>{{ item.part_code|default:"-" }}</td>
+                <td><span class="badge">{{ item.category }}</span></td>
+                <td>
+                    {% if item.quantity > 0 %}
+                        <span class="badge-in-stock">Available in Stock</span>
+                    {% else %}
+                        <span class="badge-out-stock">On Request</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;"><strong style="font-size: 1rem; color: var(--primary);">{{ item.unit_cost }} €</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #94A3B8; padding: 40px;">
+                    No parts listed in the catalog yet.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

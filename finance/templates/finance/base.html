@@ -231,12 +231,16 @@
                 </a>
             </div>
 
-            <!-- CORE VIEW 2: WAREHOUSE STOCK -->
+            <!-- CORE VIEW 2: WAREHOUSE STOCK & CATALOG -->
             <div class="menu-section">
                 <div class="menu-section-title">2. Inventory</div>
                 
                 <a href="{% url 'inventory_list' %}" class="nav-item {% if request.resolver_match.url_name == 'inventory_list' or request.resolver_match.url_name == 'edit_inventory_item' %}active{% endif %}">
                     <span>📦 Warehouse Stock</span>
+                </a>
+
+                <a href="{% url 'client_pricelist' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'client_pricelist' %}active{% endif %}">
+                    <span>└ 📋 Client Price Catalog</span>
                 </a>
             </div>
 

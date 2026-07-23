@@ -293,3 +293,29 @@ def delete_inventory_item(request, item_id):
 def client_list(request):
     clients = Customer.objects.annotate(invoice_count=Count('invoice')).order_by('name')
     return render(request, 'tracker/client_list.html', {'clients': clients})
+def client_pricelist(request):
+    """Client-facing Price Catalog with clean search, category filtering, and print/PDF mode."""
+    query = request.GET.get('q', '').strip()
+    category_filter = request.GET.get('category', 'ALL')
+
+    items = InventoryItem.objects.all().order_by('part_name')
+
+    if category_filter != 'ALL':
+        items = items.filter(category=category_filter)
+
+    if query:
+        items = items.filter(
+            Q(part_name__icontains=query) |
+            Q(part_code__icontains=query) |
+            Q(category__icontains=query)
+        )
+
+    # Extract distinct categories for filter dropdown
+    categories = InventoryItem.objects.values_list('category', flat=True).distinct()
+
+    return render(request, 'tracker/client_pricelist.html', {
+        'items': items,
+        'query': query,
+        'category_filter': category_filter,
+        'categories': categories,
+    })
