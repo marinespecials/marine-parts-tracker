@@ -1,0 +1,222 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Orders & Delivery Notes{% endblock %}
+{% block page_title %}📦 Orders & Delivery Notes Manager{% endblock %}
+
+{% block topbar_actions %}
+    <button onclick="openOrderModal()" class="btn btn-primary" style="padding: 9px 18px; font-size: 0.9rem;">
+        + Add Quick Order / Delivery
+    </button>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Clean Tab Bar */
+    .tab-bar { display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+    .tab-item { padding: 10px 18px; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; transition: all 0.2s; }
+    .tab-item:hover { color: var(--primary); background: #F1F5F9; }
+    .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
+    .tab-badge { background: #E2E8F0; color: #334155; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px; }
+    .tab-item.active .tab-badge { background: var(--accent); color: white; }
+
+    /* Full Width Table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+
+    /* Clean Status Badges */
+    .status-tag { font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+    .tag-ORDER { background: #FEF3C7; color: #92400E; }
+    .tag-DELIVERY { background: #E0E7FF; color: #3730A3; }
+    .tag-DRAFT { background: #F1F5F9; color: #475569; }
+
+    .btn-preview { padding: 5px 10px; font-size: 0.78rem; background-color: #059669; color: white; border-radius: 5px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-preview:hover { background-color: #047857; }
+    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.85rem; }
+
+    /* Modal Styling */
+    .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.6); z-index: 999; justify-content: center; align-items: center; }
+    .modal-card { background: white; padding: 28px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; box-sizing: border-box; background: #FAFAFA; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+</style>
+
+<div class="card" style="padding: 20px 25px;">
+    <!-- Top Filter Tabs -->
+    <div class="tab-bar">
+        <a href="?status=ORDER" class="tab-item {% if status_filter == 'ORDER' %}active{% endif %}">
+            📦 Active Orders (Παραγγελίες) <span class="tab-badge">{{ counts.ORDER }}</span>
+        </a>
+        <a href="?status=DELIVERY" class="tab-item {% if status_filter == 'DELIVERY' %}active{% endif %}">
+            🚚 Delivery Notes (Δελτία Αποστολής) <span class="tab-badge">{{ counts.DELIVERY }}</span>
+        </a>
+        <a href="?status=ALL" class="tab-item {% if status_filter == 'ALL' %}active{% endif %}">
+            📋 All Records <span class="tab-badge">{{ counts.ALL }}</span>
+        </a>
+    </div>
+
+    <!-- Search Controls -->
+    <div style="margin-bottom: 20px;">
+        <form method="GET" style="display: flex; gap: 10px;">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by client or order #..." style="padding: 9px 14px; border-radius: 6px; border: 1px solid var(--border); width: 320px; font-size: 0.9rem;">
+            <button type="submit" class="btn btn-outline">Search</button>
+        </form>
+    </div>
+
+    <!-- Orders & Delivery Notes Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Order / Doc #</th>
+                <th>Client / Supplier</th>
+                <th>Date</th>
+                <th>Amount (€)</th>
+                <th>Drive Link</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in records %}
+            <tr>
+                <td>
+                    <span class="status-tag tag-{{ item.status }}">
+                        {% if item.status == 'ORDER' %}📦 Order (Παραγγελία)
+                        {% elif item.status == 'DELIVERY' %}🚚 Delivery Note (Δελτίο)
+                        {% else %}📄 Invoice{% endif %}
+                    </span>
+                </td>
+                <td><strong style="color: var(--primary);">{{ item.invoice_number }}</strong></td>
+                <td><strong style="font-size:0.925rem;">{{ item.customer.name }}</strong></td>
+                <td>{{ item.issue_date|date:"d/m/Y" }}</td>
+                <td><strong style="font-size:0.95rem;">{{ item.total_amount }} €</strong></td>
+                <td>
+                    {% if item.google_drive_url %}
+                        <button onclick="openPreviewModal('{{ item.google_drive_url }}')" class="btn-preview">Preview File ↗</button>
+                    {% else %}
+                        <span style="color: #CBD5E1; font-size: 0.8rem;">No file</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
+                        <a href="{% url 'finance:edit_invoice' item.id %}" class="text-link" style="font-size: 0.85rem;">Edit</a>
+                        <form method="POST" action="{% url 'delete_order' item.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete this record?');">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 40px;">
+                    No records found under <strong>{{ status_filter }}</strong>. Click <strong>+ Add Quick Order / Delivery</strong> above to create one!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- POP-UP MODAL: Add Quick Order / Delivery -->
+<div id="addOrderModal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-size:1.15rem; color:var(--primary);">+ Add Order / Delivery Note</h3>
+            <button onclick="closeOrderModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748B;">✕</button>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Document / Order Type *</label>
+                <select name="status" required>
+                    <option value="ORDER" selected>📦 ORDER (Παραγγελία)</option>
+                    <option value="DELIVERY">🚚 DELIVERY NOTE (Δελτίο Αποστολής)</option>
+                    <option value="DRAFT">📄 INVOICE (Τιμολόγιο)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Client / Supplier Name *</label>
+                <input type="text" name="customer_name" placeholder="e.g. Aegean Shipping, Idealakku" required list="client-list">
+                <datalist id="client-list">
+                    {% for c in customers %}
+                        <option value="{{ c.name }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <div class="form-group">
+                <label>Order / Doc Number (Optional)</label>
+                <input type="text" name="order_number" placeholder="e.g. ORD-1042 or leave blank for auto-gen">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Total Amount (€)</label>
+                    <input type="number" step="0.01" name="total_amount" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="issue_date">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Google Drive File Link (Optional)</label>
+                <input type="url" name="google_drive_url" placeholder="https://drive.google.com/file/d/...">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:11px; margin-top:10px; font-size:0.95rem;">
+                Save Record
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- POP-UP MODAL: Drive Preview -->
+<div id="pdfModal" class="modal-overlay">
+    <div style="background:white; width:85%; height:85%; border-radius:12px; position:relative; padding:20px; box-sizing:border-box; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:1.1rem; color:#0F172A;">Document Preview</h3>
+            <button onclick="closePreviewModal()" style="background:#DC2626; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600;">✕ Close</button>
+        </div>
+        <iframe id="pdfFrame" src="" style="width:100%; height:100%; border:1px solid #E2E8F0; border-radius:6px; background:#F8FAFC;"></iframe>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openOrderModal() {
+        document.getElementById('addOrderModal').style.display = 'flex';
+    }
+    function closeOrderModal() {
+        document.getElementById('addOrderModal').style.display = 'none';
+    }
+
+    function openPreviewModal(driveUrl) {
+        if (!driveUrl) return;
+        let fileId = '';
+        const match = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+            fileId = match[1];
+            document.getElementById('pdfFrame').src = `https://drive.google.com/file/d/${fileId}/preview`;
+        } else {
+            document.getElementById('pdfFrame').src = driveUrl;
+        }
+        document.getElementById('pdfModal').style.display = 'flex';
+    }
+    function closePreviewModal() {
+        document.getElementById('pdfModal').style.display = 'none';
+        document.getElementById('pdfFrame').src = '';
+    }
+</script>
+{% endblock %}
