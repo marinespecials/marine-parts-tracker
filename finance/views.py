@@ -1,7 +1,7 @@
 import random
 from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count, Avg, F, Value
 from django.utils import timezone
 
 from .models import Invoice, PriceRecord, MasterPricelistItem, ClientFinancialProfile
@@ -29,6 +29,60 @@ def finance_dashboard(request):
     return render(request, 'finance/dashboard.html', context)
 
 
+def client_ledger(request, client_id):
+    """Enterprise Client Ledger view with full metrics aggregation."""
+    client = get_object_or_404(Customer, id=client_id)
+    profile, _ = ClientFinancialProfile.objects.get_or_create(customer=client)
+
+    # Handle Settings Form Submission
+    if request.method == 'POST' and 'update_profile' in request.POST:
+        profile.internal_rating = request.POST.get('internal_rating', profile.internal_rating)
+        profile.payment_terms_days = int(request.POST.get('payment_terms_days') or 30)
+        profile.negotiation_notes = request.POST.get('negotiation_notes', '')
+        profile.save()
+        return redirect('finance:client_ledger', client_id=client.id)
+
+    invoices = Invoice.objects.filter(customer=client).order_by('-issue_date')
+
+    # Lifetime Revenue Calculation
+    lifetime_revenue = sum(inv.total_amount for inv in invoices.filter(status='PAID'))
+    profile.lifetime_revenue = lifetime_revenue
+
+    # Yearly Summary Aggregation
+    yearly_data = (
+        invoices.values('issue_date__year')
+        .annotate(count=Count('id'), total=Sum('total_amount'))
+        .order_by('-issue_date__year')
+    )
+
+    # Top Purchased Parts
+    top_parts = (
+        OrderItem.objects.filter(order__customer=client)
+        .values('description')
+        .annotate(
+            part_name=F('description'),
+            purchase_count=Count('id'),
+            avg_price=Avg('unit_price'),
+            currency=Value('€')
+        )
+        .order_by('-purchase_count')[:5]
+    )
+
+    # Price History
+    price_history = PriceRecord.objects.filter(
+        supplier_or_client_name__icontains=client.name
+    ).order_by('-date_recorded')
+
+    return render(request, 'finance/client_ledger.html', {
+        'client': client,
+        'profile': profile,
+        'invoices': invoices,
+        'yearly_data': yearly_data,
+        'top_parts': top_parts,
+        'price_history': price_history,
+    })
+
+
 def create_invoice(request):
     """Create a new formal Financial Invoice with optional initial line items."""
     if request.method == 'POST':
@@ -39,7 +93,6 @@ def create_invoice(request):
         status = request.POST.get('status', 'UNPAID')
         google_drive_url = request.POST.get('google_drive_url', '').strip()
 
-        # Safe date parsing
         try:
             issue_date = date.fromisoformat(raw_issue_date) if raw_issue_date else timezone.now().date()
         except ValueError:
@@ -62,7 +115,6 @@ def create_invoice(request):
                 google_drive_url=google_drive_url
             )
 
-            # Optional initial line item
             inventory_id = request.POST.get('inventory_id')
             custom_desc = request.POST.get('custom_description', '').strip()
             quantity = int(request.POST.get('quantity') or 1)
@@ -99,7 +151,6 @@ def create_invoice(request):
 
 
 def invoice_detail(request, invoice_id):
-    """View and manage invoice line items, PDF links, and payment status."""
     invoice = get_object_or_404(Invoice, id=invoice_id)
     master_items = InventoryItem.objects.all().order_by('part_name')
     return render(request, 'finance/invoice_detail.html', {
@@ -109,7 +160,6 @@ def invoice_detail(request, invoice_id):
 
 
 def add_invoice_item(request, invoice_id):
-    """Add a billed line item to an invoice."""
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
         inventory_id = request.POST.get('inventory_id')
@@ -140,7 +190,6 @@ def add_invoice_item(request, invoice_id):
 
 
 def delete_invoice_item(request, item_id):
-    """Delete a billed line item from an invoice."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         invoice = item.order
@@ -150,8 +199,18 @@ def delete_invoice_item(request, item_id):
         return redirect('finance:invoice_detail', invoice_id=invoice.id)
 
 
+def delete_invoice(request, invoice_id):
+    """Delete an invoice and return to the client ledger."""
+    if request.method == 'POST':
+        invoice = get_object_or_404(Invoice, id=invoice_id)
+        client_id = invoice.customer.id if invoice.customer else None
+        invoice.delete()
+        if client_id:
+            return redirect('finance:client_ledger', client_id=client_id)
+    return redirect('finance:dashboard')
+
+
 def update_invoice_details(request, invoice_id):
-    """Update invoice metadata (status, due date, Google Drive PDF URL)."""
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
         invoice.status = request.POST.get('status', invoice.status)
@@ -171,22 +230,18 @@ def edit_invoice(request, invoice_id):
 
 
 def bulk_import(request):
-    """Parse Google Drive links and import financial records."""
     return render(request, 'finance/bulk_import.html')
 
 
 def pricelist_dashboard(request):
-    """Master Pricelist."""
     items = MasterPricelistItem.objects.all()
     return render(request, 'finance/pricelist.html', {'items': items})
 
 
 def price_history(request):
-    """Spare Parts Price History."""
     records = PriceRecord.objects.all().order_by('-date_recorded')
     return render(request, 'finance/price_history.html', {'records': records})
 
 
 def export_finances(request):
-    """Export invoices logic placeholder."""
     return redirect('finance:dashboard')

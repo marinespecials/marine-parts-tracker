@@ -183,8 +183,8 @@
                                 </td>
                                 <td style="text-align: right;">
                                     <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
-                                        {% if invoice.ocr_document %}
-                                            <a href="{{ invoice.ocr_document.url }}" target="_blank" class="text-link">PDF</a>
+                                        {% if invoice.google_drive_url %}
+                                            <a href="{{ invoice.google_drive_url }}" target="_blank" class="text-link">PDF</a>
                                         {% endif %}
                                         <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" style="display:inline;">
                                             {% csrf_token %}
