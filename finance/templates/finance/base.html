@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Financial Intelligence Hub{% endblock %} | Marine Specials</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary: #0F172A;
+            --primary-hover: #1E293B;
+            --surface: #FFFFFF;
+            --background: #F8FAFC;
+            --accent: #2563EB;
+            --accent-light: #EFF6FF;
+            --success: #059669;
+            --danger: #DC2626;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --border: #E2E8F0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            margin: 0;
+            padding: 0;
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary);
+            color: #94A3B8;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-brand {
+            padding: 22px 24px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #1E293B;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-menu {
+            padding: 20px 14px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .menu-section {
+            margin-bottom: 24px;
+        }
+
+        .menu-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #475569;
+            font-weight: 700;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background-color: var(--primary-hover);
+        }
+
+        .nav-item.active {
+            color: white;
+            background-color: var(--accent);
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid #1E293B;
+        }
+
+        /* Main Workspace Area */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Top Header Bar */
+        .topbar {
+            height: 64px;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .page-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .content-body {
+            padding: 32px;
+            flex-grow: 1;
+        }
+
+        /* Reusable UI Components */
+        .card {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: #1D4ED8; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #047857; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-outline:hover { background: #F1F5F9; }
+
+        .badge {
+            font-size: 0.725rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #E2E8F0;
+            color: #334155;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span>⚓ MARINE SPECIALS</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-section-title">Main</div>
+                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span>🏠 Financial Dashboard</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Financial Operations</div>
+                <a href="{% url 'finance:bulk_import' %}" class="nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
+                    <span>⚡ Smart Bulk Import</span>
+                </a>
+                <a href="{% url 'client_list' %}" class="nav-item">
+                    <span>👥 Client Ledgers</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Catalog & Pricing</div>
+                <a href="{% url 'finance:pricelist_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'pricelist_dashboard' %}active{% endif %}">
+                    <span>📋 Master Pricelist</span>
+                </a>
+                <a href="{% url 'finance:price_history' %}" class="nav-item {% if request.resolver_match.url_name == 'price_history' %}active{% endif %}">
+                    <span>⚙️ Spare Parts & Prices</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Resources</div>
+                <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="nav-item">
+                    <span>📁 Drive Repository ↗</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{% url 'finance:export_finances' %}" class="btn btn-success" style="width: 100%; justify-content: center;">
+                📥 Export CSV Report
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="topbar-actions">
+                {% block topbar_actions %}
+                    <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">+ New Invoice</a>
+                {% endblock %}
+            </div>
+        </header>
+
+        <main class="content-body">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

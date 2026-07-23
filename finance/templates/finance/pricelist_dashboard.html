@@ -1,193 +1,164 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Master Client Pricelist Hub</title>
-    <style>
-        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --danger: #DC2626; --text: #334155; --border: #E2E8F0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
-        
-        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .nav-group { display: flex; gap: 15px; align-items: center; }
-        .nav-group a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
-        .nav-group a:hover, .nav-group a.active { color: white; }
-        
-        .container { padding: 30px; max-width: 1350px; margin: auto; }
-        .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); }
-        
-        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
-        .kpi-box { background: var(--surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .kpi-title { font-size: 0.75rem; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
-        
-        .grid-split { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
-        
-        .form-group { margin-bottom: 14px; }
-        label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 4px; }
-        input, select { width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; }
-        input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
-        
-        .btn { width: 100%; padding: 10px; border-radius: 6px; font-size: 0.875rem; background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
-        .btn:hover { background-color: #1D4ED8; }
-        .btn-success { background-color: var(--success); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: auto; padding: 7px 14px; font-size: 0.825rem; color: white; border-radius: 6px; font-weight: 600; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: #64748B; font-weight: 600; }
-        td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        tr:hover td { background-color: #FAFCFF; }
-        
-        .badge { font-size: 0.725rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: #E2E8F0; color: #334155; }
-        .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <div class="nav-group">
-            <a href="/">🏠 Hub</a>
-            <span style="color: #475569;">|</span>
-            <a href="{% url 'finance:dashboard' %}">Financial Intelligence</a>
-            <a href="{% url 'finance:pricelist_dashboard' %}" class="active">📋 Master Pricelist</a>
-            <a href="{% url 'finance:price_history' %}">⚙️ Spare Parts & Prices</a>
-            <a href="{% url 'client_list' %}">Client Ledgers</a>
-        </div>
+{% extends 'finance/base.html' %}
+
+{% block title %}Master Client Pricelist{% endblock %}
+{% block page_title %}📋 Master Client Pricelist{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{% url 'finance:export_pricelist_csv' %}?category={{ selected_category }}&q={{ query }}" class="btn btn-success">📥 Download Client CSV</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
+    .kpi-box { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .kpi-title { font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); margin-top: 6px; }
+    
+    .grid-split { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+    
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+    
+    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
+</style>
+
+<div class="kpi-grid">
+    <div class="kpi-box">
+        <div class="kpi-title">Catalog Items</div>
+        <div class="kpi-value">{{ total_items }}</div>
     </div>
+    <div class="kpi-box">
+        <div class="kpi-title">Average Trade Margin</div>
+        <div class="kpi-value">{{ avg_markup }}%</div>
+    </div>
+</div>
 
-    <div class="container">
-        <!-- KPI Row -->
-        <div class="kpi-grid">
-            <div class="kpi-box">
-                <div class="kpi-title">Catalog Items</div>
-                <div class="kpi-value">{{ total_items }}</div>
+<div class="grid-split">
+    <!-- Left: Add New Catalog Item -->
+    <div class="card">
+        <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary);">+ Add Catalog Item</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Part Name *</label>
+                <input type="text" name="part_name" placeholder="e.g. Yanmar Fuel Filter" required>
             </div>
-            <div class="kpi-box">
-                <div class="kpi-title">Average Trade Margin</div>
-                <div class="kpi-value">{{ avg_markup }}%</div>
+            <div class="form-group">
+                <label>Part / OEM Code</label>
+                <input type="text" name="part_code" placeholder="e.g. YAM-129670">
             </div>
-        </div>
-
-        <div class="grid-split">
-            <!-- Left: Add New Catalog Item -->
-            <div class="card">
-                <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary);">+ Add Catalog Item</h3>
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label>Part Name *</label>
-                        <input type="text" name="part_name" placeholder="e.g. Yanmar Fuel Filter" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Part / OEM Code</label>
-                        <input type="text" name="part_code" placeholder="e.g. YAM-129670">
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category">
-                            {% for code, label in category_choices %}
-                                <option value="{{ code }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Brand / Manufacturer</label>
-                        <input type="text" name="brand" placeholder="e.g. Yanmar, Victron">
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-group">
-                            <label>Cost Price (€)</label>
-                            <input type="number" step="0.01" id="cost_price" name="cost_price" value="0.00" oninput="calculatePrice()">
-                        </div>
-                        <div class="form-group">
-                            <label>Markup %</label>
-                            <input type="number" step="0.01" id="markup_percent" name="markup_percent" value="30.00" oninput="calculatePrice()">
-                        </div>
-                    </div>
-                    <div class="form-group" style="background:#F1F5F9; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-                        <label style="color:#0F172A;">Calculated Client Price (€):</label>
-                        <div id="price_preview" style="font-size:1.3rem; font-weight:700; color:var(--success);">0.00 €</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Stock Status</label>
-                        <select name="availability">
-                            {% for code, label in availability_choices %}
-                                <option value="{{ code }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn">Save to Catalog</button>
-                </form>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                    {% for code, label in category_choices %}
+                        <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
-
-            <!-- Right: Item List with Filters and Client CSV Exporter -->
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
-                    <h3 style="margin:0; font-size:1.1rem; color:var(--primary);">Catalog Items</h3>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <a href="{% url 'finance:export_pricelist_csv' %}?category={{ selected_category }}&q={{ query }}" class="btn-success">📥 Download Client CSV</a>
-                    </div>
+            <div class="form-group">
+                <label>Brand / Manufacturer</label>
+                <input type="text" name="brand" placeholder="e.g. Yanmar, Victron">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Cost Price (€)</label>
+                    <input type="number" step="0.01" id="cost_price" name="cost_price" value="0.00" oninput="calculatePrice()">
                 </div>
-
-                <!-- Filter Controls -->
-                <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <select name="category" onchange="this.form.submit()" style="width: 180px;">
-                        <option value="">All Categories</option>
-                        {% for code, label in category_choices %}
-                            <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                    <input type="text" name="q" value="{{ query }}" placeholder="Search part #, name, brand..." style="width: 220px;">
-                    <button type="submit" class="btn" style="width: auto; padding: 6px 14px;">Filter</button>
-                </form>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Part Code / Name</th>
-                            <th>Brand</th>
-                            <th>Category</th>
-                            <th>Cost</th>
-                            <th>Client Price</th>
-                            <th>Status</th>
-                            <th style="text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items %}
-                        <tr>
-                            <td>
-                                <strong>{{ item.part_name }}</strong>
-                                {% if item.part_code %}
-                                    <br><span style="font-size:0.75rem; color:#64748B;">OEM: {{ item.part_code }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ item.brand|default:"Generic" }}</td>
-                            <td><span class="badge">{{ item.get_category_display }}</span></td>
-                            <td style="color:#64748B;">{{ item.cost_price }} €</td>
-                            <td><strong style="color:var(--success); font-size:0.95rem;">{{ item.client_price }} €</strong></td>
-                            <td style="font-size:0.8rem;">{{ item.get_availability_display }}</td>
-                            <td style="text-align: right;">
-                                <form method="POST" action="{% url 'finance:delete_pricelist_item' item.id %}" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="text-danger" onclick="return confirm('Delete this item?');">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 30px;">No catalog items found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="form-group">
+                    <label>Markup %</label>
+                    <input type="number" step="0.01" id="markup_percent" name="markup_percent" value="30.00" oninput="calculatePrice()">
+                </div>
             </div>
-        </div>
+            <div class="form-group" style="background:#F1F5F9; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+                <label style="color:#0F172A;">Calculated Client Price (€):</label>
+                <div id="price_preview" style="font-size:1.3rem; font-weight:700; color:var(--success);">0.00 €</div>
+            </div>
+            <div class="form-group">
+                <label>Stock Status</label>
+                <select name="availability">
+                    {% for code, label in availability_choices %}
+                        <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Save to Catalog</button>
+        </form>
     </div>
 
-    <script>
-        function calculatePrice() {
-            const cost = parseFloat(document.getElementById('cost_price').value) || 0;
-            const markup = parseFloat(document.getElementById('markup_percent').value) || 0;
-            const clientPrice = cost * (1 + (markup / 100));
-            document.getElementById('price_preview').textContent = clientPrice.toFixed(2) + ' €';
-        }
-        window.addEventListener('DOMContentLoaded', calculatePrice);
-    </script>
-</body>
-</html>
+    <!-- Right: Item List with Filters -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="margin:0; font-size:1.1rem; color:var(--primary);">Catalog Items</h3>
+        </div>
+
+        <form method="GET" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <select name="category" onchange="this.form.submit()" style="width: 180px;">
+                <option value="">All Categories</option>
+                {% for code, label in category_choices %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="q" value="{{ query }}" placeholder="Search part #, name, brand..." style="width: 220px;">
+            <button type="submit" class="btn btn-outline" style="width: auto;">Filter</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Part Code / Name</th>
+                    <th>Brand</th>
+                    <th>Category</th>
+                    <th>Cost</th>
+                    <th>Client Price</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <strong>{{ item.part_name }}</strong>
+                        {% if item.part_code %}
+                            <br><span style="font-size:0.75rem; color:var(--text-secondary);">OEM: {{ item.part_code }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.brand|default:"Generic" }}</td>
+                    <td><span class="badge">{{ item.get_category_display }}</span></td>
+                    <td style="color:var(--text-secondary);">{{ item.cost_price }} €</td>
+                    <td><strong style="color:var(--success); font-size:0.95rem;">{{ item.client_price }} €</strong></td>
+                    <td style="font-size:0.8rem;">{{ item.get_availability_display }}</td>
+                    <td style="text-align: right;">
+                        <form method="POST" action="{% url 'finance:delete_pricelist_item' item.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete this item?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align: center; color: #94A3B8; padding: 30px;">No catalog items found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function calculatePrice() {
+        const cost = parseFloat(document.getElementById('cost_price').value) || 0;
+        const markup = parseFloat(document.getElementById('markup_percent').value) || 0;
+        const clientPrice = cost * (1 + (markup / 100));
+        document.getElementById('price_preview').textContent = clientPrice.toFixed(2) + ' €';
+    }
+    window.addEventListener('DOMContentLoaded', calculatePrice);
+</script>
+{% endblock %}

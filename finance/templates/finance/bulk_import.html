@@ -1,57 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Auto-Fetch Link Importer</title>
-    <style>
-        :root { --primary: #0F172A; --surface: #FFFFFF; --background: #F8FAFC; --accent: #2563EB; --success: #059669; --text: #334155; --border: #E2E8F0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--background); margin: 0; color: var(--text); }
-        .navbar { background-color: var(--primary); color: white; padding: 14px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .container { padding: 40px; max-width: 950px; margin: auto; }
-        .card { background: var(--surface); padding: 30px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        h2 { margin-top: 0; color: var(--primary); }
-        textarea { width: 100%; height: 280px; font-family: monospace; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; background: #FAFAFA; margin-top: 8px; }
-        textarea:focus { outline: none; border-color: var(--accent); background: white; }
-        .btn { width: 100%; padding: 12px; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; margin-top: 20px; background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; }
-        .btn:hover { background-color: #1D4ED8; }
-        .alert { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; }
-        .instructions { font-size: 0.875rem; color: #64748B; line-height: 1.6; margin-bottom: 20px; background: #F1F5F9; padding: 18px; border-radius: 6px; }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <a href="{% url 'finance:dashboard' %}" style="color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem;">&larr; Back to Dashboard</a>
-            <span style="color: white; font-weight: 600; font-size: 0.9rem;">Auto-Fetch Link Importer</span>
+{% extends 'finance/base.html' %}
+
+{% block title %}Smart Bulk Link Importer{% endblock %}
+{% block page_title %}⚡ Smart Bulk Link Importer{% endblock %}
+
+{% block content %}
+<style>
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; }
+    textarea { width: 100%; height: 220px; padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; font-family: monospace; }
+    textarea:focus { outline: none; border-color: var(--accent); background: white; }
+    .alert-success { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; }
+</style>
+
+<div class="card" style="max-width: 900px; margin: auto;">
+    {% if message %}
+        <div class="alert-success">✅ {{ message }}</div>
+    {% endif %}
+
+    <h3 style="margin-top:0; color:var(--primary);">Bulk Paste Google Drive Share Links</h3>
+    <p style="color:var(--text-secondary); font-size:0.875rem; margin-bottom:20px;">
+        Paste raw Google Drive file URLs separated by lines or spaces. The system will auto-parse titles, extract tail dates, clean supplier names, and assign document categories automatically.
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="raw_data">Paste Links Below:</label>
+            <textarea id="raw_data" name="raw_data" placeholder="https://drive.google.com/file/d/...&#10;https://drive.google.com/file/d/..." required></textarea>
         </div>
-    </div>
-
-    <div class="container">
-        <div class="card">
-            <h2>Just Paste Your Google Drive Links!</h2>
-            
-            {% if message %}
-                <div class="alert">{{ message }}</div>
-            {% endif %}
-
-            <div class="instructions">
-                <strong>Super Simple Workflow:</strong> You can now paste **just the Google Drive share links** (one per line). 
-                <br>The app will automatically visit each link in the background, read the file name from Google Drive (e.g., `Elyros-Marine_INV-1001_2026-07-01.pdf`), and extract the client name, invoice number, and date automatically!
-                <br><br>
-                <em>Example format to paste:</em><br>
-                <code>https://drive.google.com/file/d/1Mtnlbdr.../view?usp=sharing</code><br>
-                <code>https://drive.google.com/file/d/3C4D.../view?usp=sharing</code>
-            </div>
-
-            <form method="POST">
-                {% csrf_token %}
-
-                <label style="font-size: 0.825rem; font-weight: 600; color: #475569; display: block;">Paste Google Drive Links (one per line):</label>
-                <textarea name="raw_data" placeholder="https://drive.google.com/file/d/.../view&#10;https://drive.google.com/file/d/.../view" required></textarea>
-
-                <button type="submit" class="btn">Auto-Fetch & Import All Links</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; justify-content: center; font-size: 0.95rem;">
+            Process & Import Links
+        </button>
+    </form>
+</div>
+{% endblock %}
