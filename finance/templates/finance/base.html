@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Financial Intelligence Hub{% endblock %} | Marine Specials</title>
+    <title>{% block title %}Logistics & Operations{% endblock %} | Marine Specials</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -48,7 +48,7 @@
         .sidebar-brand {
             padding: 22px 24px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -64,7 +64,7 @@
         }
 
         .menu-section {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .menu-section-title {
@@ -80,15 +80,15 @@
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
+            justify-content: space-between;
+            padding: 12px 14px;
             color: #94A3B8;
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 600;
             border-radius: 8px;
             transition: all 0.2s ease;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .nav-item:hover {
@@ -99,6 +99,28 @@
         .nav-item.active {
             color: white;
             background-color: var(--accent);
+        }
+
+        .sub-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 8px 32px;
+            color: #64748B;
+            text-decoration: none;
+            font-size: 0.825rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+            margin-bottom: 2px;
+        }
+
+        .sub-nav-item:hover {
+            color: white;
+        }
+
+        .sub-nav-item.active {
+            color: #60A5FA;
+            font-weight: 700;
         }
 
         .sidebar-footer {
@@ -141,16 +163,16 @@
         }
 
         .content-body {
-            padding: 32px;
+            padding: 28px 32px;
             flex-grow: 1;
         }
 
         .card {
             background: var(--surface);
-            padding: 25px;
+            padding: 24px;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
+            margin-bottom: 24px;
             border: 1px solid var(--border);
         }
 
@@ -188,69 +210,64 @@
 </head>
 <body>
 
-    <!-- SIDEBAR NAVIGATION -->
+    <!-- CONSOLIDATED SIDEBAR NAVIGATION -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <span>⚓ MARINE SPECIALS</span>
         </div>
 
         <nav class="sidebar-menu">
+            
+            <!-- CORE VIEW 1: ACTIVE OPERATIONS & ORDERS -->
             <div class="menu-section">
-                <div class="menu-section-title">Main</div>
-                <a href="{% url 'hub' %}" class="nav-item {% if request.resolver_match.url_name == 'hub' or request.resolver_match.url_name == 'app_hub' %}active{% endif %}">
-                    <span>🏠 Portal Hub</span>
-                </a>
-            </div>
-
-            <div class="menu-section">
-                <div class="menu-section-title">Operations & Orders</div>
+                <div class="menu-section-title">1. Operations</div>
                 
-                <a href="{% url 'active_board' %}" class="nav-item {% if request.resolver_match.url_name == 'active_board' %}active{% endif %}" style="background-color: #1E293B; margin-bottom: 8px;">
-                    <span style="color: #60A5FA;">📡 Live Operations Board</span>
+                <a href="{% url 'active_board' %}" class="nav-item {% if request.resolver_match.url_name == 'active_board' %}active{% endif %}">
+                    <span>📡 Live Board & Orders</span>
                 </a>
+                
+                <a href="{% url 'orders_dashboard' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'orders_dashboard' %}active{% endif %}">
+                    <span>└ Orders & Delivery Notes</span>
+                </a>
+            </div>
 
-                <a href="{% url 'orders_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'orders_dashboard' %}active{% endif %}">
-                    <span>📦 Orders & Delivery Notes</span>
-                </a>
+            <!-- CORE VIEW 2: WAREHOUSE STOCK -->
+            <div class="menu-section">
+                <div class="menu-section-title">2. Inventory</div>
+                
                 <a href="{% url 'inventory_list' %}" class="nav-item {% if request.resolver_match.url_name == 'inventory_list' %}active{% endif %}">
-                    <span>📦 Warehouse Inventory</span>
-                </a>
-                <a href="{% url 'client_list' %}" class="nav-item {% if request.resolver_match.url_name == 'client_list' %}active{% endif %}">
-                    <span>👥 Client Ledgers</span>
+                    <span>📦 Warehouse Stock</span>
                 </a>
             </div>
 
+            <!-- CORE VIEW 3: INVOICES & FINANCE -->
             <div class="menu-section">
-                <div class="menu-section-title">Financial Intelligence</div>
-                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <span>📊 Finance Workspace</span>
+                <div class="menu-section-title">3. Finance</div>
+                
+                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
+                    <span>📄 Invoices & Drive</span>
                 </a>
-                <a href="{% url 'finance:bulk_import' %}" class="nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
-                    <span>⚡ Smart Bulk Import</span>
+
+                <a href="{% url 'finance:bulk_import' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
+                    <span>└ Smart Drive Import</span>
+                </a>
+                <a href="{% url 'client_list' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'client_list' %}active{% endif %}">
+                    <span>└ Client Ledgers</span>
                 </a>
             </div>
 
-            <div class="menu-section">
-                <div class="menu-section-title">Catalog & Pricing</div>
-                <a href="{% url 'finance:pricelist_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'pricelist_dashboard' %}active{% endif %}">
-                    <span>📋 Master Pricelist</span>
-                </a>
-                <a href="{% url 'finance:price_history' %}" class="nav-item {% if request.resolver_match.url_name == 'price_history' %}active{% endif %}">
-                    <span>⚙️ Spare Parts & Prices</span>
+            <!-- EXTERNAL DRIVE LINK -->
+            <div class="menu-section" style="margin-top: 30px;">
+                <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="sub-nav-item" style="color: #94A3B8;">
+                    <span>📁 Google Drive Folder ↗</span>
                 </a>
             </div>
 
-            <div class="menu-section">
-                <div class="menu-section-title">Resources</div>
-                <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="nav-item">
-                    <span>📁 Drive Repository ↗</span>
-                </a>
-            </div>
         </nav>
 
         <div class="sidebar-footer">
-            <a href="{% url 'finance:export_finances' %}" class="btn btn-success" style="width: 100%; justify-content: center;">
-                📥 Export CSV Report
+            <a href="{% url 'finance:export_finances' %}" class="btn btn-success" style="width: 100%; justify-content: center; font-size: 0.8rem;">
+                📥 Export Financials
             </a>
         </div>
     </aside>
@@ -261,6 +278,7 @@
             <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
             <div class="topbar-actions">
                 {% block topbar_actions %}
+                    <a href="{% url 'orders_dashboard' %}" class="btn btn-outline">+ Quick Order</a>
                     <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">+ New Invoice</a>
                 {% endblock %}
             </div>
