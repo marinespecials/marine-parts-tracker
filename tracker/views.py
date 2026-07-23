@@ -30,18 +30,17 @@ app_hub = hub_view
 
 
 def orders_dashboard(request):
-    """Simple Order & Delivery Note Manager (Restored classic workflow)."""
+    """Simple Order & Delivery Note Manager (No Drive dependency)."""
     status_filter = request.GET.get('status', 'ORDER').upper()
     query = request.GET.get('q', '').strip()
 
-    # Fast Manual Entry via Pop-up Modal
+    # Simple Manual Order Creation
     if request.method == 'POST':
         customer_name = request.POST.get('customer_name', '').strip()
         order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
         total_amount = float(request.POST.get('total_amount') or 0.00)
         issue_date = request.POST.get('issue_date') or timezone.now().date()
         status = request.POST.get('status', 'ORDER')
-        google_drive_url = request.POST.get('google_drive_url', '').strip()
 
         if customer_name:
             customer, _ = Customer.objects.get_or_create(name=customer_name)
@@ -52,11 +51,11 @@ def orders_dashboard(request):
                 issue_date=issue_date,
                 due_date=issue_date + timedelta(days=30),
                 status=status,
-                google_drive_url=google_drive_url
+                google_drive_url='' # Drive intentionally left empty for orders
             )
         return redirect(f"{request.path}?status={status}")
 
-    records = Invoice.objects.all().order_by('-issue_date')
+    records = Invoice.objects.filter(status__in=['ORDER', 'DELIVERY']).order_by('-issue_date')
 
     # Status Tab Filtering
     if status_filter != 'ALL':
@@ -72,8 +71,7 @@ def orders_dashboard(request):
     counts = {
         'ORDER': Invoice.objects.filter(status='ORDER').count(),
         'DELIVERY': Invoice.objects.filter(status='DELIVERY').count(),
-        'DRAFT': Invoice.objects.filter(status='DRAFT').count(),
-        'ALL': Invoice.objects.count(),
+        'ALL': Invoice.objects.filter(status__in=['ORDER', 'DELIVERY']).count(),
     }
 
     context = {
