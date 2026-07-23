@@ -1,165 +1,82 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}Order Tracker{% endblock %}
-{% block page_title %}📦 Operational Order Tracker{% endblock %}
+{% block title %}Logistics Orders{% endblock %}
+{% block page_title %}📦 Operational Logistics Tracker{% endblock %}
 
 {% block content %}
 <style>
-    /* Quick Add Bar */
-    .quick-add-card {
-        background: var(--surface);
-        padding: 16px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        margin-bottom: 20px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    }
-    
-    .quick-add-form {
-        display: grid;
-        grid-template-columns: 140px 1.5fr 1fr 120px 110px 110px;
-        gap: 10px;
-        align-items: center;
-    }
-
-    /* Filter Tabs */
+    .quick-add-card { background: var(--surface); padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .quick-add-form { display: grid; grid-template-columns: 140px 1.5fr 1fr 120px 100px; gap: 10px; align-items: center; }
     .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; }
     .tab-item { padding: 9px 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; }
-    .tab-item:hover { color: var(--primary); background: #F1F5F9; }
     .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
     .tab-badge { background: #E2E8F0; color: #334155; padding: 2px 7px; border-radius: 10px; font-size: 0.725rem; margin-left: 6px; }
     .tab-item.active .tab-badge { background: var(--accent); color: white; }
-
-    /* High Density Table */
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
     td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
-
     .status-tag { font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block; }
-    .tag-ORDER { background: #FEF3C7; color: #92400E; }
-    .tag-DELIVERY { background: #D1FAE5; color: #065F46; }
-
-    .btn-convert {
-        background-color: #2563EB;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 5px;
-        font-size: 0.775rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-    .btn-convert:hover { background-color: #1D4ED8; }
-    
-    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.825rem; }
-    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
+    .tag-PENDING { background: #FEF3C7; color: #92400E; }
+    .tag-PROCESSING { background: #DBEAFE; color: #1E40AF; }
+    .tag-DELIVERED { background: #D1FAE5; color: #065F46; }
+    .btn-manage { background-color: var(--accent); color: white; border: none; padding: 5px 12px; border-radius: 5px; font-size: 0.775rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; font-size: 0.825rem; }
 </style>
 
-<!-- FAST INLINE ORDER LOGGER -->
 <div class="quick-add-card">
-    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-        + Fast Log Order / Delivery
-    </div>
+    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">+ LOG NEW ORDER</div>
     <form method="POST" class="quick-add-form">
         {% csrf_token %}
         <input type="hidden" name="create_order" value="1">
-
-        <select name="status" style="padding: 7px 9px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required>
-            <option value="ORDER" selected>📦 Order</option>
-            <option value="DELIVERY">🚚 Delivery Note</option>
+        <select name="status" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);" required>
+            <option value="PENDING" selected>🕒 Pending</option>
+            <option value="PROCESSING">⚙️ Processing</option>
+            <option value="DELIVERED">🚚 Delivered</option>
         </select>
-
-        <input type="text" name="customer_name" placeholder="Client / Vessel Name *" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required list="client-list">
-        <datalist id="client-list">
-            {% for c in customers %}
-                <option value="{{ c.name }}"></option>
-            {% endfor %}
-        </datalist>
-
-        <input type="text" name="order_number" placeholder="Order # (Optional)" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
-
-        <input type="number" step="0.01" name="total_amount" placeholder="Amount (€)" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
-
-        <input type="date" name="issue_date" style="padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.825rem;">
-
-        <button type="submit" class="btn btn-primary" style="padding: 7px; justify-content: center; font-size: 0.85rem;">
-            Save Entry
-        </button>
+        <input type="text" name="customer_name" placeholder="Client Name *" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);" required list="client-list">
+        <datalist id="client-list">{% for c in customers %}<option value="{{ c.name }}"></option>{% endfor %}</datalist>
+        <input type="text" name="order_number" placeholder="Order # (Optional)" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);">
+        <input type="date" name="issue_date" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);">
+        <button type="submit" class="btn btn-primary" style="padding: 7px; justify-content: center;">Save</button>
     </form>
 </div>
 
-<!-- MAIN ORDER & DELIVERY WORKSPACE -->
 <div class="card" style="padding: 18px 22px;">
-    <!-- Filter Tabs -->
     <div class="tab-bar">
-        <a href="?status=ORDER" class="tab-item {% if status_filter == 'ORDER' %}active{% endif %}">
-            📦 Active Orders (Παραγγελίες) <span class="tab-badge">{{ counts.ORDER }}</span>
-        </a>
-        <a href="?status=DELIVERY" class="tab-item {% if status_filter == 'DELIVERY' %}active{% endif %}">
-            🚚 Delivery Notes (Δελτία) <span class="tab-badge">{{ counts.DELIVERY }}</span>
-        </a>
-        <a href="?status=ALL" class="tab-item {% if status_filter == 'ALL' %}active{% endif %}">
-            📋 All Records <span class="tab-badge">{{ counts.ALL }}</span>
-        </a>
+        <a href="?status=PENDING" class="tab-item {% if status_filter == 'PENDING' %}active{% endif %}">🕒 Pending <span class="tab-badge">{{ counts.PENDING }}</span></a>
+        <a href="?status=PROCESSING" class="tab-item {% if status_filter == 'PROCESSING' %}active{% endif %}">⚙️ Processing <span class="tab-badge">{{ counts.PROCESSING }}</span></a>
+        <a href="?status=DELIVERED" class="tab-item {% if status_filter == 'DELIVERED' %}active{% endif %}">🚚 Delivered <span class="tab-badge">{{ counts.DELIVERED }}</span></a>
+        <a href="?status=ALL" class="tab-item {% if status_filter == 'ALL' %}active{% endif %}">📋 All <span class="tab-badge">{{ counts.ALL }}</span></a>
     </div>
 
-    <!-- Search Bar -->
-    <div style="margin-bottom: 16px;">
-        <form method="GET" style="display: flex; gap: 8px;">
-            <input type="hidden" name="status" value="{{ status_filter }}">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search client or order #..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); width: 280px; font-size: 0.85rem;">
-            <button type="submit" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.825rem;">Search</button>
-        </form>
-    </div>
-
-    <!-- Clean Orders Table -->
     <table>
         <thead>
             <tr>
-                <th>Type</th>
+                <th>Status</th>
                 <th>Order #</th>
-                <th>Client / Vessel</th>
+                <th>Client</th>
                 <th>Date</th>
-                <th>Amount (€)</th>
+                <th>Total Value</th>
                 <th style="text-align: right;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for item in records %}
             <tr>
-                <td>
-                    <span class="status-tag tag-{{ item.status }}">
-                        {% if item.status == 'DELIVERY' %}🚚 Delivery{% else %}📦 Active Order{% endif %}
-                    </span>
-                </td>
-                <td><strong style="color: var(--primary);">{{ item.invoice_number }}</strong></td>
-                <td><strong style="font-size: 0.9rem;">{{ item.customer.name }}</strong></td>
+                <td><span class="status-tag tag-{{ item.status }}">{{ item.status }}</span></td>
+                <td><strong>{{ item.invoice_number }}</strong></td>
+                <td><strong>{{ item.customer.name }}</strong></td>
                 <td>{{ item.issue_date|date:"d/m/Y" }}</td>
                 <td><strong>{{ item.total_amount }} €</strong></td>
                 <td style="text-align: right;">
                     <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                        {% if item.status == 'ORDER' %}
-                            <form method="POST" action="{% url 'convert_order_status' item.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-convert" title="Move this order to Delivery Note status">
-                                    🚚 Move to Delivery Note
-                                </button>
-                            </form>
-                        {% endif %}
-                        <a href="{% url 'finance:edit_invoice' item.id %}" class="text-link">Edit</a>
+                        <a href="{% url 'order_detail' item.id %}" class="btn-manage">📝 Manage Items</a>
                         <form method="POST" action="{% url 'delete_order' item.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="text-danger" onclick="return confirm('Delete this record?');">Delete</button>
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete order?');">Delete</button>
                         </form>
                     </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center; color: #94A3B8; padding: 35px;">
-                    No records found under <strong>{{ status_filter }}</strong>. Use the fast logger above to add a new entry!
                 </td>
             </tr>
             {% endfor %}

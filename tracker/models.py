@@ -46,3 +46,17 @@ class InventoryItem(models.Model):
 
     def __str__(self):
         return f"{self.part_name} ({self.quantity} in stock at {self.location})"
+class OrderItem(models.Model):
+    """Line items attached to an Order/Invoice, pulling from Master Inventory."""
+    order = models.ForeignKey('finance.Invoice', on_delete=models.CASCADE, related_name='order_items')
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.CharField(max_length=255, help_text="Part name if not from inventory")
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    @property
+    def total_price(self):
+        return self.quantity * float(self.unit_price)
+
+    def __str__(self):
+        return f"{self.quantity}x {self.description} for {self.order.invoice_number}"

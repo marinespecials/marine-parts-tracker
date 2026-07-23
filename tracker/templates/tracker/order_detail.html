@@ -1,0 +1,92 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Order Details - {{ order.invoice_number }}{% endblock %}
+{% block page_title %}🧾 Order: {{ order.invoice_number }}{% endblock %}
+
+{% block content %}
+<style>
+    .info-card { background: var(--surface); padding: 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; }
+    .status-btns form { display: inline; }
+    .btn-status { padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; font-size: 0.8rem; }
+    .btn-status:hover { background: #F8FAFC; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); }
+    .add-row { background: #F8FAFC; }
+    input, select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); width: 100%; box-sizing: border-box; }
+</style>
+
+<a href="{% url 'orders_dashboard' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to Orders</a>
+
+<div class="info-card">
+    <div>
+        <h2 style="margin: 0 0 5px 0; color: var(--primary);">{{ order.customer.name }}</h2>
+        <div style="color: var(--text-secondary); font-size: 0.9rem;">Date: {{ order.issue_date|date:"d/m/Y" }}</div>
+    </div>
+    <div style="text-align: right;">
+        <h2 style="margin: 0 0 5px 0; color: var(--primary);">{{ order.total_amount }} €</h2>
+        <div class="status-btns">
+            Current Status: <strong>{{ order.status }}</strong> &nbsp;|&nbsp;
+            <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}">{% csrf_token %}<button class="btn-status">🕒 Set Pending</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}">{% csrf_token %}<button class="btn-status">⚙️ Set Processing</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}">{% csrf_token %}<button class="btn-status">🚚 Set Delivered</button></form>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 0;">
+    <table>
+        <thead>
+            <tr>
+                <th>Item Description / Master Part</th>
+                <th style="width: 100px; text-align: center;">Qty</th>
+                <th style="width: 120px;">Unit Price (€)</th>
+                <th style="width: 120px;">Total (€)</th>
+                <th style="width: 80px; text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Existing Items -->
+            {% for item in order.order_items.all %}
+            <tr>
+                <td><strong>{{ item.description }}</strong></td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td>{{ item.unit_price }}</td>
+                <td><strong>{{ item.total_price }}</strong></td>
+                <td style="text-align: right;">
+                    <form method="POST" action="{% url 'delete_order_item' item.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="color: var(--danger); background: none; border: none; cursor: pointer; font-weight: bold;">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; padding: 30px; color: #94A3B8;">No items added to this order yet.</td></tr>
+            {% endfor %}
+
+            <!-- Add New Item Row -->
+            <tr class="add-row">
+                <form method="POST" action="{% url 'add_order_item' order.id %}">
+                    {% csrf_token %}
+                    <td>
+                        <div style="margin-bottom: 5px; font-size: 0.75rem; font-weight: bold; color: var(--primary);">Select from Master List (Warehouse):</div>
+                        <select name="inventory_id">
+                            <option value="">-- Or type custom item below --</option>
+                            {% for inv in master_items %}
+                                <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }}€</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="description" placeholder="Or type custom description..." style="margin-top: 5px;">
+                    </td>
+                    <td><input type="number" name="quantity" value="1" min="1" style="text-align: center;" required></td>
+                    <td><input type="number" step="0.01" name="unit_price" placeholder="0.00" title="Leave blank if using Master List"></td>
+                    <td>-</td>
+                    <td style="text-align: right;">
+                        <button type="submit" class="btn btn-primary" style="padding: 8px 12px;">+ Add</button>
+                    </td>
+                </form>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
