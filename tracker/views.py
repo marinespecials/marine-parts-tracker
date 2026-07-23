@@ -371,3 +371,33 @@ def delete_inventory_item(request, item_id):
 def client_list(request):
     clients = Customer.objects.annotate(invoice_count=Count('invoice')).order_by('name')
     return render(request, 'tracker/client_list.html', {'clients': clients})
+
+def global_search(request):
+    """Universal search across Orders, Financial Invoices, Warehouse Parts, and Clients."""
+    query = request.GET.get('q', '').strip()
+    orders = []
+    invoices = []
+    inventory = []
+    clients = []
+
+    if query:
+        all_docs = Invoice.objects.filter(
+            Q(invoice_number__icontains=query) | Q(customer__name__icontains=query)
+        ).order_by('-issue_date')
+        
+        orders = all_docs.filter(status__in=['PENDING', 'PROCESSING', 'DELIVERED'])
+        invoices = all_docs.filter(status__in=['UNPAID', 'PAID', 'OVERDUE', 'DRAFT'])
+        
+        inventory = InventoryItem.objects.filter(
+            Q(part_name__icontains=query) | Q(part_code__icontains=query) | Q(location__icontains=query)
+        )
+
+        clients = Customer.objects.filter(name__icontains=query)
+
+    return render(request, 'tracker/search_results.html', {
+        'query': query,
+        'orders': orders,
+        'invoices': invoices,
+        'inventory': inventory,
+        'clients': clients,
+    })

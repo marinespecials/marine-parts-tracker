@@ -6,6 +6,9 @@ urlpatterns = [
     path('', views.hub_view, name='hub'),
     path('hub/', views.hub_view, name='app_hub'),
     
+    # Universal Global Search
+    path('search/', views.global_search, name='global_search'),
+    
     # Live Operations Board
     path('live-board/', views.active_board, name='active_board'),
     
@@ -14,7 +17,7 @@ urlpatterns = [
     path('orders/create/', views.create_order, name='create_order'),
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
     path('orders/<int:order_id>/add_item/', views.add_order_item, name='add_order_item'),
-    path('orders/<int:order_id>/convert/', views.convert_order_to_invoice, name='convert_order_to_invoice'), # <-- NEW
+    path('orders/<int:order_id>/convert/', views.convert_order_to_invoice, name='convert_order_to_invoice'),
     path('orders/item/<int:item_id>/delete/', views.delete_order_item, name='delete_order_item'),
     path('orders/item/<int:item_id>/toggle/', views.toggle_item_packed, name='toggle_item_packed'),
     path('orders/<int:order_id>/status/<str:new_status>/', views.change_order_status, name='change_order_status'),

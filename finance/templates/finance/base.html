@@ -210,7 +210,7 @@
 </head>
 <body>
 
-    <!-- CONSOLIDATED SIDEBAR NAVIGATION -->
+    <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <span>⚓ MARINE SPECIALS</span>
@@ -279,7 +279,11 @@
     <!-- MAIN CONTENT AREA -->
     <div class="main-wrapper">
         <header class="topbar">
-            <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <!-- GLOBAL SEARCH BAR IN TOPBAR -->
+            <form method="GET" action="{% url 'global_search' %}" style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" name="q" value="{{ query }}" placeholder="🔍 Universal Search (Orders, Invoices, Parts...)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
+            </form>
+
             <div class="topbar-actions">
                 {% block topbar_actions %}
                     <a href="{% url 'create_order' %}" class="btn btn-outline">+ Create Order</a>

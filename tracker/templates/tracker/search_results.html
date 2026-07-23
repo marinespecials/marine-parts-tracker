@@ -1,0 +1,125 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Search Results for "{{ query }}"{% endblock %}
+{% block page_title %}🔍 Search Results for "{{ query }}"{% endblock %}
+
+{% block content %}
+<style>
+    .section-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 24px; }
+    th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background-color: #FAFCFF; }
+    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
+</style>
+
+<!-- LOGISTICS ORDERS MATCHES -->
+<div class="card">
+    <div class="section-title">📦 Operational Orders ({{ orders.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Client / Vessel</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th style="text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>{{ order.invoice_number }}</strong></td>
+                <td><strong style="color: var(--primary);">{{ order.customer.name }}</strong></td>
+                <td><span class="badge">{{ order.status }}</span></td>
+                <td>{{ order.issue_date|date:"d/m/Y" }}</td>
+                <td style="text-align: right;"><a href="{% url 'order_detail' order.id %}" class="text-link">Open Order ➔</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="color: #94A3B8; text-align: center; padding: 20px;">No matching logistics orders.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- FINANCIAL INVOICES MATCHES -->
+<div class="card">
+    <div class="section-title">📄 Financial Invoices ({{ invoices.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Client Name</th>
+                <th>Status</th>
+                <th>Total Value (€)</th>
+                <th style="text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in invoices %}
+            <tr>
+                <td><strong>{{ inv.invoice_number }}</strong></td>
+                <td><strong style="color: var(--primary);">{{ inv.customer.name }}</strong></td>
+                <td><span class="badge">{{ inv.status }}</span></td>
+                <td><strong>{{ inv.total_amount }} €</strong></td>
+                <td style="text-align: right;"><a href="{% url 'finance:invoice_detail' inv.id %}" class="text-link">Open Invoice ➔</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="color: #94A3B8; text-align: center; padding: 20px;">No matching financial invoices.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- WAREHOUSE INVENTORY MATCHES -->
+<div class="card">
+    <div class="section-title">📦 Master Warehouse Stock ({{ inventory.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Part Name</th>
+                <th>OEM Code</th>
+                <th>Stock Qty</th>
+                <th>Unit Cost (€)</th>
+                <th style="text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory %}
+            <tr>
+                <td><strong>{{ item.part_name }}</strong></td>
+                <td>{{ item.part_code|default:"-" }}</td>
+                <td><strong>{{ item.quantity }}</strong></td>
+                <td>{{ item.unit_cost }} €</td>
+                <td style="text-align: right;"><a href="{% url 'edit_inventory_item' item.id %}" class="text-link">Edit Item ➔</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="color: #94A3B8; text-align: center; padding: 20px;">No matching warehouse parts.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- CLIENT DIRECTORY MATCHES -->
+<div class="card">
+    <div class="section-title">👥 Client Ledgers ({{ clients.count }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Client / Vessel Name</th>
+                <th style="text-align: right;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td><strong>{{ client.name }}</strong></td>
+                <td style="text-align: right;"><a href="{% url 'finance:client_ledger' client.id %}" class="text-link">Open Client Ledger ➔</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" style="color: #94A3B8; text-align: center; padding: 20px;">No matching client records.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
