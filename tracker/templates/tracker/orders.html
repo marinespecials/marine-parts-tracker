@@ -5,8 +5,29 @@
 
 {% block content %}
 <style>
-    .quick-add-card { background: var(--surface); padding: 16px 20px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; }
-    .quick-add-form { display: grid; grid-template-columns: 140px 1.5fr 1fr 120px 100px; gap: 10px; align-items: center; }
+    .quick-add-card { 
+        background: var(--surface); 
+        padding: 18px 22px; 
+        border-radius: 10px; 
+        border: 1px solid var(--border); 
+        margin-bottom: 22px; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .quick-add-grid { 
+        display: grid; 
+        grid-template-columns: 130px 1.5fr 1fr 1.8fr 80px 100px 110px; 
+        gap: 10px; 
+        align-items: center; 
+        margin-top: 8px;
+    }
+    .quick-add-grid input, .quick-add-grid select {
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 0.85rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
     .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; }
     .tab-item { padding: 9px 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; }
     .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
@@ -20,28 +41,51 @@
     .tag-PENDING { background: #FEF3C7; color: #92400E; }
     .tag-PROCESSING { background: #DBEAFE; color: #1E40AF; }
     .tag-DELIVERED { background: #D1FAE5; color: #065F46; }
-    .btn-manage { background-color: var(--accent); color: white; border: none; padding: 5px 12px; border-radius: 5px; font-size: 0.775rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn-manage { background-color: var(--accent); color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-manage:hover { background-color: #1D4ED8; }
     .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; font-size: 0.825rem; }
 </style>
 
+<!-- FAST LOG ORDER BAR WITH ITEM PICKER -->
 <div class="quick-add-card">
-    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">+ LOG NEW ORDER</div>
-    <form method="POST" class="quick-add-form">
+    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+        + Fast Log New Order
+    </div>
+    
+    <form method="POST" class="quick-add-grid">
         {% csrf_token %}
         <input type="hidden" name="create_order" value="1">
-        <select name="status" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);" required>
+
+        <select name="status" required>
             <option value="PENDING" selected>🕒 Pending</option>
             <option value="PROCESSING">⚙️ Processing</option>
             <option value="DELIVERED">🚚 Delivered</option>
         </select>
-        <input type="text" name="customer_name" placeholder="Client Name *" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);" required list="client-list">
+
+        <input type="text" name="customer_name" placeholder="Client Name *" required list="client-list">
         <datalist id="client-list">{% for c in customers %}<option value="{{ c.name }}"></option>{% endfor %}</datalist>
-        <input type="text" name="order_number" placeholder="Order # (Optional)" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);">
-        <input type="date" name="issue_date" style="padding: 7px; border-radius: 6px; border: 1px solid var(--border);">
-        <button type="submit" class="btn btn-primary" style="padding: 7px; justify-content: center;">Save</button>
+
+        <input type="text" name="order_number" placeholder="Order # (Optional)">
+
+        <!-- Initial Item Selection -->
+        <select name="inventory_id">
+            <option value="">-- Attach Warehouse Part (Optional) --</option>
+            {% for inv in master_items %}
+                <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} €</option>
+            {% endfor %}
+        </select>
+
+        <input type="number" name="item_quantity" value="1" min="1" placeholder="Qty">
+
+        <input type="date" name="issue_date">
+
+        <button type="submit" class="btn btn-primary" style="padding: 8px; justify-content: center; font-size: 0.85rem;">
+            Create Order ➔
+        </button>
     </form>
 </div>
 
+<!-- ORDERS TABLE -->
 <div class="card" style="padding: 18px 22px;">
     <div class="tab-bar">
         <a href="?status=PENDING" class="tab-item {% if status_filter == 'PENDING' %}active{% endif %}">🕒 Pending <span class="tab-badge">{{ counts.PENDING }}</span></a>
@@ -55,9 +99,10 @@
             <tr>
                 <th>Status</th>
                 <th>Order #</th>
-                <th>Client</th>
+                <th>Client / Vessel</th>
                 <th>Date</th>
-                <th>Total Value</th>
+                <th>Items Count</th>
+                <th>Total Value (€)</th>
                 <th style="text-align: right;">Actions</th>
             </tr>
         </thead>
@@ -66,17 +111,24 @@
             <tr>
                 <td><span class="status-tag tag-{{ item.status }}">{{ item.status }}</span></td>
                 <td><strong>{{ item.invoice_number }}</strong></td>
-                <td><strong>{{ item.customer.name }}</strong></td>
+                <td><strong style="color: var(--primary);">{{ item.customer.name }}</strong></td>
                 <td>{{ item.issue_date|date:"d/m/Y" }}</td>
+                <td><span class="badge">{{ item.order_items.count }} items</span></td>
                 <td><strong>{{ item.total_amount }} €</strong></td>
                 <td style="text-align: right;">
                     <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                        <a href="{% url 'order_detail' item.id %}" class="btn-manage">📝 Manage Items</a>
+                        <a href="{% url 'order_detail' item.id %}" class="btn-manage">📝 Manage / Add Items</a>
                         <form method="POST" action="{% url 'delete_order' item.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="text-danger" onclick="return confirm('Delete order?');">Delete</button>
+                            <button type="submit" class="text-danger" onclick="return confirm('Delete this order?');">Delete</button>
                         </form>
                     </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 35px;">
+                    No orders found under <strong>{{ status_filter }}</strong>. Use the form above to log your first order!
                 </td>
             </tr>
             {% endfor %}
