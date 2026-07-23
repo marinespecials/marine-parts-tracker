@@ -38,6 +38,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width: 50px; text-align: center;">Packed</th>
                 <th>Item Description / Master Part</th>
                 <th style="width: 100px; text-align: center;">Qty</th>
                 <th style="width: 120px;">Unit Price (€)</th>
@@ -48,8 +49,20 @@
         <tbody>
             <!-- Existing Items -->
             {% for item in order.order_items.all %}
-            <tr>
-                <td><strong>{{ item.description }}</strong></td>
+            <tr style="{% if item.is_packed %}opacity: 0.6; background-color: #F8FAFC;{% endif %}">
+                <td style="text-align: center;">
+                    <form method="POST" action="{% url 'toggle_item_packed' item.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.2rem;">
+                            {% if item.is_packed %}✅{% else %}⬜{% endif %}
+                        </button>
+                    </form>
+                </td>
+                <td>
+                    <strong style="{% if item.is_packed %}text-decoration: line-through; color: #94A3B8;{% endif %}">
+                        {{ item.description }}
+                    </strong>
+                </td>
                 <td style="text-align: center;">{{ item.quantity }}</td>
                 <td>{{ item.unit_price }}</td>
                 <td><strong>{{ item.total_price }}</strong></td>
@@ -61,11 +74,12 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" style="text-align: center; padding: 30px; color: #94A3B8;">No items added to this order yet.</td></tr>
+            <tr><td colspan="6" style="text-align: center; padding: 30px; color: #94A3B8;">No items added to this order yet.</td></tr>
             {% endfor %}
 
             <!-- Add New Item Row -->
             <tr class="add-row">
+                <td></td>
                 <form method="POST" action="{% url 'add_order_item' order.id %}">
                     {% csrf_token %}
                     <td>

@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Q, F
 from django.utils import timezone
+from django.urls import reverse
 
 from .models import Customer, InventoryItem, OrderItem
 from finance.models import Invoice
@@ -21,7 +22,25 @@ def hub_view(request):
 
 app_hub = hub_view
 
-# --- ORDERS MANAGER ---
+
+def active_board(request):
+    """Live Operations Board with completion percentage & dynamic QR codes."""
+    orders = Invoice.objects.filter(status__in=['PENDING', 'PROCESSING']).order_by('issue_date')
+    for order in orders:
+        items = order.order_items.all()
+        total_items = items.count()
+        packed_items = items.filter(is_packed=True).count()
+        
+        if total_items > 0:
+            order.progress = int((packed_items / total_items) * 100)
+        else:
+            order.progress = 50 if order.status == 'PROCESSING' else 0
+
+        absolute_url = request.build_absolute_uri(reverse('order_detail', args=[order.id]))
+        order.qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={absolute_url}"
+
+    return render(request, 'tracker/active_board.html', {'orders': orders})
+
 
 def orders_dashboard(request):
     status_filter = request.GET.get('status', 'PENDING').upper()
@@ -38,7 +57,7 @@ def orders_dashboard(request):
             Invoice.objects.create(
                 invoice_number=order_number,
                 customer=customer,
-                total_amount=0.00,  # Will auto-calculate as items are added
+                total_amount=0.00,
                 issue_date=issue_date,
                 due_date=issue_date + timedelta(days=30),
                 status=status,
@@ -61,15 +80,19 @@ def orders_dashboard(request):
     }
 
     return render(request, 'tracker/orders.html', {
-        'records': records, 'status_filter': status_filter, 
-        'query': query, 'counts': counts, 'customers': Customer.objects.all()
+        'records': records,
+        'status_filter': status_filter,
+        'query': query,
+        'counts': counts,
+        'customers': Customer.objects.all(),
     })
+
 
 def order_detail(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
-    # Master items list for dropdown
     master_items = InventoryItem.objects.all().order_by('part_name')
     return render(request, 'tracker/order_detail.html', {'order': order, 'master_items': master_items})
+
 
 def add_order_item(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
@@ -77,31 +100,57 @@ def add_order_item(request, order_id):
         inventory_id = request.POST.get('inventory_id')
         quantity = int(request.POST.get('quantity', 1))
         
-        if inventory_id:  # Pulled from Master List
+        if inventory_id:
             inv_item = get_object_or_404(InventoryItem, id=inventory_id)
             desc = f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name
             unit_price = inv_item.unit_cost
-        else:  # Custom typed item
+        else:
             desc = request.POST.get('description', 'Custom Item')
             unit_price = float(request.POST.get('unit_price', 0.00))
             inv_item = None
 
-        OrderItem.objects.create(order=order, inventory_item=inv_item, description=desc, quantity=quantity, unit_price=unit_price)
+        OrderItem.objects.create(
+            order=order,
+            inventory_item=inv_item,
+            description=desc,
+            quantity=quantity,
+            unit_price=unit_price
+        )
         
-        # Auto-update the order's total amount
         order.total_amount = sum(item.total_price for item in order.order_items.all())
         order.save()
     return redirect('order_detail', order_id=order.id)
+
+
+def toggle_item_packed(request, item_id):
+    if request.method == 'POST':
+        item = get_object_or_404(OrderItem, id=item_id)
+        item.is_packed = not item.is_packed
+        item.save()
+        
+        order = item.order
+        total = order.order_items.count()
+        packed = order.order_items.filter(is_packed=True).count()
+        
+        if packed == total and total > 0:
+            order.status = 'PROCESSING'
+        elif packed > 0:
+            order.status = 'PROCESSING'
+        
+        order.save()
+        
+    return redirect('order_detail', order_id=item.order.id)
+
 
 def delete_order_item(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
         item.delete()
-        # Recalculate total
         order.total_amount = sum(i.total_price for i in order.order_items.all())
         order.save()
         return redirect('order_detail', order_id=order.id)
+
 
 def change_order_status(request, order_id, new_status):
     if request.method == 'POST':
@@ -110,13 +159,12 @@ def change_order_status(request, order_id, new_status):
         order.save()
     return redirect('orders_dashboard')
 
+
 def delete_order(request, order_id):
     if request.method == 'POST':
         Invoice.objects.filter(id=order_id).delete()
     return redirect('orders_dashboard')
 
-
-# --- WAREHOUSE MANAGER --- (Kept classic and simple)
 
 def inventory_list(request):
     query = request.GET.get('q', '').strip()
@@ -130,26 +178,47 @@ def inventory_list(request):
         unit_cost = float(request.POST.get('unit_cost', 0.00))
 
         if part_name:
-            InventoryItem.objects.create(part_name=part_name, part_code=part_code, category='General', quantity=quantity, reorder_level=5, location=location, unit_cost=unit_cost)
+            InventoryItem.objects.create(
+                part_name=part_name,
+                part_code=part_code,
+                category='General',
+                quantity=quantity,
+                reorder_level=5,
+                location=location,
+                unit_cost=unit_cost
+            )
         return redirect('inventory_list')
 
     items = InventoryItem.objects.all().order_by('-id')
-    if filter_type == 'LOW_STOCK': items = items.filter(quantity__lte=F('reorder_level'))
-    if query: items = items.filter(Q(part_name__icontains=query) | Q(part_code__icontains=query) | Q(location__icontains=query))
+    if filter_type == 'LOW_STOCK':
+        items = items.filter(quantity__lte=F('reorder_level'))
+    if query:
+        items = items.filter(Q(part_name__icontains=query) | Q(part_code__icontains=query) | Q(location__icontains=query))
 
-    counts = {'ALL': InventoryItem.objects.count(), 'LOW_STOCK': InventoryItem.objects.filter(quantity__lte=F('reorder_level')).count()}
+    counts = {
+        'ALL': InventoryItem.objects.count(),
+        'LOW_STOCK': InventoryItem.objects.filter(quantity__lte=F('reorder_level')).count()
+    }
     return render(request, 'tracker/inventory_list.html', {
-        'items': items, 'counts': counts, 'total_items': items.count(),
-        'total_warehouse_value': sum(item.total_stock_value for item in items), 'query': query, 'filter_type': filter_type,
+        'items': items,
+        'counts': counts,
+        'total_items': items.count(),
+        'total_warehouse_value': sum(item.total_stock_value for item in items),
+        'query': query,
+        'filter_type': filter_type,
     })
+
 
 def adjust_stock(request, item_id, action):
     if request.method == 'POST':
         item = get_object_or_404(InventoryItem, id=item_id)
-        if action == 'increase': item.quantity += 1
-        elif action == 'decrease' and item.quantity > 0: item.quantity -= 1
+        if action == 'increase':
+            item.quantity += 1
+        elif action == 'decrease' and item.quantity > 0:
+            item.quantity -= 1
         item.save()
     return redirect('inventory_list')
+
 
 def edit_inventory_item(request, item_id):
     item = get_object_or_404(InventoryItem, id=item_id)
@@ -163,9 +232,12 @@ def edit_inventory_item(request, item_id):
         return redirect('inventory_list')
     return render(request, 'tracker/inventory_edit.html', {'item': item})
 
+
 def delete_inventory_item(request, item_id):
-    if request.method == 'POST': InventoryItem.objects.filter(id=item_id).delete()
+    if request.method == 'POST':
+        InventoryItem.objects.filter(id=item_id).delete()
     return redirect('inventory_list')
+
 
 def client_list(request):
     clients = Customer.objects.annotate(invoice_count=Count('invoice')).order_by('name')

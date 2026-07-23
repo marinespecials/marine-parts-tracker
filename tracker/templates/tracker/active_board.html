@@ -1,0 +1,95 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Live Operations Board{% endblock %}
+{% block page_title %}📡 Live Operations Board{% endblock %}
+
+{% block content %}
+<style>
+    .board-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+    }
+
+    .order-card {
+        background: var(--surface);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+    
+    .qr-container {
+        width: 70px;
+        height: 70px;
+        background: white;
+        padding: 4px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+    }
+    .qr-container img { width: 100%; height: 100%; display: block; }
+
+    /* Progress Bar */
+    .progress-wrapper { margin-top: auto; margin-bottom: 15px; }
+    .progress-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+    .progress-bar-bg { background: #E2E8F0; border-radius: 8px; height: 10px; width: 100%; overflow: hidden; }
+    .progress-bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 8px; }
+    
+    .fill-low { background: var(--danger); }
+    .fill-mid { background: #F59E0B; }
+    .fill-high { background: var(--success); }
+
+    .btn-open {
+        display: block; width: 100%; text-align: center; padding: 10px;
+        background: var(--accent-light); color: var(--accent); font-weight: 700;
+        border-radius: 8px; text-decoration: none; transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .btn-open:hover { background: var(--accent); color: white; }
+</style>
+
+<div class="board-grid">
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="card-header">
+            <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #94A3B8; letter-spacing: 0.5px;">{{ order.status }}</span>
+                <h3 style="margin: 4px 0; color: var(--primary); font-size: 1.15rem;">{{ order.invoice_number }}</h3>
+                <div style="font-weight: 700; color: #475569; font-size: 0.95rem;">{{ order.customer.name }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">Date: {{ order.issue_date|date:"M d, Y" }}</div>
+            </div>
+            <div class="qr-container">
+                <img src="{{ order.qr_code_url }}" alt="Scan to open order">
+            </div>
+        </div>
+
+        <div class="progress-wrapper">
+            <div class="progress-header">
+                <span>PACKING COMPLETION</span>
+                <span style="color: var(--primary);">{{ order.progress }}%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill {% if order.progress < 30 %}fill-low{% elif order.progress < 100 %}fill-mid{% else %}fill-high{% endif %}" 
+                     style="width: {{ order.progress }}%;"></div>
+            </div>
+        </div>
+
+        <a href="{% url 'order_detail' order.id %}" class="btn-open">Scan QR or Click to Pack ➔</a>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #94A3B8; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border);">
+        <h2>No Active Operations</h2>
+        <p>All pending orders have been delivered.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

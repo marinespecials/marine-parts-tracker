@@ -31,7 +31,6 @@
             min-height: 100vh;
         }
 
-        /* Sidebar Styling */
         .sidebar {
             width: var(--sidebar-width);
             background-color: var(--primary);
@@ -107,7 +106,6 @@
             border-top: 1px solid #1E293B;
         }
 
-        /* Main Workspace Area */
         .main-wrapper {
             margin-left: var(--sidebar-width);
             flex-grow: 1;
@@ -116,7 +114,6 @@
             min-width: 0;
         }
 
-        /* Top Header Bar */
         .topbar {
             height: 64px;
             background-color: var(--surface);
@@ -148,7 +145,6 @@
             flex-grow: 1;
         }
 
-        /* Reusable UI Components */
         .card {
             background: var(--surface);
             padding: 25px;
@@ -208,6 +204,11 @@
 
             <div class="menu-section">
                 <div class="menu-section-title">Operations & Orders</div>
+                
+                <a href="{% url 'active_board' %}" class="nav-item {% if request.resolver_match.url_name == 'active_board' %}active{% endif %}" style="background-color: #1E293B; margin-bottom: 8px;">
+                    <span style="color: #60A5FA;">📡 Live Operations Board</span>
+                </a>
+
                 <a href="{% url 'orders_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'orders_dashboard' %}active{% endif %}">
                     <span>📦 Orders & Delivery Notes</span>
                 </a>
