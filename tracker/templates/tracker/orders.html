@@ -1,76 +1,125 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}Orders & Delivery Manager{% endblock %}
-{% block page_title %}📦 Orders & Delivery Manager{% endblock %}
-
-{% block topbar_actions %}
-    <button onclick="openOrderModal()" class="btn btn-primary" style="padding: 9px 18px; font-size: 0.9rem;">
-        + Add New Order
-    </button>
-{% endblock %}
+{% block title %}Order Tracker{% endblock %}
+{% block page_title %}📦 Operational Order Tracker{% endblock %}
 
 {% block content %}
 <style>
-    /* Clean Tab Bar */
-    .tab-bar { display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
-    .tab-item { padding: 10px 18px; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; transition: all 0.2s; }
+    /* Quick Add Bar */
+    .quick-add-card {
+        background: var(--surface);
+        padding: 16px 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    
+    .quick-add-form {
+        display: grid;
+        grid-template-columns: 140px 1.5fr 1fr 120px 110px 110px;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Filter Tabs */
+    .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; }
+    .tab-item { padding: 9px 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; }
     .tab-item:hover { color: var(--primary); background: #F1F5F9; }
     .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
-    .tab-badge { background: #E2E8F0; color: #334155; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px; }
+    .tab-badge { background: #E2E8F0; color: #334155; padding: 2px 7px; border-radius: 10px; font-size: 0.725rem; margin-left: 6px; }
     .tab-item.active .tab-badge { background: var(--accent); color: white; }
 
-    /* Full Width Table */
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
-    td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    /* High Density Table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
 
-    /* Clean Status Badges */
-    .status-tag { font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block; }
+    .status-tag { font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block; }
     .tag-ORDER { background: #FEF3C7; color: #92400E; }
-    .tag-DELIVERY { background: #E0E7FF; color: #3730A3; }
+    .tag-DELIVERY { background: #D1FAE5; color: #065F46; }
 
-    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
-    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.85rem; }
-
-    /* Modal Styling */
-    .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.6); z-index: 999; justify-content: center; align-items: center; }
-    .modal-card { background: white; padding: 28px; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; box-sizing: border-box; background: #FAFAFA; }
-    input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+    .btn-convert {
+        background-color: #2563EB;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-size: 0.775rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .btn-convert:hover { background-color: #1D4ED8; }
+    
+    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.825rem; }
+    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
 </style>
 
-<div class="card" style="padding: 20px 25px;">
-    <!-- Top Filter Tabs -->
+<!-- FAST INLINE ORDER LOGGER -->
+<div class="quick-add-card">
+    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+        + Fast Log Order / Delivery
+    </div>
+    <form method="POST" class="quick-add-form">
+        {% csrf_token %}
+        <input type="hidden" name="create_order" value="1">
+
+        <select name="status" style="padding: 7px 9px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required>
+            <option value="ORDER" selected>📦 Order</option>
+            <option value="DELIVERY">🚚 Delivery Note</option>
+        </select>
+
+        <input type="text" name="customer_name" placeholder="Client / Vessel Name *" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;" required list="client-list">
+        <datalist id="client-list">
+            {% for c in customers %}
+                <option value="{{ c.name }}"></option>
+            {% endfor %}
+        </datalist>
+
+        <input type="text" name="order_number" placeholder="Order # (Optional)" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
+
+        <input type="number" step="0.01" name="total_amount" placeholder="Amount (€)" style="padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem;">
+
+        <input type="date" name="issue_date" style="padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.825rem;">
+
+        <button type="submit" class="btn btn-primary" style="padding: 7px; justify-content: center; font-size: 0.85rem;">
+            Save Entry
+        </button>
+    </form>
+</div>
+
+<!-- MAIN ORDER & DELIVERY WORKSPACE -->
+<div class="card" style="padding: 18px 22px;">
+    <!-- Filter Tabs -->
     <div class="tab-bar">
         <a href="?status=ORDER" class="tab-item {% if status_filter == 'ORDER' %}active{% endif %}">
             📦 Active Orders (Παραγγελίες) <span class="tab-badge">{{ counts.ORDER }}</span>
         </a>
         <a href="?status=DELIVERY" class="tab-item {% if status_filter == 'DELIVERY' %}active{% endif %}">
-            🚚 Delivery Notes (Δελτία Αποστολής) <span class="tab-badge">{{ counts.DELIVERY }}</span>
+            🚚 Delivery Notes (Δελτία) <span class="tab-badge">{{ counts.DELIVERY }}</span>
         </a>
         <a href="?status=ALL" class="tab-item {% if status_filter == 'ALL' %}active{% endif %}">
             📋 All Records <span class="tab-badge">{{ counts.ALL }}</span>
         </a>
     </div>
 
-    <!-- Search Controls -->
-    <div style="margin-bottom: 20px;">
-        <form method="GET" style="display: flex; gap: 10px;">
+    <!-- Search Bar -->
+    <div style="margin-bottom: 16px;">
+        <form method="GET" style="display: flex; gap: 8px;">
             <input type="hidden" name="status" value="{{ status_filter }}">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search client name or order #..." style="padding: 9px 14px; border-radius: 6px; border: 1px solid var(--border); width: 320px; font-size: 0.9rem;">
-            <button type="submit" class="btn btn-outline">Search</button>
+            <input type="text" name="q" value="{{ query }}" placeholder="Search client or order #..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); width: 280px; font-size: 0.85rem;">
+            <button type="submit" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.825rem;">Search</button>
         </form>
     </div>
 
-    <!-- Orders & Delivery Table (No Drive Columns) -->
+    <!-- Clean Orders Table -->
     <table>
         <thead>
             <tr>
                 <th>Type</th>
-                <th>Order / Doc #</th>
+                <th>Order #</th>
                 <th>Client / Vessel</th>
                 <th>Date</th>
                 <th>Amount (€)</th>
@@ -82,16 +131,24 @@
             <tr>
                 <td>
                     <span class="status-tag tag-{{ item.status }}">
-                        {% if item.status == 'DELIVERY' %}🚚 Delivery Note{% else %}📦 Active Order{% endif %}
+                        {% if item.status == 'DELIVERY' %}🚚 Delivery{% else %}📦 Active Order{% endif %}
                     </span>
                 </td>
                 <td><strong style="color: var(--primary);">{{ item.invoice_number }}</strong></td>
-                <td><strong style="font-size:0.925rem;">{{ item.customer.name }}</strong></td>
+                <td><strong style="font-size: 0.9rem;">{{ item.customer.name }}</strong></td>
                 <td>{{ item.issue_date|date:"d/m/Y" }}</td>
-                <td><strong style="font-size:0.95rem;">{{ item.total_amount }} €</strong></td>
+                <td><strong>{{ item.total_amount }} €</strong></td>
                 <td style="text-align: right;">
-                    <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
-                        <a href="{% url 'finance:edit_invoice' item.id %}" class="text-link" style="font-size: 0.85rem;">Edit</a>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+                        {% if item.status == 'ORDER' %}
+                            <form method="POST" action="{% url 'convert_order_status' item.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-convert" title="Move this order to Delivery Note status">
+                                    🚚 Move to Delivery Note
+                                </button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'finance:edit_invoice' item.id %}" class="text-link">Edit</a>
                         <form method="POST" action="{% url 'delete_order' item.id %}" style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="text-danger" onclick="return confirm('Delete this record?');">Delete</button>
@@ -101,75 +158,12 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; color: #94A3B8; padding: 40px;">
-                    No records found under <strong>{{ status_filter }}</strong>. Click <strong>+ Add New Order</strong> above to log your first order!
+                <td colspan="6" style="text-align: center; color: #94A3B8; padding: 35px;">
+                    No records found under <strong>{{ status_filter }}</strong>. Use the fast logger above to add a new entry!
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
-<!-- POP-UP MODAL: Simple Order Entry (No Drive Input) -->
-<div id="addOrderModal" class="modal-overlay">
-    <div class="modal-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; font-size:1.15rem; color:var(--primary);">+ Log New Order / Delivery</h3>
-            <button onclick="closeOrderModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748B;">✕</button>
-        </div>
-
-        <form method="POST">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label>Record Type *</label>
-                <select name="status" required>
-                    <option value="ORDER" selected>📦 ORDER (Παραγγελία)</option>
-                    <option value="DELIVERY">🚚 DELIVERY NOTE (Δελτίο Αποστολής)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Client / Vessel Name *</label>
-                <input type="text" name="customer_name" placeholder="e.g. Aegean Shipping, M/Y Atlantis" required list="client-list">
-                <datalist id="client-list">
-                    {% for c in customers %}
-                        <option value="{{ c.name }}"></option>
-                    {% endfor %}
-                </datalist>
-            </div>
-
-            <div class="form-group">
-                <label>Order / Doc Number (Optional)</label>
-                <input type="text" name="order_number" placeholder="e.g. ORD-1042 or leave blank for auto-gen">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="form-group">
-                    <label>Total Amount (€)</label>
-                    <input type="number" step="0.01" name="total_amount" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" name="issue_date">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:11px; margin-top:10px; font-size:0.95rem;">
-                Save Order Record
-            </button>
-        </form>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    function openOrderModal() {
-        document.getElementById('addOrderModal').style.display = 'flex';
-    }
-    function closeOrderModal() {
-        document.getElementById('addOrderModal').style.display = 'none';
-    }
-</script>
 {% endblock %}

@@ -2,12 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Main Landing Hub
+    # Main Hub
     path('', views.hub_view, name='hub'),
-    path('hub/', views.hub_view, name='app_hub'),  # Alias compatibility
+    path('hub/', views.hub_view, name='app_hub'),
     
-    # Restored Simple Orders & Delivery Manager
+    # Simple Orders & Delivery Manager
     path('orders/', views.orders_dashboard, name='orders_dashboard'),
+    path('orders/<int:order_id>/convert/', views.convert_order_status, name='convert_order_status'),
     path('orders/delete/<int:order_id>/', views.delete_order, name='delete_order'),
 
     # Warehouse & Inventory

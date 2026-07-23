@@ -5,7 +5,7 @@ from django.db.models import Count, Q, F
 from django.utils import timezone
 
 from .models import Customer, InventoryItem
-from finance.models import Invoice, MasterPricelistItem
+from finance.models import Invoice
 
 def hub_view(request):
     """Main clean landing hub."""
@@ -30,12 +30,12 @@ app_hub = hub_view
 
 
 def orders_dashboard(request):
-    """Simple Order & Delivery Note Manager (No Drive dependency)."""
+    """Ultra-clean Order & Delivery Note Manager."""
     status_filter = request.GET.get('status', 'ORDER').upper()
     query = request.GET.get('q', '').strip()
 
-    # Simple Manual Order Creation
-    if request.method == 'POST':
+    # Fast Manual Order Creation
+    if request.method == 'POST' and 'create_order' in request.POST:
         customer_name = request.POST.get('customer_name', '').strip()
         order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
         total_amount = float(request.POST.get('total_amount') or 0.00)
@@ -51,17 +51,15 @@ def orders_dashboard(request):
                 issue_date=issue_date,
                 due_date=issue_date + timedelta(days=30),
                 status=status,
-                google_drive_url='' # Drive intentionally left empty for orders
+                google_drive_url=''
             )
         return redirect(f"{request.path}?status={status}")
 
     records = Invoice.objects.filter(status__in=['ORDER', 'DELIVERY']).order_by('-issue_date')
 
-    # Status Tab Filtering
     if status_filter != 'ALL':
         records = records.filter(status=status_filter)
 
-    # Search Filter
     if query:
         records = records.filter(
             Q(invoice_number__icontains=query) |
@@ -84,6 +82,16 @@ def orders_dashboard(request):
     return render(request, 'tracker/orders.html', context)
 
 
+def convert_order_status(request, order_id):
+    """1-Click status progression: ORDER -> DELIVERY"""
+    if request.method == 'POST':
+        order = get_object_or_404(Invoice, id=order_id)
+        if order.status == 'ORDER':
+            order.status = 'DELIVERY'
+            order.save()
+    return redirect('orders_dashboard')
+
+
 def delete_order(request, order_id):
     if request.method == 'POST':
         Invoice.objects.filter(id=order_id).delete()
@@ -91,7 +99,7 @@ def delete_order(request, order_id):
 
 
 def inventory_list(request):
-    """Warehouse stock manager."""
+    """Clean Warehouse stock manager."""
     query = request.GET.get('q', '').strip()
     selected_category = request.GET.get('category', '').strip()
 
