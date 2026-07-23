@@ -1,13 +1,11 @@
 import random
 import csv
 import re
-import requests
 from datetime import timedelta, datetime
 
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Sum, Avg, Q
-from django.core.management import call_command
 from django.http import HttpResponse
 
 from tracker.models import Customer
@@ -17,46 +15,47 @@ def finance_dashboard(request):
     status_filter = request.GET.get('status', 'ALL').upper()
     query = request.GET.get('q', '').strip()
 
-    # Fast Manual Entry Handler directly from Dashboard
-    if request.method == 'POST' and 'manual_entry' in request.POST:
-        invoice_number = request.POST.get('invoice_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
+    # Fast Order / Invoice Creator
+    if request.method == 'POST':
         customer_name = request.POST.get('customer_name', '').strip()
+        invoice_number = request.POST.get('invoice_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
         total_amount = float(request.POST.get('total_amount') or 0.00)
         issue_date = request.POST.get('issue_date') or timezone.now().date()
         status = request.POST.get('status', 'ORDER')
         google_drive_url = request.POST.get('google_drive_url', '').strip()
 
-        customer, _ = Customer.objects.get_or_create(name=customer_name)
-
-        Invoice.objects.create(
-            invoice_number=invoice_number,
-            customer=customer,
-            total_amount=total_amount,
-            issue_date=issue_date,
-            due_date=issue_date,
-            status=status,
-            google_drive_url=google_drive_url
-        )
+        if customer_name:
+            customer, _ = Customer.objects.get_or_create(name=customer_name)
+            Invoice.objects.create(
+                invoice_number=invoice_number,
+                customer=customer,
+                total_amount=total_amount,
+                issue_date=issue_date,
+                due_date=issue_date,
+                status=status,
+                google_drive_url=google_drive_url
+            )
         return redirect(f"{request.path}?status={status}")
 
     invoices = Invoice.objects.all().order_by('-issue_date')
 
-    # Status Tab Filtering
+    # Tab Filter
     if status_filter != 'ALL':
         invoices = invoices.filter(status=status_filter)
 
+    # Search Filter
     if query:
         invoices = invoices.filter(
             Q(invoice_number__icontains=query) |
             Q(customer__name__icontains=query)
         )
 
-    # Simple Counts for Tab Badges
+    # Tab Counts
     counts = {
         'ALL': Invoice.objects.count(),
         'ORDER': Invoice.objects.filter(status='ORDER').count(),
-        'DELIVERY': Invoice.objects.filter(status='DELIVERY').count(),
         'DRAFT': Invoice.objects.filter(status='DRAFT').count(),
+        'DELIVERY': Invoice.objects.filter(status='DELIVERY').count(),
         'PAID': Invoice.objects.filter(status='PAID').count(),
     }
 
@@ -254,7 +253,7 @@ def pricelist_dashboard(request):
 
 def export_pricelist_csv(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="Marine_Specials_Pricelist.csv"'
+    response['Content-Disposition'] = 'attachment; filename="Marine_Specials_Pricelist.csv"'
     writer = csv.writer(response)
     writer.writerow(['Part / OEM Code', 'Description', 'Brand', 'Category', 'Client Price (EUR)', 'Availability'])
     for item in MasterPricelistItem.objects.all():
