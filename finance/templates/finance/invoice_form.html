@@ -1,140 +1,103 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}{{ action_title|default:"Review & Link Invoice" }}{% endblock %}
-{% block page_title %}{{ action_title|default:"Review & Link Invoice" }}{% endblock %}
+{% block title %}Create Financial Invoice{% endblock %}
+{% block page_title %}🧾 Create Financial Invoice (Τιμολόγιο){% endblock %}
 
 {% block content %}
 <style>
-    .split-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 25px; align-items: start; }
-    
-    .preview-container { height: calc(100vh - 160px); min-height: 650px; display: flex; flex-direction: column; position: sticky; top: 90px; }
-    .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .preview-header h3 { margin: 0; font-size: 1.05rem; color: var(--primary); font-weight: 600; }
-    .preview-frame { width: 100%; height: 100%; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; }
-    .empty-preview { width: 100%; height: 100%; border: 2px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #94A3B8; font-weight: 600; background: #FAFAFA; text-align: center; padding: 20px; box-sizing: border-box; }
-    
-    .form-group { margin-bottom: 18px; }
-    label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
-    input[type="text"], input[type="number"], input[type="date"], input[type="url"], select {
-        width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; box-sizing: border-box; background: #FAFAFA;
+    .notice-banner {
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        border-left: 4px solid var(--accent);
+        padding: 14px 18px;
+        border-radius: 8px;
+        margin-bottom: 22px;
+        font-size: 0.875rem;
+        color: #1E40AF;
     }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group.full { grid-column: span 2; }
+    label { display: block; font-size: 0.825rem; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
+    input, select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; box-sizing: border-box; background: #FAFAFA; }
     input:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
-    
-    .btn-submit { width: 100%; padding: 12px; border-radius: 6px; font-size: 0.9rem; background-color: var(--accent); color: white; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    .btn-submit:hover { background-color: #1D4ED8; }
-    
-    .btn-delete { width: 100%; padding: 10px; border-radius: 6px; font-size: 0.85rem; background-color: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; margin-top: 12px; }
-    .btn-delete:hover { background-color: #FEF2F2; }
 </style>
 
-<div class="split-layout">
-    
-    <div class="card preview-container">
-        <div class="preview-header">
-            <h3>Document Preview</h3>
-            {% if invoice.google_drive_url %}
-                <a href="{{ invoice.google_drive_url }}" target="_blank" style="color: var(--accent); font-size: 0.825rem; font-weight: 600; text-decoration: none;">Open Full Tab ↗</a>
-            {% endif %}
-        </div>
-        
-        <iframe id="pdfFrame" class="preview-frame" src="" style="display: none;"></iframe>
-        
-        <div id="emptyPreview" class="empty-preview">
-            <span>No Google Drive Link Provided.<br>Paste a valid link on the right to load preview.</span>
-        </div>
-    </div>
+<a href="{% url 'finance:dashboard' %}" style="display: inline-block; margin-bottom: 16px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to Financial Workspace</a>
 
-    <div class="card">
-        <h2 style="margin-top:0; color:var(--primary); font-size:1.25rem; margin-bottom:20px;">Invoice Details</h2>
-
-        <form method="POST">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label for="invoice_number">Invoice Number</label>
-                <input type="text" id="invoice_number" name="invoice_number" value="{{ invoice.invoice_number|default:'' }}" required>
-            </div>
-
-            <div class="form-group">
-                <label for="customer_id">Client / Supplier Name</label>
-                <select id="customer_id" name="customer_id" required>
-                    {% for customer in customers %}
-                        <option value="{{ customer.id }}" {% if invoice.customer.id == customer.id %}selected{% endif %}>
-                            {{ customer.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group">
-                    <label for="total_amount">Total Amount (€)</label>
-                    <input type="number" step="0.01" id="total_amount" name="total_amount" value="{{ invoice.total_amount|default:'0.00' }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="due_date">Due Date</label>
-                    <input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="status">Document Type / Status</label>
-                <select id="status" name="status">
-                    <option value="DRAFT" {% if invoice.status == 'DRAFT' %}selected{% endif %}>DRAFT / INVOICE</option>
-                    <option value="ORDER" {% if invoice.status == 'ORDER' %}selected{% endif %}>ORDER (Παραγγελία)</option>
-                    <option value="DELIVERY" {% if invoice.status == 'DELIVERY' %}selected{% endif %}>DELIVERY NOTE (Δελτίο Αποστολής)</option>
-                    <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>PAID</option>
-                    <option value="VOID" {% if invoice.status == 'VOID' %}selected{% endif %}>VOID</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="google_drive_url">Google Drive Link</label>
-                <input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/file/d/..." oninput="updatePreview()">
-            </div>
-
-            <button type="submit" class="btn-submit">Save Changes</button>
-        </form>
-
-        {% if invoice %}
-            <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" onsubmit="return confirm('Are you sure you want to delete this invoice?');">
-                {% csrf_token %}
-                <button type="submit" class="btn-delete">Delete Invoice</button>
-            </form>
-        {% endif %}
-    </div>
-
+<div class="notice-banner">
+    <strong>🧾 FINANCIAL INVOICE VS. 📦 LOGISTICS ORDER:</strong><br>
+    Invoices are official billing records with payment terms (Unpaid/Paid), due dates, and Google Drive PDF links. For simple internal packing tickets, use <strong>Operations ➔ Orders</strong>.
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    function updatePreview() {
-        const driveUrl = document.getElementById('google_drive_url').value.trim();
-        const frame = document.getElementById('pdfFrame');
-        const emptyState = document.getElementById('emptyPreview');
+<div class="card" style="max-width: 820px; margin: 0 auto;">
+    <form method="POST">
+        {% csrf_token %}
 
-        if (!driveUrl) {
-            frame.style.display = 'none';
-            emptyState.style.display = 'flex';
-            return;
-        }
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Client / Vessel Name *</label>
+                <input type="text" name="customer_name" placeholder="e.g. Aegean Shipping, M/Y Atlantis" required list="client-list">
+                <datalist id="client-list">
+                    {% for c in customers %}
+                        <option value="{{ c.name }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
 
-        let fileId = '';
-        const match = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/id=([a-zA-Z0-9_-]+)/);
-        
-        if (match && match[1]) {
-            fileId = match[1];
-            frame.src = `https://drive.google.com/file/d/${fileId}/preview`;
-        } else {
-            frame.src = driveUrl;
-        }
+            <div class="form-group">
+                <label>Invoice # (Auto-generated if empty)</label>
+                <input type="text" name="invoice_number" placeholder="e.g. INV-2026-004">
+            </div>
 
-        frame.style.display = 'block';
-        emptyState.style.display = 'none';
-    }
+            <div class="form-group">
+                <label>Payment Status</label>
+                <select name="status" required>
+                    <option value="UNPAID" selected>🔴 Unpaid</option>
+                    <option value="PAID">🟢 Paid</option>
+                    <option value="OVERDUE">⚠️ Overdue</option>
+                </select>
+            </div>
 
-    window.addEventListener('DOMContentLoaded', updatePreview);
-</script>
+            <div class="form-group">
+                <label>Issue Date</label>
+                <input type="date" name="issue_date">
+            </div>
+
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" name="due_date">
+            </div>
+
+            <div class="form-group">
+                <label>Google Drive PDF Link (Optional)</label>
+                <input type="url" name="google_drive_url" placeholder="https://drive.google.com/file/d/...">
+            </div>
+
+            <div class="form-group full" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px;">
+                <label style="color: var(--primary);">+ Initial Line Item (Optional)</label>
+                <div style="display: grid; grid-template-columns: 2fr 1fr 100px 110px; gap: 10px;">
+                    <select name="inventory_id">
+                        <option value="">-- Choose from Warehouse Stock --</option>
+                        {% for inv in master_items %}
+                            <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} €</option>
+                        {% endfor %}
+                    </select>
+
+                    <input type="text" name="custom_description" placeholder="Or custom description...">
+                    <input type="number" name="quantity" value="1" min="1" placeholder="Qty">
+                    <input type="number" step="0.01" name="unit_price" placeholder="Price (€)">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px; margin-top: 15px; font-size: 0.95rem;">
+            Save Invoice & Open Item Builder ➔
+        </button>
+    </form>
+</div>
 {% endblock %}
