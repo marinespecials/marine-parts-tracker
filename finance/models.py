@@ -47,3 +47,40 @@ class PriceRecord(models.Model):
 
     def __str__(self):
         return f"{self.part_name} - {self.unit_price} {self.currency} ({self.supplier_or_client_name})"
+
+class MasterPricelistItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('Filters', 'Filters & Separators'),
+        ('Electrical', 'Electrical & Batteries'),
+        ('Pumps', 'Pumps & Impellers'),
+        ('Valves', 'Valves & Plumbing'),
+        ('Engine Spares', 'Engine Spares'),
+        ('General', 'General Marine Hardware'),
+    ]
+    AVAILABILITY_CHOICES = [
+        ('In Stock', 'In Stock (Piraeus Warehouse)'),
+        ('2-3 Days', 'Available (2-3 Business Days)'),
+        ('7-10 Days', 'Special Order (7-10 Days)'),
+    ]
+
+    part_name = models.CharField(max_length=255)
+    part_code = models.CharField(max_length=100, blank=True, null=True, help_text="OEM or Manufacturer Part Number")
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='General')
+    brand = models.CharField(max_length=100, blank=True, null=True, help_text="e.g. Yanmar, Victron, Jabsco")
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Internal Purchase Cost (€)")
+    markup_percent = models.DecimalField(max_digits=5, decimal_places=2, default=30.00, help_text="Default Markup %")
+    client_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Calculated Selling Price (€)")
+    availability = models.CharField(max_length=50, choices=AVAILABILITY_CHOICES, default='In Stock')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'part_name']
+
+    def save(self, *args, **kwargs):
+        if self.cost_price is not None and self.markup_percent is not None:
+            calc_price = float(self.cost_price) * (1 + (float(self.markup_percent) / 100))
+            self.client_price = round(calc_price, 2)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.part_name} ({self.part_code or 'No Code'}) - {self.client_price} €"

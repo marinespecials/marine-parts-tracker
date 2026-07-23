@@ -14,7 +14,7 @@ from django.core.management import call_command
 from django.http import HttpResponse
 
 from tracker.models import Customer
-from .models import Invoice, ClientFinancialProfile, PriceRecord
+from .models import Invoice, ClientFinancialProfile, PriceRecord, MasterPricelistItem
 
 def finance_dashboard(request):
     invoices = Invoice.objects.all().order_by('-issue_date')
@@ -306,6 +306,104 @@ def delete_price_record(request, record_id):
     if request.method == 'POST':
         PriceRecord.objects.filter(id=record_id).delete()
     return redirect('finance:price_history')
+
+
+def pricelist_dashboard(request):
+    query = request.GET.get('q', '').strip()
+    selected_category = request.GET.get('category', '').strip()
+
+    if request.method == 'POST':
+        part_name = request.POST.get('part_name', '').strip()
+        part_code = request.POST.get('part_code', '').strip()
+        category = request.POST.get('category', 'General')
+        brand = request.POST.get('brand', '').strip()
+        cost_price = float(request.POST.get('cost_price') or 0.00)
+        markup_percent = float(request.POST.get('markup_percent') or 30.00)
+        availability = request.POST.get('availability', 'In Stock')
+
+        client_price = round(cost_price * (1 + (markup_percent / 100)), 2)
+
+        MasterPricelistItem.objects.create(
+            part_name=part_name,
+            part_code=part_code,
+            category=category,
+            brand=brand,
+            cost_price=cost_price,
+            markup_percent=markup_percent,
+            client_price=client_price,
+            availability=availability
+        )
+        return redirect('finance:pricelist_dashboard')
+
+    items = MasterPricelistItem.objects.all()
+
+    if query:
+        items = items.filter(
+            Q(part_name__icontains=query) |
+            Q(part_code__icontains=query) |
+            Q(brand__icontains=query)
+        )
+
+    if selected_category:
+        items = items.filter(category=selected_category)
+
+    total_items = items.count()
+    avg_markup = items.aggregate(Avg('markup_percent'))['markup_percent__avg'] or 0.00
+
+    context = {
+        'items': items,
+        'total_items': total_items,
+        'avg_markup': round(avg_markup, 1),
+        'query': query,
+        'selected_category': selected_category,
+        'category_choices': MasterPricelistItem.CATEGORY_CHOICES,
+        'availability_choices': MasterPricelistItem.AVAILABILITY_CHOICES,
+    }
+    return render(request, 'finance/pricelist_dashboard.html', context)
+
+
+def export_pricelist_csv(request):
+    selected_category = request.GET.get('category', '').strip()
+    query = request.GET.get('q', '').strip()
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="Marine_Specials_Pricelist_{timezone.now().strftime("%Y%m%d")}.csv"'
+
+    writer = csv.writer(response)
+    
+    writer.writerow(['MARINE SPECIALS - OFFICIAL CLIENT PRICELIST'])
+    writer.writerow([f'Generated on: {timezone.now().strftime("%d %B %Y")} | Prices valid for 30 days. Subject to stock availability.'])
+    writer.writerow([])
+    writer.writerow(['Part / OEM Code', 'Description', 'Brand', 'Category', 'Client Price (EUR)', 'Availability'])
+
+    items = MasterPricelistItem.objects.all().order_by('category', 'part_name')
+    
+    if selected_category:
+        items = items.filter(category=selected_category)
+    if query:
+        items = items.filter(
+            Q(part_name__icontains=query) |
+            Q(part_code__icontains=query) |
+            Q(brand__icontains=query)
+        )
+
+    for item in items:
+        writer.writerow([
+            item.part_code or 'N/A',
+            item.part_name,
+            item.brand or 'Generic',
+            item.get_category_display(),
+            f'{item.client_price:.2f} €',
+            item.get_availability_display()
+        ])
+
+    return response
+
+
+def delete_pricelist_item(request, item_id):
+    if request.method == 'POST':
+        MasterPricelistItem.objects.filter(id=item_id).delete()
+    return redirect('finance:pricelist_dashboard')
 
 
 def client_ledger(request, client_id):

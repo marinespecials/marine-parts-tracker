@@ -11,20 +11,17 @@
         .navbar a { color: #94A3B8; text-decoration: none; font-weight: 600; font-size: 0.875rem; transition: color 0.2s; }
         .navbar a:hover { color: white; }
         
-        /* Split Screen Container */
         .container { padding: 25px; max-width: 1500px; margin: auto; }
         .split-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 25px; align-items: start; }
         
         .card { background: var(--surface); padding: 25px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         
-        /* Left Side Document Viewer */
         .preview-container { height: calc(100vh - 120px); min-height: 650px; display: flex; flex-direction: column; position: sticky; top: 20px; }
         .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .preview-header h3 { margin: 0; font-size: 1.05rem; color: var(--primary); font-weight: 600; }
         .preview-frame { width: 100%; height: 100%; border: 1px solid var(--border); border-radius: 8px; background: #F1F5F9; }
         .empty-preview { width: 100%; height: 100%; border: 2px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #94A3B8; font-weight: 600; background: #FAFAFA; text-align: center; padding: 20px; box-sizing: border-box; }
         
-        /* Form Styling */
         h2 { margin-top: 0; color: var(--primary); font-size: 1.25rem; margin-bottom: 20px; }
         .form-group { margin-bottom: 18px; }
         label { display: block; font-size: 0.825rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
@@ -52,7 +49,6 @@
     <div class="container">
         <div class="split-layout">
             
-            <!-- LEFT COLUMN: Embedded Google Drive Document Preview -->
             <div class="card preview-container">
                 <div class="preview-header">
                     <h3>Document Preview</h3>
@@ -68,7 +64,6 @@
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: Invoice Fields Form -->
             <div class="card">
                 <h2>{{ action_title|default:"Invoice Details" }}</h2>
 
@@ -159,7 +154,6 @@
             emptyState.style.display = 'none';
         }
 
-        // Auto-load preview on page render
         window.addEventListener('DOMContentLoaded', updatePreview);
     </script>
 </body>

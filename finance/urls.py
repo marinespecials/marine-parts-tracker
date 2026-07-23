@@ -15,4 +15,9 @@ urlpatterns = [
     # Spare Parts & Price Tracking
     path('prices/', views.price_history_dashboard, name='price_history'),
     path('prices/delete/<int:record_id>/', views.delete_price_record, name='delete_price_record'),
+
+    # Master Pricelist & Client Exporter
+    path('pricelist/', views.pricelist_dashboard, name='pricelist_dashboard'),
+    path('pricelist/export/', views.export_pricelist_csv, name='export_pricelist_csv'),
+    path('pricelist/delete/<int:item_id>/', views.delete_pricelist_item, name='delete_pricelist_item'),
 ]
