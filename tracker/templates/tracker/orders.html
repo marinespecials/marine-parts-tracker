@@ -5,7 +5,6 @@
 
 {% block topbar_actions %}
 <div style="display: flex; gap: 8px;">
-    <!-- 1-CLICK HISTORICAL SYNC BUTTON -->
     <form method="POST" action="{% url 'sync_all_historical_orders' %}" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline" style="background: #EFF6FF; border-color: #BFDBFE; color: var(--accent);" onclick="return confirm('Sync all historical orders with Warehouse Storage? This will auto-link past order items and update inventory.');">
@@ -30,9 +29,32 @@
     td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
 
-    .badge-pending { background: #FEF3C7; color: #92400E; }
-    .badge-processing { background: #DBEAFE; color: #1E40AF; }
-    .badge-delivered { background: #D1FAE5; color: #065F46; }
+    /* SEGMENTED QUICK STATUS BUTTON GROUP */
+    .quick-status-pills {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 3px;
+        border-radius: 8px;
+        gap: 3px;
+        border: 1px solid var(--border);
+    }
+    .quick-status-pills form { display: inline; margin: 0; }
+    .status-pill {
+        border: none;
+        background: transparent;
+        padding: 4px 9px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #64748B;
+        transition: all 0.15s ease;
+    }
+    .status-pill:hover { background: #E2E8F0; color: var(--primary); }
+    .status-pill.active-pending { background: #FEF3C7; color: #92400E; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .status-pill.active-processing { background: #2563EB; color: white; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .status-pill.active-delivered { background: #059669; color: white; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
     .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
 </style>
 
@@ -68,7 +90,7 @@
             <tr>
                 <th>Order #</th>
                 <th>Client / Target Vessel</th>
-                <th>Status</th>
+                <th>Status (1-Click Change)</th>
                 <th>Order Date</th>
                 <th>Total Value (€)</th>
                 <th style="text-align: right;">Action</th>
@@ -79,17 +101,31 @@
             <tr>
                 <td><strong>{{ record.invoice_number }}</strong></td>
                 <td><strong style="color: var(--primary);">{{ record.customer.name }}</strong></td>
+                
+                <!-- STREAMLINED INLINE STATUS BUTTONS -->
                 <td>
-                    {% if record.status == 'PENDING' %}
-                        <span class="badge badge-pending">🕒 Pending</span>
-                    {% elif record.status == 'PROCESSING' %}
-                        <span class="badge badge-processing">⚙️ Processing</span>
-                    {% elif record.status == 'DELIVERED' %}
-                        <span class="badge badge-delivered">🚚 Delivered</span>
-                    {% else %}
-                        <span class="badge">{{ record.status }}</span>
-                    {% endif %}
+                    <div class="quick-status-pills">
+                        <form method="POST" action="{% url 'change_order_status' record.id 'PENDING' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="status-pill {% if record.status == 'PENDING' %}active-pending{% endif %}" title="Set status to Pending">
+                                🕒 Pending
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'change_order_status' record.id 'PROCESSING' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="status-pill {% if record.status == 'PROCESSING' %}active-processing{% endif %}" title="Set status to Processing">
+                                ⚙️ Processing
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'change_order_status' record.id 'DELIVERED' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="status-pill {% if record.status == 'DELIVERED' %}active-delivered{% endif %}" title="Set status to Delivered">
+                                🚚 Delivered
+                            </button>
+                        </form>
+                    </div>
                 </td>
+
                 <td>{{ record.issue_date|date:"d/m/Y" }}</td>
                 <td><strong>{{ record.total_amount }} €</strong></td>
                 <td style="text-align: right;">

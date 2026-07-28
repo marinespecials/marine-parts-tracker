@@ -46,11 +46,6 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
 
 
 def sync_all_historical_orders(request):
-    """
-    Scans ALL past order items in the database:
-    1. Links unlinked items to matching Master Warehouse parts (or creates new ones).
-    2. Syncs stock counts across all orders.
-    """
     if request.method == 'POST':
         unlinked_items = OrderItem.objects.filter(inventory_item__isnull=True)
         
@@ -59,7 +54,6 @@ def sync_all_historical_orders(request):
             if not clean_desc:
                 continue
 
-            # Check if part already exists in warehouse
             match = InventoryItem.objects.filter(
                 Q(part_name__iexact=clean_desc) | Q(part_code__iexact=clean_desc)
             ).first()
@@ -70,7 +64,6 @@ def sync_all_historical_orders(request):
                 match.quantity = max(0, match.quantity - item.quantity)
                 match.save()
             else:
-                # Auto-create new warehouse part for old item
                 new_inv = InventoryItem.objects.create(
                     part_name=clean_desc,
                     part_code='',
@@ -331,6 +324,11 @@ def change_order_status(request, order_id, new_status):
         order = get_object_or_404(Invoice, id=order_id)
         order.status = new_status.upper()
         order.save()
+        
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+
     return redirect('orders_dashboard')
 
 
