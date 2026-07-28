@@ -60,6 +60,24 @@
     td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
 
+    /* STEPPER BUTTON STYLING */
+    .btn-qty-step {
+        background: white;
+        border: 1px solid var(--border);
+        color: var(--primary);
+        font-weight: 800;
+        font-size: 0.85rem;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+    }
+    .btn-qty-step:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
     .text-danger { color: var(--danger); font-weight: bold; background: none; border: none; cursor: pointer; font-size: 1rem; }
 </style>
 
@@ -72,7 +90,6 @@
         <h2 style="margin: 2px 0 6px 0; color: var(--primary);">{{ order.customer.name }}</h2>
         <div style="color: var(--text-secondary); font-size: 0.875rem;">Date: <strong>{{ order.issue_date|date:"d/m/Y" }}</strong></div>
         
-        <!-- MOBILE PACKING MODE LAUNCH BUTTON -->
         <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-outline" style="margin-top: 10px; padding: 5px 12px; font-size: 0.8rem; background: #EFF6FF; color: var(--accent); border-color: #BFDBFE;">
             📱 Open Mobile Packing Checklist ➔
         </a>
@@ -90,7 +107,6 @@
             <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">⚙️ Processing</button></form>
             <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Set Delivered (Auto-Deduct Stock)</button></form>
 
-            <!-- 1-CLICK CONVERT TO INVOICE BUTTON -->
             <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" style="display:inline; margin-left: 8px;">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary" style="background-color: var(--success); font-size: 0.8rem; padding: 6px 12px;" onclick="return confirm('Convert this order into an Unpaid Financial Invoice?');">
@@ -101,10 +117,10 @@
     </div>
 </div>
 
-<!-- DEDICATED ADD ITEM FORM CARD -->
+<!-- LINKED WAREHOUSE ADD ITEM FORM -->
 <div class="add-item-card">
     <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
-        + Add Part / Item to Order
+        + Add Part / Item to Order (Linked to Warehouse Storage)
     </div>
     
     <form method="POST" action="{% url 'add_order_item' order.id %}" class="add-item-grid">
@@ -112,15 +128,15 @@
         
         <div>
             <select name="inventory_id">
-                <option value="">-- Choose from Master Warehouse List --</option>
+                <option value="">-- Choose from Master Warehouse Storage --</option>
                 {% for inv in master_items %}
-                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} €</option>
+                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} € (Stock: {{ inv.quantity }})</option>
                 {% endfor %}
             </select>
         </div>
 
         <div>
-            <input type="text" name="description" placeholder="Or type custom item name...">
+            <input type="text" name="description" placeholder="Or type unlisted item name...">
         </div>
 
         <div>
@@ -139,14 +155,14 @@
     </form>
 </div>
 
-<!-- ORDER ITEMS TABLE -->
+<!-- ORDER ITEMS TABLE WITH INLINE + / - STEPPERS -->
 <div class="card" style="padding: 0; overflow: hidden;">
     <table>
         <thead>
             <tr>
                 <th style="width: 60px; text-align: center;">Packed</th>
                 <th>Item Description / Part</th>
-                <th style="width: 90px; text-align: center;">Qty</th>
+                <th style="width: 130px; text-align: center;">Qty (Adjust)</th>
                 <th style="width: 130px;">Unit Price (€)</th>
                 <th style="width: 130px;">Total (€)</th>
                 <th style="width: 70px; text-align: right;">Delete</th>
@@ -168,7 +184,24 @@
                         {{ item.description }}
                     </strong>
                 </td>
-                <td style="text-align: center;"><strong>{{ item.quantity }}</strong></td>
+
+                <!-- INLINE STEPPER CONTROL FOR ORDER QTY -->
+                <td style="text-align: center;">
+                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                        <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-qty-step" title="Decrease item count">-</button>
+                        </form>
+
+                        <strong style="font-size: 0.95rem; min-width: 22px; display: inline-block; text-align: center;">{{ item.quantity }}</strong>
+
+                        <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'increase' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-qty-step" title="Increase item count">+</button>
+                        </form>
+                    </div>
+                </td>
+
                 <td>{{ item.unit_price }} €</td>
                 <td><strong style="color: var(--primary);">{{ item.total_price }} €</strong></td>
                 <td style="text-align: right;">
@@ -181,7 +214,7 @@
             {% empty %}
             <tr>
                 <td colspan="6" style="text-align: center; padding: 40px; color: #94A3B8;">
-                    No items added to this order yet. Use the form above to add your first part or item!
+                    No items added to this order yet. Select an item from warehouse storage above!
                 </td>
             </tr>
             {% endfor %}

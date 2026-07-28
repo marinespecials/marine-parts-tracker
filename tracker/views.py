@@ -24,7 +24,6 @@ app_hub = hub_view
 
 
 def active_board(request):
-    """Live Operations Board with completion percentage & dynamic QR codes."""
     orders = Invoice.objects.filter(status__in=['PENDING', 'PROCESSING']).order_by('issue_date')
     for order in orders:
         items = order.order_items.all()
@@ -43,7 +42,6 @@ def active_board(request):
 
 
 def orders_dashboard(request):
-    """Orders Dashboard with clean search & filters."""
     status_filter = request.GET.get('status', 'PENDING').upper()
     query = request.GET.get('q', '').strip()
 
@@ -70,7 +68,6 @@ def orders_dashboard(request):
 
 
 def create_order(request):
-    """Full-page Order Creation view."""
     if request.method == 'POST':
         customer_name = request.POST.get('customer_name', '').strip()
         order_number = request.POST.get('order_number', '').strip() or f"ORD-{random.randint(1000, 9999)}"
@@ -171,8 +168,33 @@ def add_order_item(request, order_id):
     return redirect('order_detail', order_id=order.id)
 
 
+def adjust_order_item_qty(request, item_id, action):
+    """Adjusts an existing order line item quantity up or down inline."""
+    if request.method == 'POST':
+        item = get_object_or_404(OrderItem, id=item_id)
+        order = item.order
+
+        if action == 'increase':
+            item.quantity += 1
+            item.save()
+        elif action == 'decrease':
+            if item.quantity > 1:
+                item.quantity -= 1
+                item.save()
+            else:
+                item.delete()
+
+        order.total_amount = sum(i.total_price for i in order.order_items.all())
+        order.save()
+
+        referer = request.META.get('HTTP_REFERER')
+        if referer:
+            return redirect(referer)
+
+    return redirect('order_detail', order_id=item.order.id)
+
+
 def toggle_item_packed(request, item_id):
-    """Toggles item packed state and redirects back to whichever page triggered it."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         item.is_packed = not item.is_packed
@@ -207,7 +229,6 @@ def delete_order_item(request, item_id):
 
 
 def change_order_status(request, order_id, new_status):
-    """Changes order status & AUTOMATICALLY DEDUCTS WAREHOUSE STOCK on DELIVERED."""
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
         target_status = new_status.upper()
@@ -226,7 +247,6 @@ def change_order_status(request, order_id, new_status):
 
 
 def convert_order_to_invoice(request, order_id):
-    """Clones a logistics order into an unpaid financial invoice."""
     if request.method == 'POST':
         original_order = get_object_or_404(Invoice, id=order_id)
         
@@ -313,7 +333,6 @@ def inventory_list(request):
 
 
 def client_pricelist(request):
-    """Client-facing Price Catalog."""
     query = request.GET.get('q', '').strip()
     category_filter = request.GET.get('category', 'ALL')
 
@@ -375,7 +394,6 @@ def client_list(request):
 
 
 def global_search(request):
-    """Universal search across Orders, Financial Invoices, Warehouse Parts, and Clients."""
     query = request.GET.get('q', '').strip()
     orders = []
     invoices = []
@@ -406,7 +424,6 @@ def global_search(request):
 
 
 def mobile_packing_list(request, order_id):
-    """Mobile-optimized packing checklist view for warehouse floor staff."""
     order = get_object_or_404(Invoice, id=order_id)
     items = order.order_items.all()
     total_items = items.count()
