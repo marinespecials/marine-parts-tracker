@@ -55,6 +55,7 @@
             gap: 10px;
             border-bottom: 1px solid #1E293B;
             letter-spacing: 0.5px;
+            user-select: none;
         }
 
         .sidebar-menu {
@@ -229,6 +230,10 @@
                 <a href="{% url 'orders_dashboard' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'orders_dashboard' or request.resolver_match.url_name == 'create_order' or request.resolver_match.url_name == 'order_detail' %}active{% endif %}">
                     <span>└ Orders & Delivery Notes</span>
                 </a>
+
+                <a href="{% url 'app_hub' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'app_hub' or request.resolver_match.url_name == 'hub' %}active{% endif %}">
+                    <span>└ 📊 Hub & Analytics</span>
+                </a>
             </div>
 
             <!-- CORE VIEW 2: WAREHOUSE STOCK & CATALOG -->
@@ -260,8 +265,17 @@
                 </a>
             </div>
 
+            <!-- CORE VIEW 4: RESEARCH & GENERAL DATA -->
+            <div class="menu-section">
+                <div class="menu-section-title">4. Research</div>
+                
+                <a href="{% url 'research_hub' %}" class="nav-item {% if request.resolver_match.url_name == 'research_hub' %}active{% endif %}">
+                    <span>🔬 Research & General Data</span>
+                </a>
+            </div>
+
             <!-- EXTERNAL DRIVE LINK -->
-            <div class="menu-section" style="margin-top: 30px;">
+            <div class="menu-section" style="margin-top: 20px;">
                 <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="sub-nav-item" style="color: #94A3B8;">
                     <span>📁 Google Drive Folder ↗</span>
                 </a>
