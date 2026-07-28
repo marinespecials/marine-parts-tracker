@@ -29,31 +29,65 @@
     td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
 
-    /* SEGMENTED QUICK STATUS BUTTON GROUP */
-    .quick-status-pills {
-        display: inline-flex;
-        background: #F1F5F9;
-        padding: 3px;
-        border-radius: 8px;
-        gap: 3px;
-        border: 1px solid var(--border);
+    /* COLLAPSIBLE STATUS DROPDOWN BUTTON */
+    .status-dropdown {
+        position: relative;
+        display: inline-block;
     }
-    .quick-status-pills form { display: inline; margin: 0; }
-    .status-pill {
-        border: none;
-        background: transparent;
-        padding: 4px 9px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        border-radius: 6px;
+    .status-dropdown summary {
+        list-style: none;
         cursor: pointer;
-        color: #64748B;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.775rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+        border: 1px solid transparent;
         transition: all 0.15s ease;
     }
-    .status-pill:hover { background: #E2E8F0; color: var(--primary); }
-    .status-pill.active-pending { background: #FEF3C7; color: #92400E; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .status-pill.active-processing { background: #2563EB; color: white; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .status-pill.active-delivered { background: #059669; color: white; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .status-dropdown summary::-webkit-details-marker { display: none; }
+    .status-dropdown summary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Color Badge Themes */
+    .status-badge-pending { background: #FEF3C7; color: #92400E; border-color: #FCD34D; }
+    .status-badge-processing { background: #DBEAFE; color: #1E40AF; border-color: #93C5FD; }
+    .status-badge-delivered { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+
+    /* Collapsed Popover Menu */
+    .status-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 4px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        z-index: 50;
+        min-width: 130px;
+        padding: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .status-menu form { display: block; margin: 0; }
+    .status-menu button {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--primary);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    .status-menu button:hover { background: #F1F5F9; color: var(--accent); }
 
     .text-link { color: var(--accent); font-weight: 600; text-decoration: none; }
 </style>
@@ -90,7 +124,7 @@
             <tr>
                 <th>Order #</th>
                 <th>Client / Target Vessel</th>
-                <th>Status (1-Click Change)</th>
+                <th>Status</th>
                 <th>Order Date</th>
                 <th>Total Value (€)</th>
                 <th style="text-align: right;">Action</th>
@@ -102,28 +136,37 @@
                 <td><strong>{{ record.invoice_number }}</strong></td>
                 <td><strong style="color: var(--primary);">{{ record.customer.name }}</strong></td>
                 
-                <!-- STREAMLINED INLINE STATUS BUTTONS -->
+                <!-- COMPACT COLLAPSIBLE STATUS BUTTON -->
                 <td>
-                    <div class="quick-status-pills">
-                        <form method="POST" action="{% url 'change_order_status' record.id 'PENDING' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="status-pill {% if record.status == 'PENDING' %}active-pending{% endif %}" title="Set status to Pending">
+                    <details class="status-dropdown">
+                        <summary class="{% if record.status == 'PENDING' %}status-badge-pending{% elif record.status == 'PROCESSING' %}status-badge-processing{% elif record.status == 'DELIVERED' %}status-badge-delivered{% else %}badge{% endif %}">
+                            {% if record.status == 'PENDING' %}
                                 🕒 Pending
-                            </button>
-                        </form>
-                        <form method="POST" action="{% url 'change_order_status' record.id 'PROCESSING' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="status-pill {% if record.status == 'PROCESSING' %}active-processing{% endif %}" title="Set status to Processing">
+                            {% elif record.status == 'PROCESSING' %}
                                 ⚙️ Processing
-                            </button>
-                        </form>
-                        <form method="POST" action="{% url 'change_order_status' record.id 'DELIVERED' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="status-pill {% if record.status == 'DELIVERED' %}active-delivered{% endif %}" title="Set status to Delivered">
+                            {% elif record.status == 'DELIVERED' %}
                                 🚚 Delivered
-                            </button>
-                        </form>
-                    </div>
+                            {% else %}
+                                {{ record.status }}
+                            {% endif %}
+                            <span style="font-size: 0.65rem; opacity: 0.7;">▾</span>
+                        </summary>
+
+                        <div class="status-menu">
+                            <form method="POST" action="{% url 'change_order_status' record.id 'PENDING' %}">
+                                {% csrf_token %}
+                                <button type="submit">🕒 Pending</button>
+                            </form>
+                            <form method="POST" action="{% url 'change_order_status' record.id 'PROCESSING' %}">
+                                {% csrf_token %}
+                                <button type="submit">⚙️ Processing</button>
+                            </form>
+                            <form method="POST" action="{% url 'change_order_status' record.id 'DELIVERED' %}">
+                                {% csrf_token %}
+                                <button type="submit">🚚 Delivered</button>
+                            </form>
+                        </div>
+                    </details>
                 </td>
 
                 <td>{{ record.issue_date|date:"d/m/Y" }}</td>
