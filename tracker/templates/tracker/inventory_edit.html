@@ -1,0 +1,97 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Edit Item - {{ item.part_name }}{% endblock %}
+{% block page_title %}✏️ Edit Inventory Item{% endblock %}
+
+{% block content %}
+<style>
+    .edit-card {
+        background: var(--surface);
+        padding: 24px 28px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        max-width: 550px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 0.9rem;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+</style>
+
+<a href="{% url 'inventory_list' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to Warehouse Stock</a>
+
+<div class="edit-card">
+    <h2 style="margin-top: 0; margin-bottom: 20px; color: var(--primary); font-size: 1.2rem;">
+        Edit Details: {{ item.part_name }}
+    </h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Part Name *</label>
+            <input type="text" name="part_name" value="{{ item.part_name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Part / OEM Code</label>
+            <input type="text" name="part_code" value="{{ item.part_code }}">
+        </div>
+
+        <div class="form-group">
+            <label>Stock Quantity</label>
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="0" required>
+        </div>
+
+        <div class="form-group">
+            <label>Location / Bin</label>
+            <input type="text" name="location" value="{{ item.location }}">
+        </div>
+
+        <div class="form-group">
+            <label>Unit Cost (€)</label>
+            <input type="number" step="0.01" name="unit_cost" value="{{ item.unit_cost }}">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">
+                💾 Save Changes
+            </button>
+            <a href="{% url 'inventory_list' %}" class="btn btn-outline" style="padding: 10px 20px;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
