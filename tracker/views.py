@@ -10,41 +10,32 @@ from finance.models import Invoice
 
 
 def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
-    """
-    Auto-links order items to existing warehouse parts (by ID or matching name/OEM code).
-    If no match exists, automatically creates a NEW master item in the Warehouse Inventory!
-    """
     inv_item = None
     desc = ""
     price = 0.0
 
-    # 1. Check if chosen explicitly from dropdown
     if inventory_id:
         inv_item = InventoryItem.objects.filter(id=inventory_id).first()
 
     clean_desc = (custom_desc or '').strip()
 
-    # 2. If not selected from dropdown, check if typed name matches an existing warehouse part
     if not inv_item and clean_desc:
         inv_item = InventoryItem.objects.filter(
             Q(part_name__iexact=clean_desc) | Q(part_code__iexact=clean_desc)
         ).first()
 
-    # 3. If matched with an OLD item -> deduct stock
     if inv_item:
         desc = clean_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
         price = float(unit_price) if unit_price is not None and str(unit_price).strip() != '' else float(inv_item.unit_cost)
         inv_item.quantity = max(0, inv_item.quantity - quantity)
         inv_item.save()
-    
-    # 4. If NEW item (no match in warehouse) -> AUTO-CREATE in Master Warehouse List!
     elif clean_desc:
         price = float(unit_price or 0.0)
         inv_item = InventoryItem.objects.create(
             part_name=clean_desc,
             part_code='',
             category='General',
-            quantity=0,  # Added on order, saved to master warehouse
+            quantity=0,
             reorder_level=5,
             location='Piraeus Warehouse',
             unit_cost=price
@@ -52,6 +43,47 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
         desc = clean_desc
 
     return inv_item, desc, price
+
+
+def sync_all_historical_orders(request):
+    """
+    Scans ALL past order items in the database:
+    1. Links unlinked items to matching Master Warehouse parts (or creates new ones).
+    2. Syncs stock counts across all orders.
+    """
+    if request.method == 'POST':
+        unlinked_items = OrderItem.objects.filter(inventory_item__isnull=True)
+        
+        for item in unlinked_items:
+            clean_desc = item.description.strip()
+            if not clean_desc:
+                continue
+
+            # Check if part already exists in warehouse
+            match = InventoryItem.objects.filter(
+                Q(part_name__iexact=clean_desc) | Q(part_code__iexact=clean_desc)
+            ).first()
+
+            if match:
+                item.inventory_item = match
+                item.save()
+                match.quantity = max(0, match.quantity - item.quantity)
+                match.save()
+            else:
+                # Auto-create new warehouse part for old item
+                new_inv = InventoryItem.objects.create(
+                    part_name=clean_desc,
+                    part_code='',
+                    category='General',
+                    quantity=0,
+                    reorder_level=5,
+                    location='Piraeus Warehouse',
+                    unit_cost=float(item.unit_price or 0.0)
+                )
+                item.inventory_item = new_inv
+                item.save()
+
+    return redirect('orders_dashboard')
 
 
 def hub_view(request):
@@ -173,21 +205,6 @@ def create_order(request):
 def order_detail(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     master_items = InventoryItem.objects.all().order_by('part_name')
-    
-    # Auto-link unlinked historical items if fuzzy name match exists in warehouse
-    unlinked = order.order_items.filter(inventory_item__isnull=True)
-    for item in unlinked:
-        desc_lower = item.description.lower()
-        for inv in master_items:
-            p_name = inv.part_name.lower()
-            p_code = inv.part_code.lower() if inv.part_code else ""
-            if (p_name and p_name in desc_lower) or (p_code and p_code in desc_lower):
-                item.inventory_item = inv
-                item.save()
-                inv.quantity = max(0, inv.quantity - item.quantity)
-                inv.save()
-                break
-
     return render(request, 'tracker/order_detail.html', {'order': order, 'master_items': master_items})
 
 
