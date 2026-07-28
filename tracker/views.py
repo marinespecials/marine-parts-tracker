@@ -8,6 +8,52 @@ from django.urls import reverse
 from .models import Customer, InventoryItem, OrderItem
 from finance.models import Invoice
 
+
+def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
+    """
+    Auto-links order items to existing warehouse parts (by ID or matching name/OEM code).
+    If no match exists, automatically creates a NEW master item in the Warehouse Inventory!
+    """
+    inv_item = None
+    desc = ""
+    price = 0.0
+
+    # 1. Check if chosen explicitly from dropdown
+    if inventory_id:
+        inv_item = InventoryItem.objects.filter(id=inventory_id).first()
+
+    clean_desc = (custom_desc or '').strip()
+
+    # 2. If not selected from dropdown, check if typed name matches an existing warehouse part
+    if not inv_item and clean_desc:
+        inv_item = InventoryItem.objects.filter(
+            Q(part_name__iexact=clean_desc) | Q(part_code__iexact=clean_desc)
+        ).first()
+
+    # 3. If matched with an OLD item -> deduct stock
+    if inv_item:
+        desc = clean_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
+        price = float(unit_price) if unit_price is not None and str(unit_price).strip() != '' else float(inv_item.unit_cost)
+        inv_item.quantity = max(0, inv_item.quantity - quantity)
+        inv_item.save()
+    
+    # 4. If NEW item (no match in warehouse) -> AUTO-CREATE in Master Warehouse List!
+    elif clean_desc:
+        price = float(unit_price or 0.0)
+        inv_item = InventoryItem.objects.create(
+            part_name=clean_desc,
+            part_code='',
+            category='General',
+            quantity=0,  # Added on order, saved to master warehouse
+            reorder_level=5,
+            location='Piraeus Warehouse',
+            unit_cost=price
+        )
+        desc = clean_desc
+
+    return inv_item, desc, price
+
+
 def hub_view(request):
     total_orders = Invoice.objects.filter(status__in=['PENDING', 'PROCESSING']).count()
     total_deliveries = Invoice.objects.filter(status='DELIVERED').count()
@@ -103,23 +149,7 @@ def create_order(request):
             unit_price = request.POST.get('unit_price')
 
             if inventory_id or custom_desc:
-                if inventory_id:
-                    inv_item = InventoryItem.objects.filter(id=inventory_id).first()
-                    if inv_item:
-                        desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
-                        price = float(unit_price) if unit_price else float(inv_item.unit_cost)
-                        
-                        # Deduct stock immediately
-                        inv_item.quantity = max(0, inv_item.quantity - quantity)
-                        inv_item.save()
-                    else:
-                        desc = custom_desc
-                        price = float(unit_price or 0.0)
-                else:
-                    inv_item = None
-                    desc = custom_desc
-                    price = float(unit_price or 0.0)
-
+                inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price)
                 OrderItem.objects.create(
                     order=order,
                     inventory_item=inv_item,
@@ -144,7 +174,7 @@ def order_detail(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     master_items = InventoryItem.objects.all().order_by('part_name')
     
-    # Auto-link old unlinked items if fuzzy name match exists
+    # Auto-link unlinked historical items if fuzzy name match exists in warehouse
     unlinked = order.order_items.filter(inventory_item__isnull=True)
     for item in unlinked:
         desc_lower = item.description.lower()
@@ -162,7 +192,6 @@ def order_detail(request, order_id):
 
 
 def link_order_item_to_inventory(request, item_id):
-    """Manually links an old/unlinked line item to a warehouse part and deducts stock."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         inventory_id = request.POST.get('inventory_id')
@@ -170,8 +199,6 @@ def link_order_item_to_inventory(request, item_id):
             inv = get_object_or_404(InventoryItem, id=inventory_id)
             item.inventory_item = inv
             item.save()
-
-            # Deduct stock
             inv.quantity = max(0, inv.quantity - item.quantity)
             inv.save()
 
@@ -186,32 +213,21 @@ def add_order_item(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     if request.method == 'POST':
         inventory_id = request.POST.get('inventory_id')
+        custom_desc = request.POST.get('description', '').strip()
         quantity = int(request.POST.get('quantity') or 1)
-        custom_price = request.POST.get('unit_price')
-        
-        if inventory_id:
-            inv_item = get_object_or_404(InventoryItem, id=inventory_id)
-            desc = f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name
-            unit_price = float(custom_price) if custom_price else float(inv_item.unit_cost)
-            
-            # Deduct stock immediately
-            inv_item.quantity = max(0, inv_item.quantity - quantity)
-            inv_item.save()
-        else:
-            desc = request.POST.get('description', '').strip() or 'Custom Item'
-            unit_price = float(custom_price or 0.00)
-            inv_item = None
+        unit_price = request.POST.get('unit_price')
 
-        OrderItem.objects.create(
-            order=order,
-            inventory_item=inv_item,
-            description=desc,
-            quantity=quantity,
-            unit_price=unit_price
-        )
-        
-        order.total_amount = sum(item.total_price for item in order.order_items.all())
-        order.save()
+        if inventory_id or custom_desc:
+            inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price)
+            OrderItem.objects.create(
+                order=order,
+                inventory_item=inv_item,
+                description=desc,
+                quantity=quantity,
+                unit_price=price
+            )
+            order.total_amount = sum(item.total_price for item in order.order_items.all())
+            order.save()
         
     return redirect('order_detail', order_id=order.id)
 
