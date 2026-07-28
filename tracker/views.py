@@ -529,3 +529,22 @@ def mobile_packing_list(request, order_id):
         'packed_items': packed_items,
         'progress': progress,
     })
+def research_hub(request):
+    """Dedicated workspace for technical research, OEM cross-references, and supplier data."""
+    query = request.GET.get('q', '').strip()
+    
+    # Retrieve parts and clients for general research filtering
+    all_parts = InventoryItem.objects.all().order_by('part_name')
+    if query:
+        all_parts = all_parts.filter(
+            Q(part_name__icontains=query) | Q(part_code__icontains=query) | Q(category__icontains=query)
+        )
+
+    context = {
+        'query': query,
+        'parts': all_parts,
+        'total_catalog_items': InventoryItem.objects.count(),
+        'total_clients': Customer.objects.count(),
+        'total_orders_logged': Invoice.objects.exclude(status='DRAFT').count(),
+    }
+    return render(request, 'tracker/research.html', context)

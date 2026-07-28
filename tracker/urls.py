@@ -9,6 +9,9 @@ urlpatterns = [
     # Universal Global Search
     path('search/', views.global_search, name='global_search'),
     
+    # 🔬 NEW: Research & General Data Hub
+    path('research/', views.research_hub, name='research_hub'),
+    
     # Live Operations Board
     path('live-board/', views.active_board, name='active_board'),
     
@@ -20,7 +23,7 @@ urlpatterns = [
     path('orders/<int:order_id>/add_item/', views.add_order_item, name='add_order_item'),
     path('orders/item/<int:item_id>/adjust/<str:action>/', views.adjust_order_item_qty, name='adjust_order_item_qty'),
     path('orders/item/<int:item_id>/link/', views.link_order_item_to_inventory, name='link_order_item_to_inventory'),
-    path('orders/sync-history/', views.sync_all_historical_orders, name='sync_all_historical_orders'), # <-- NEW: 1-Click Sync
+    path('orders/sync-history/', views.sync_all_historical_orders, name='sync_all_historical_orders'),
     path('orders/<int:order_id>/convert/', views.convert_order_to_invoice, name='convert_order_to_invoice'),
     path('orders/item/<int:item_id>/delete/', views.delete_order_item, name='delete_order_item'),
     path('orders/item/<int:item_id>/toggle/', views.toggle_item_packed, name='toggle_item_packed'),
