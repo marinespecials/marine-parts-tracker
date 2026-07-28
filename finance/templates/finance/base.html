@@ -3,193 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Marine Specials Portal{% endblock %}</title>
+    <title>{% block title %}Logistics & Operations{% endblock %} | Marine Specials</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
+            --sidebar-width: 260px;
             --primary: #0F172A;
+            --primary-hover: #1E293B;
+            --surface: #FFFFFF;
+            --background: #F8FAFC;
             --accent: #2563EB;
             --accent-light: #EFF6FF;
-            --surface: #FFFFFF;
-            --bg: #F8FAFC;
-            --border: #E2E8F0;
-            --text-secondary: #64748B;
-            --danger: #DC2626;
             --success: #059669;
+            --danger: #DC2626;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --border: #E2E8F0;
         }
 
         body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--primary);
+            padding: 0;
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
         }
 
-        /* STICKY TOP NAVIGATION BAR */
-        .navbar {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 12px 28px;
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary);
+            color: #94A3B8;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
+            flex-direction: column;
+            position: fixed;
             top: 0;
+            bottom: 0;
+            left: 0;
             z-index: 100;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        /* CLICKABLE LOGO BRANDING */
-        .brand-logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: var(--primary);
-            font-weight: 800;
+        .sidebar-brand {
+            padding: 22px 24px;
+            color: white;
             font-size: 1.15rem;
-            transition: opacity 0.15s ease;
-        }
-
-        .brand-logo:hover {
-            opacity: 0.8;
-        }
-
-        .nav-links {
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 10px;
+            border-bottom: 1px solid #1E293B;
+            letter-spacing: 0.5px;
         }
 
-        .nav-link {
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 0.875rem;
-            padding: 6px 12px;
-            border-radius: 6px;
-            transition: all 0.15s ease;
+        .sidebar-menu {
+            padding: 20px 14px;
+            flex-grow: 1;
+            overflow-y: auto;
         }
 
-        .nav-link:hover {
-            color: var(--accent);
-            background-color: var(--accent-light);
-        }
-
-        .search-bar {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .search-bar input {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            font-size: 0.825rem;
-            width: 180px;
-        }
-
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        /* LAYOUT & CONTAINERS */
-        .container {
-            max-width: 1240px;
-            margin: 0 auto;
-            padding: 24px 20px;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 22px;
-        }
-
-        .page-title {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 0;
-        }
-
-        /* BUTTON STYLES */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            border: 1px solid transparent;
-        }
-
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: #1D4ED8; }
-
-        .btn-outline { background: white; border-color: var(--border); color: var(--primary); }
-        .btn-outline:hover { background: #F1F5F9; }
-
-        .card {
-            background: var(--surface);
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            padding: 20px;
+        .menu-section {
             margin-bottom: 20px;
         }
 
-        .badge {
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+        .menu-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #475569;
+            font-weight: 700;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            margin-bottom: 6px;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background-color: var(--primary-hover);
+        }
+
+        .nav-item.active {
+            color: white;
+            background-color: var(--accent);
+        }
+
+        .sub-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 8px 32px;
+            color: #64748B;
+            text-decoration: none;
+            font-size: 0.825rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+            margin-bottom: 2px;
+        }
+
+        .sub-nav-item:hover {
+            color: white;
+        }
+
+        .sub-nav-item.active {
+            color: #60A5FA;
             font-weight: 700;
         }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid #1E293B;
+        }
+
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .topbar {
+            height: 64px;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .page-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .content-body {
+            padding: 28px 32px;
+            flex-grow: 1;
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--accent); color: white; }
+        .btn-primary:hover { background-color: #1D4ED8; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #047857; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-outline:hover { background: #F1F5F9; }
+
+        .badge {
+            font-size: 0.725rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #E2E8F0;
+            color: #334155;
+        }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<!-- TOP NAVIGATION -->
-<nav class="navbar">
-    <!-- CLICKABLE LOGO -> NAVIGATES TO MAIN HUB -->
-    <a href="{% url 'hub' %}" class="brand-logo" title="Back to Main Portal Hub">
-        🚢 <span>Marine Specials</span>
-    </a>
-
-    <!-- MAIN APP NAVIGATION -->
-    <div class="nav-links">
-        <a href="{% url 'hub' %}" class="nav-link">📊 Hub</a>
-        <a href="{% url 'orders_dashboard' %}" class="nav-link">📦 Orders</a>
-        <a href="{% url 'inventory_list' %}" class="nav-link">🏭 Warehouse</a>
-        <a href="{% url 'research_hub' %}" class="nav-link">🔬 Research</a>
-        <a href="{% url 'active_board' %}" class="nav-link">⚡ Live Board</a>
-        <a href="{% url 'client_pricelist' %}" class="nav-link">📋 Catalog</a>
-        <a href="{% url 'client_list' %}" class="nav-link">👥 Clients</a>
-    </div>
-
-    <!-- GLOBAL SEARCH -->
-    <form method="GET" action="{% url 'global_search' %}" class="search-bar">
-        <input type="text" name="q" placeholder="Global Search..." required>
-        <button type="submit" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem;">Search</button>
-    </form>
-</nav>
-
-<!-- MAIN CONTENT BLOCK -->
-<main class="container">
-    <div class="page-header">
-        <h1 class="page-title">{% block page_title %}Marine Specials Portal{% endblock %}</h1>
-        <div>
-            {% block topbar_actions %}{% endblock %}
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span>⚓ MARINE SPECIALS</span>
         </div>
+
+        <nav class="sidebar-menu">
+            
+            <!-- CORE VIEW 1: ACTIVE OPERATIONS & ORDERS -->
+            <div class="menu-section">
+                <div class="menu-section-title">1. Operations</div>
+                
+                <a href="{% url 'active_board' %}" class="nav-item {% if request.resolver_match.url_name == 'active_board' %}active{% endif %}">
+                    <span>📡 Live Board & Orders</span>
+                </a>
+                
+                <a href="{% url 'orders_dashboard' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'orders_dashboard' or request.resolver_match.url_name == 'create_order' or request.resolver_match.url_name == 'order_detail' %}active{% endif %}">
+                    <span>└ Orders & Delivery Notes</span>
+                </a>
+            </div>
+
+            <!-- CORE VIEW 2: WAREHOUSE STOCK & CATALOG -->
+            <div class="menu-section">
+                <div class="menu-section-title">2. Inventory</div>
+                
+                <a href="{% url 'inventory_list' %}" class="nav-item {% if request.resolver_match.url_name == 'inventory_list' or request.resolver_match.url_name == 'edit_inventory_item' %}active{% endif %}">
+                    <span>📦 Warehouse Stock</span>
+                </a>
+
+                <a href="{% url 'client_pricelist' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'client_pricelist' %}active{% endif %}">
+                    <span>└ 📋 Client Price Catalog</span>
+                </a>
+            </div>
+
+            <!-- CORE VIEW 3: INVOICES & FINANCE -->
+            <div class="menu-section">
+                <div class="menu-section-title">3. Finance</div>
+                
+                <a href="{% url 'finance:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'invoice_detail' or request.resolver_match.url_name == 'create_invoice' %}active{% endif %}">
+                    <span>📄 Invoices & Drive</span>
+                </a>
+
+                <a href="{% url 'finance:bulk_import' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'bulk_import' %}active{% endif %}">
+                    <span>└ Smart Drive Import</span>
+                </a>
+                <a href="{% url 'client_list' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_ledger' %}active{% endif %}">
+                    <span>└ Client Ledgers</span>
+                </a>
+            </div>
+
+            <!-- EXTERNAL DRIVE LINK -->
+            <div class="menu-section" style="margin-top: 30px;">
+                <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="sub-nav-item" style="color: #94A3B8;">
+                    <span>📁 Google Drive Folder ↗</span>
+                </a>
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{% url 'finance:export_finances' %}" class="btn btn-success" style="width: 100%; justify-content: center; font-size: 0.8rem;">
+                📥 Export Financials
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <!-- GLOBAL SEARCH BAR IN TOPBAR -->
+            <form method="GET" action="{% url 'global_search' %}" style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" name="q" value="{{ query }}" placeholder="🔍 Universal Search (Orders, Invoices, Parts...)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
+            </form>
+
+            <div class="topbar-actions">
+                {% block topbar_actions %}
+                    <a href="{% url 'create_order' %}" class="btn btn-outline">+ Create Order</a>
+                    <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">+ New Invoice</a>
+                {% endblock %}
+            </div>
+        </header>
+
+        <main class="content-body">
+            {% block content %}{% endblock %}
+        </main>
     </div>
 
-    {% block content %}{% endblock %}
-</main>
-
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
