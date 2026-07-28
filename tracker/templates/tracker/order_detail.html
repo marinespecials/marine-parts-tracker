@@ -60,7 +60,6 @@
     td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background-color: #FAFCFF; }
 
-    /* STEPPER BUTTON STYLING */
     .btn-qty-step {
         background: white;
         border: 1px solid var(--border);
@@ -105,7 +104,7 @@
         <div class="status-btn-group">
             <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🕒 Pending</button></form>
             <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">⚙️ Processing</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Set Delivered (Auto-Deduct Stock)</button></form>
+            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Set Delivered</button></form>
 
             <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" style="display:inline; margin-left: 8px;">
                 {% csrf_token %}
@@ -155,7 +154,7 @@
     </form>
 </div>
 
-<!-- ORDER ITEMS TABLE WITH INLINE + / - STEPPERS -->
+<!-- ORDER ITEMS TABLE WITH LINK BADGES & STEPPERS -->
 <div class="card" style="padding: 0; overflow: hidden;">
     <table>
         <thead>
@@ -183,9 +182,27 @@
                     <strong style="{% if item.is_packed %}text-decoration: line-through; color: #94A3B8;{% endif %} font-size: 0.925rem;">
                         {{ item.description }}
                     </strong>
+                    
+                    {% if item.inventory_item %}
+                        <div style="font-size: 0.75rem; color: #059669; margin-top: 2px; font-weight: 600;">
+                            📍 Linked to Warehouse: {{ item.inventory_item.part_name }} (Current Stock: {{ item.inventory_item.quantity }})
+                        </div>
+                    {% else %}
+                        <form method="POST" action="{% url 'link_order_item_to_inventory' item.id %}" style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+                            {% csrf_token %}
+                            <select name="inventory_id" style="padding: 3px 6px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #991B1B;" required>
+                                <option value="">⚠️ Not Linked to Warehouse - Select Part...</option>
+                                {% for inv in master_items %}
+                                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - Qty: {{ inv.quantity }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.725rem; background: #EFF6FF; border-color: #BFDBFE; color: var(--accent);">
+                                🔗 Link & Deduct Stock
+                            </button>
+                        </form>
+                    {% endif %}
                 </td>
 
-                <!-- INLINE STEPPER CONTROL FOR ORDER QTY -->
                 <td style="text-align: center;">
                     <div style="display: inline-flex; align-items: center; gap: 6px;">
                         <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}" style="display:inline;">

@@ -109,7 +109,7 @@ def create_order(request):
                         desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
                         price = float(unit_price) if unit_price else float(inv_item.unit_cost)
                         
-                        # Deduct stock immediately from storage
+                        # Deduct stock immediately
                         inv_item.quantity = max(0, inv_item.quantity - quantity)
                         inv_item.save()
                     else:
@@ -143,7 +143,43 @@ def create_order(request):
 def order_detail(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     master_items = InventoryItem.objects.all().order_by('part_name')
+    
+    # Auto-link old unlinked items if fuzzy name match exists
+    unlinked = order.order_items.filter(inventory_item__isnull=True)
+    for item in unlinked:
+        desc_lower = item.description.lower()
+        for inv in master_items:
+            p_name = inv.part_name.lower()
+            p_code = inv.part_code.lower() if inv.part_code else ""
+            if (p_name and p_name in desc_lower) or (p_code and p_code in desc_lower):
+                item.inventory_item = inv
+                item.save()
+                inv.quantity = max(0, inv.quantity - item.quantity)
+                inv.save()
+                break
+
     return render(request, 'tracker/order_detail.html', {'order': order, 'master_items': master_items})
+
+
+def link_order_item_to_inventory(request, item_id):
+    """Manually links an old/unlinked line item to a warehouse part and deducts stock."""
+    if request.method == 'POST':
+        item = get_object_or_404(OrderItem, id=item_id)
+        inventory_id = request.POST.get('inventory_id')
+        if inventory_id:
+            inv = get_object_or_404(InventoryItem, id=inventory_id)
+            item.inventory_item = inv
+            item.save()
+
+            # Deduct stock
+            inv.quantity = max(0, inv.quantity - item.quantity)
+            inv.save()
+
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+
+    return redirect('order_detail', order_id=item.order.id)
 
 
 def add_order_item(request, order_id):
@@ -158,7 +194,7 @@ def add_order_item(request, order_id):
             desc = f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name
             unit_price = float(custom_price) if custom_price else float(inv_item.unit_cost)
             
-            # Deduct stock immediately from warehouse storage
+            # Deduct stock immediately
             inv_item.quantity = max(0, inv_item.quantity - quantity)
             inv_item.save()
         else:
@@ -181,7 +217,6 @@ def add_order_item(request, order_id):
 
 
 def adjust_order_item_qty(request, item_id, action):
-    """Adjusts order item quantity and syncs warehouse stock in real time."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
@@ -202,7 +237,6 @@ def adjust_order_item_qty(request, item_id, action):
                     inv.quantity += 1
                     inv.save()
             else:
-                # If quantity reaches 0, restore 1 unit to warehouse stock and remove item
                 if item.inventory_item:
                     inv = item.inventory_item
                     inv.quantity += 1
@@ -244,7 +278,6 @@ def toggle_item_packed(request, item_id):
 
 
 def delete_order_item(request, item_id):
-    """Deletes order item and returns its stock back to warehouse storage."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
@@ -306,7 +339,6 @@ def convert_order_to_invoice(request, order_id):
 
 
 def delete_order(request, order_id):
-    """Deletes an entire order and refunds all warehouse stock back to storage."""
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
         for item in order.order_items.all():
