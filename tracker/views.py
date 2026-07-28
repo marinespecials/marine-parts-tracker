@@ -105,8 +105,16 @@ def create_order(request):
             if inventory_id or custom_desc:
                 if inventory_id:
                     inv_item = InventoryItem.objects.filter(id=inventory_id).first()
-                    desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-                    price = float(unit_price) if unit_price else float(inv_item.unit_cost if inv_item else 0.0)
+                    if inv_item:
+                        desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
+                        price = float(unit_price) if unit_price else float(inv_item.unit_cost)
+                        
+                        # Deduct stock immediately from storage
+                        inv_item.quantity = max(0, inv_item.quantity - quantity)
+                        inv_item.save()
+                    else:
+                        desc = custom_desc
+                        price = float(unit_price or 0.0)
                 else:
                     inv_item = None
                     desc = custom_desc
@@ -149,6 +157,10 @@ def add_order_item(request, order_id):
             inv_item = get_object_or_404(InventoryItem, id=inventory_id)
             desc = f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name
             unit_price = float(custom_price) if custom_price else float(inv_item.unit_cost)
+            
+            # Deduct stock immediately from warehouse storage
+            inv_item.quantity = max(0, inv_item.quantity - quantity)
+            inv_item.save()
         else:
             desc = request.POST.get('description', '').strip() or 'Custom Item'
             unit_price = float(custom_price or 0.00)
@@ -169,7 +181,7 @@ def add_order_item(request, order_id):
 
 
 def adjust_order_item_qty(request, item_id, action):
-    """Adjusts an existing order line item quantity up or down inline."""
+    """Adjusts order item quantity and syncs warehouse stock in real time."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
@@ -177,11 +189,24 @@ def adjust_order_item_qty(request, item_id, action):
         if action == 'increase':
             item.quantity += 1
             item.save()
+            if item.inventory_item:
+                inv = item.inventory_item
+                inv.quantity = max(0, inv.quantity - 1)
+                inv.save()
         elif action == 'decrease':
             if item.quantity > 1:
                 item.quantity -= 1
                 item.save()
+                if item.inventory_item:
+                    inv = item.inventory_item
+                    inv.quantity += 1
+                    inv.save()
             else:
+                # If quantity reaches 0, restore 1 unit to warehouse stock and remove item
+                if item.inventory_item:
+                    inv = item.inventory_item
+                    inv.quantity += 1
+                    inv.save()
                 item.delete()
 
         order.total_amount = sum(i.total_price for i in order.order_items.all())
@@ -219,9 +244,16 @@ def toggle_item_packed(request, item_id):
 
 
 def delete_order_item(request, item_id):
+    """Deletes order item and returns its stock back to warehouse storage."""
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
+        
+        if item.inventory_item:
+            inv = item.inventory_item
+            inv.quantity += item.quantity
+            inv.save()
+
         item.delete()
         order.total_amount = sum(i.total_price for i in order.order_items.all())
         order.save()
@@ -231,18 +263,8 @@ def delete_order_item(request, item_id):
 def change_order_status(request, order_id, new_status):
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
-        target_status = new_status.upper()
-
-        if target_status == 'DELIVERED' and order.status != 'DELIVERED':
-            for item in order.order_items.all():
-                if item.inventory_item:
-                    inv = item.inventory_item
-                    inv.quantity = max(0, inv.quantity - item.quantity)
-                    inv.save()
-
-        order.status = target_status
+        order.status = new_status.upper()
         order.save()
-
     return redirect('orders_dashboard')
 
 
@@ -284,8 +306,15 @@ def convert_order_to_invoice(request, order_id):
 
 
 def delete_order(request, order_id):
+    """Deletes an entire order and refunds all warehouse stock back to storage."""
     if request.method == 'POST':
-        Invoice.objects.filter(id=order_id).delete()
+        order = get_object_or_404(Invoice, id=order_id)
+        for item in order.order_items.all():
+            if item.inventory_item:
+                inv = item.inventory_item
+                inv.quantity += item.quantity
+                inv.save()
+        order.delete()
     return redirect('orders_dashboard')
 
 
