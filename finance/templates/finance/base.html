@@ -234,6 +234,10 @@
                 <a href="{% url 'app_hub' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'app_hub' or request.resolver_match.url_name == 'hub' %}active{% endif %}">
                     <span>└ 📊 Hub & Analytics</span>
                 </a>
+
+                <a href="{% url 'research_hub' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'research_hub' %}active{% endif %}">
+                    <span>└ 🔬 Research & Data</span>
+                </a>
             </div>
 
             <!-- CORE VIEW 2: WAREHOUSE STOCK & CATALOG -->
@@ -262,15 +266,6 @@
                 </a>
                 <a href="{% url 'client_list' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_ledger' %}active{% endif %}">
                     <span>└ Client Ledgers</span>
-                </a>
-            </div>
-
-            <!-- CORE VIEW 4: RESEARCH & GENERAL DATA -->
-            <div class="menu-section">
-                <div class="menu-section-title">4. Research</div>
-                
-                <a href="{% url 'research_hub' %}" class="nav-item {% if request.resolver_match.url_name == 'research_hub' %}active{% endif %}">
-                    <span>🔬 Research & General Data</span>
                 </a>
             </div>
 
