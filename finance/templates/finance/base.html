@@ -52,12 +52,12 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 10px;
             border-bottom: 1px solid #1E293B;
             letter-spacing: 0.5px;
             text-decoration: none;
             transition: background-color 0.2s ease;
+            user-select: none;
         }
 
         .sidebar-brand:hover {
@@ -219,10 +219,9 @@
 
     <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar">
-        <!-- TOP SIDEBAR BRAND HEADER LINKED TO HUB & ANALYTICS -->
-        <a href="{% url 'app_hub' %}" class="sidebar-brand" title="Open Operational Hub & Analytics Dashboard">
+        <!-- TOP SIDEBAR BRAND HEADER LINKED TO MAIN HUB -->
+        <a href="{% url 'app_hub' %}" class="sidebar-brand" title="Open Main Hub & Operations Overview">
             <span>⚓ MARINE SPECIALS</span>
-            <span class="badge" style="background: rgba(37, 99, 235, 0.3); color: #60A5FA; font-size: 0.65rem; border: 1px solid rgba(96, 165, 250, 0.4);">HUB</span>
         </a>
 
         <nav class="sidebar-menu">

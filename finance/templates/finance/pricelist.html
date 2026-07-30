@@ -1,0 +1,39 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Master Pricelist{% endblock %}
+{% block page_title %}📋 Finance Master Pricelist{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">
+            Master catalog pricing items linked to financial invoicing and client quotes.
+        </p>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+        <thead>
+            <tr style="background-color: #F8FAFC; border-bottom: 2px solid var(--border);">
+                <th style="text-align: left; padding: 10px 12px; color: var(--text-secondary); font-weight: 600;">Description</th>
+                <th style="text-align: left; padding: 10px 12px; color: var(--text-secondary); font-weight: 600;">Code / Ref</th>
+                <th style="text-align: right; padding: 10px 12px; color: var(--text-secondary); font-weight: 600;">Unit Price (€)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 10px 12px;"><strong>{{ item.description|default:item.name }}</strong></td>
+                <td style="padding: 10px 12px;"><code>{{ item.code|default:"—" }}</code></td>
+                <td style="text-align: right; padding: 10px 12px;"><strong style="color: var(--accent);">{{ item.unit_price|default:item.price|default:"0.00" }} €</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #94A3B8; padding: 30px;">
+                    No pricelist records found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
