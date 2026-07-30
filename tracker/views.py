@@ -639,3 +639,18 @@ def po_detail(request, po_id):
         return redirect('po_detail', po_id=po.id)
         
     return render(request, 'tracker/po_detail.html', {'po': po, 'inventory_items': inventory_items})
+def delete_po(request, po_id):
+    if request.method == 'POST':
+        po = get_object_or_404(PurchaseOrder, id=po_id)
+        po.delete()
+    return redirect('po_list')
+
+def delete_po_item(request, item_id):
+    if request.method == 'POST':
+        item = get_object_or_404(PurchaseOrderItem, id=item_id)
+        po = item.purchase_order
+        item.delete()
+        po.total_amount = sum(i.total_cost for i in po.items.all())
+        po.save()
+        return redirect('po_detail', po_id=po.id)
+    return redirect('po_list')
