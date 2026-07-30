@@ -1,10 +1,40 @@
 {% extends 'finance/base.html' %}
 
-{% block title %}Research & General Data Hub{% endblock %}
-{% block page_title %}🔬 Research & Technical Intelligence Hub{% endblock %}
+{% block title %}Research & Data Hub{% endblock %}
+{% block page_title %}🔬 Research & Visual Data Analytics{% endblock %}
 
 {% block content %}
 <style>
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+        .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+        background: var(--surface);
+        padding: 20px 22px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .chart-card h3 {
+        margin-top: 0;
+        margin-bottom: 14px;
+        color: var(--primary);
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
     .research-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
@@ -30,9 +60,6 @@
         margin-bottom: 12px;
         color: var(--primary);
         font-size: 1.05rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
     }
 
     .stat-badge-group {
@@ -79,8 +106,24 @@
     </div>
 </div>
 
+<!-- VISUAL DATA CHARTS -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <h3>🔥 Most Ordered Spare Parts (Units)</h3>
+        <div style="height: 220px; position: relative;">
+            <canvas id="partsChart"></canvas>
+        </div>
+    </div>
+    <div class="chart-card">
+        <h3>🚢 Top Clients / Vessels by Revenue (€)</h3>
+        <div style="height: 220px; position: relative;">
+            <canvas id="clientsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- RESEARCH TABLE & NOTES GRID -->
 <div class="research-grid">
-    <!-- Main Technical Lookup & Cross-Reference -->
     <div>
         <div class="research-card">
             <h3>🔍 Technical Parts & OEM Cross-Reference Database</h3>
@@ -124,7 +167,6 @@
         </div>
     </div>
 
-    <!-- Supplier & Market Notes Side Panel -->
     <div>
         <div class="research-card">
             <h3>📝 Supplier & Market Notes</h3>
@@ -135,4 +177,62 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const partLabels = {{ part_labels_json|safe }};
+        const partData = {{ part_data_json|safe }};
+        const clientLabels = {{ client_labels_json|safe }};
+        const clientData = {{ client_data_json|safe }};
+
+        // 1. Chart: Most Ordered Parts (Bar)
+        const partsCtx = document.getElementById('partsChart').getContext('2d');
+        new Chart(partsCtx, {
+            type: 'bar',
+            data: {
+                labels: partLabels.length ? partLabels : ['No Data'],
+                datasets: [{
+                    label: 'Units Ordered',
+                    data: partData.length ? partData : [0],
+                    backgroundColor: '#2563EB',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+
+        // 2. Chart: Top Clients by Revenue (Horizontal Bar)
+        const clientsCtx = document.getElementById('clientsChart').getContext('2d');
+        new Chart(clientsCtx, {
+            type: 'bar',
+            data: {
+                labels: clientLabels.length ? clientLabels : ['No Data'],
+                datasets: [{
+                    label: 'Total Spend (€)',
+                    data: clientData.length ? clientData : [0],
+                    backgroundColor: '#059669',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

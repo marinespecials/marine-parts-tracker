@@ -1,7 +1,8 @@
+import json
 import random
 from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Sum
 from django.utils import timezone
 from django.urls import reverse
 
@@ -529,8 +530,10 @@ def mobile_packing_list(request, order_id):
         'packed_items': packed_items,
         'progress': progress,
     })
+
+
 def research_hub(request):
-    """Dedicated workspace for technical research, OEM cross-references, and supplier data."""
+    """Dedicated workspace for technical research, OEM cross-references, and visual analytics."""
     query = request.GET.get('q', '').strip()
     
     # Retrieve parts and clients for general research filtering
@@ -540,11 +543,36 @@ def research_hub(request):
             Q(part_name__icontains=query) | Q(part_code__icontains=query) | Q(category__icontains=query)
         )
 
+    # 1. Top 5 Most Ordered Spare Parts Data
+    top_parts_qs = (
+        OrderItem.objects.filter(inventory_item__isnull=False)
+        .values('inventory_item__part_name')
+        .annotate(total_qty=Sum('quantity'))
+        .order_by('-total_qty')[:5]
+    )
+    part_labels = [p['inventory_item__part_name'] for p in top_parts_qs]
+    part_data = [p['total_qty'] for p in top_parts_qs]
+
+    # 2. Top 5 Best Clients by Revenue (€) Data
+    top_clients_qs = (
+        Customer.objects.annotate(
+            total_spent=Sum('invoice__total_amount', filter=~Q(invoice__status='DRAFT'))
+        )
+        .filter(total_spent__gt=0)
+        .order_by('-total_spent')[:5]
+    )
+    client_labels = [c.name for c in top_clients_qs]
+    client_data = [float(c.total_spent or 0) for c in top_clients_qs]
+
     context = {
         'query': query,
         'parts': all_parts,
         'total_catalog_items': InventoryItem.objects.count(),
         'total_clients': Customer.objects.count(),
         'total_orders_logged': Invoice.objects.exclude(status='DRAFT').count(),
+        'part_labels_json': json.dumps(part_labels),
+        'part_data_json': json.dumps(part_data),
+        'client_labels_json': json.dumps(client_labels),
+        'client_data_json': json.dumps(client_data),
     }
     return render(request, 'tracker/research.html', context)
