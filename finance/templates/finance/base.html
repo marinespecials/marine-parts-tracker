@@ -272,6 +272,17 @@
                 </a>
             </div>
 
+            <!-- CORE VIEW 4: PURCHASING & SUPPLIERS -->
+            <div class="menu-section">
+                <div class="menu-section-title">4. Purchasing</div>
+                <a href="{% url 'po_list' %}" class="nav-item {% if 'purchasing' in request.path %}active{% endif %}">
+                    <span>🛒 Purchase Orders</span>
+                </a>
+                <a href="{% url 'supplier_list' %}" class="sub-nav-item {% if 'suppliers' in request.path %}active{% endif %}">
+                    <span>└ 🏢 Vendor Database</span>
+                </a>
+            </div>
+
             <!-- EXTERNAL DRIVE LINK -->
             <div class="menu-section" style="margin-top: 20px;">
                 <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" class="sub-nav-item" style="color: #94A3B8;">

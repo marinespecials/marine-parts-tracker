@@ -576,3 +576,66 @@ def research_hub(request):
         'client_data_json': json.dumps(client_data),
     }
     return render(request, 'tracker/research.html', context)
+# ==========================================
+# PURCHASING & SUPPLIER MODULE
+# ==========================================
+from .models import Supplier, PurchaseOrder, PurchaseOrderItem
+
+def supplier_list(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            Supplier.objects.create(
+                name=name,
+                contact_person=request.POST.get('contact_person', ''),
+                email=request.POST.get('email', ''),
+                phone=request.POST.get('phone', '')
+            )
+        return redirect('supplier_list')
+    
+    suppliers = Supplier.objects.annotate(po_count=Count('purchaseorder')).order_by('name')
+    return render(request, 'tracker/supplier_list.html', {'suppliers': suppliers})
+
+def po_list(request):
+    if request.method == 'POST':
+        supplier_id = request.POST.get('supplier_id')
+        po_number = request.POST.get('po_number', '').strip() or f"PO-{random.randint(1000, 9999)}"
+        if supplier_id:
+            supplier = get_object_or_404(Supplier, id=supplier_id)
+            PurchaseOrder.objects.create(po_number=po_number, supplier=supplier, status='DRAFT')
+        return redirect('po_list')
+        
+    pos = PurchaseOrder.objects.all().order_by('-issue_date')
+    suppliers = Supplier.objects.all().order_by('name')
+    return render(request, 'tracker/po_list.html', {'pos': pos, 'suppliers': suppliers})
+
+def po_detail(request, po_id):
+    po = get_object_or_404(PurchaseOrder, id=po_id)
+    inventory_items = InventoryItem.objects.all().order_by('part_name')
+    
+    if request.method == 'POST':
+        if 'add_item' in request.POST:
+            inv_id = request.POST.get('inventory_id')
+            qty = int(request.POST.get('quantity', 1))
+            cost = float(request.POST.get('unit_cost', 0.0))
+            if inv_id:
+                inv_item = get_object_or_404(InventoryItem, id=inv_id)
+                PurchaseOrderItem.objects.create(
+                    purchase_order=po, inventory_item=inv_item, quantity=qty, unit_cost=cost
+                )
+                po.total_amount = sum(item.total_cost for item in po.items.all())
+                po.save()
+                
+        elif 'receive_po' in request.POST:
+            if po.status != 'RECEIVED':
+                for item in po.items.all():
+                    if item.inventory_item:
+                        # Auto-add quantity to warehouse stock & update cost!
+                        item.inventory_item.quantity += item.quantity
+                        item.inventory_item.unit_cost = item.unit_cost
+                        item.inventory_item.save()
+                po.status = 'RECEIVED'
+                po.save()
+        return redirect('po_detail', po_id=po.id)
+        
+    return render(request, 'tracker/po_detail.html', {'po': po, 'inventory_items': inventory_items})

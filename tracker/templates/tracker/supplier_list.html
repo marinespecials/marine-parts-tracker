@@ -1,0 +1,28 @@
+{% extends 'finance/base.html' %}
+{% block title %}Suppliers{% endblock %}
+{% block page_title %}🏢 Supplier & Vendor Database{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+    <form method="POST" style="display: flex; gap: 10px; align-items: center;">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="Supplier Name" required class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
+        <input type="email" name="email" placeholder="Email" class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
+        <input type="text" name="phone" placeholder="Phone" class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
+        <button type="submit" class="btn btn-primary">+ Add Supplier</button>
+    </form>
+</div>
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
+            <th style="padding:10px;">Supplier Name</th><th style="padding:10px;">Contact</th><th style="padding:10px;">Total POs</th>
+        </tr>
+        {% for s in suppliers %}
+        <tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:10px;"><strong>{{ s.name }}</strong></td>
+            <td style="padding:10px;">{{ s.email|default:"-" }} <br> <small>{{ s.phone|default:"" }}</small></td>
+            <td style="padding:10px;"><span class="badge">{{ s.po_count }} Orders</span></td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -39,4 +39,7 @@ urlpatterns = [
     # Client Catalog & Directory
     path('catalog/', views.client_pricelist, name='client_pricelist'),
     path('clients/', views.client_list, name='client_list'),
+    path('suppliers/', views.supplier_list, name='supplier_list'),
+    path('purchasing/', views.po_list, name='po_list'),
+    path('purchasing/<int:po_id>/', views.po_detail, name='po_detail'),
 ]
