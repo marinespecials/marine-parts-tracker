@@ -231,10 +231,6 @@
                     <span>└ Orders & Delivery Notes</span>
                 </a>
 
-                <a href="{% url 'app_hub' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'app_hub' or request.resolver_match.url_name == 'hub' %}active{% endif %}">
-                    <span>└ 📊 Hub & Analytics</span>
-                </a>
-
                 <a href="{% url 'research_hub' %}" class="sub-nav-item {% if request.resolver_match.url_name == 'research_hub' %}active{% endif %}">
                     <span>└ 🔬 Research & Data</span>
                 </a>
@@ -293,7 +289,9 @@
                 <input type="text" name="q" value="{{ query }}" placeholder="🔍 Universal Search (Orders, Invoices, Parts...)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
             </form>
 
+            <!-- TOPBAR NAVIGATION & QUICK ACTIONS -->
             <div class="topbar-actions">
+                <a href="{% url 'app_hub' %}" class="btn btn-outline" style="font-weight: 700; color: var(--accent); border-color: #BFDBFE; background-color: #EFF6FF;">📊 Hub & Analytics</a>
                 {% block topbar_actions %}
                     <a href="{% url 'create_order' %}" class="btn btn-outline">+ Create Order</a>
                     <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">+ New Invoice</a>
