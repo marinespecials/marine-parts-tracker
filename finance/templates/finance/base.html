@@ -52,10 +52,16 @@
             font-weight: 700;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
             border-bottom: 1px solid #1E293B;
             letter-spacing: 0.5px;
-            user-select: none;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-brand:hover {
+            background-color: #1E293B;
         }
 
         .sidebar-menu {
@@ -213,9 +219,11 @@
 
     <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar">
-        <div class="sidebar-brand">
+        <!-- TOP SIDEBAR BRAND HEADER LINKED TO HUB & ANALYTICS -->
+        <a href="{% url 'app_hub' %}" class="sidebar-brand" title="Open Operational Hub & Analytics Dashboard">
             <span>⚓ MARINE SPECIALS</span>
-        </div>
+            <span class="badge" style="background: rgba(37, 99, 235, 0.3); color: #60A5FA; font-size: 0.65rem; border: 1px solid rgba(96, 165, 250, 0.4);">HUB</span>
+        </a>
 
         <nav class="sidebar-menu">
             
@@ -289,9 +297,7 @@
                 <input type="text" name="q" value="{{ query }}" placeholder="🔍 Universal Search (Orders, Invoices, Parts...)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
             </form>
 
-            <!-- TOPBAR NAVIGATION & QUICK ACTIONS -->
             <div class="topbar-actions">
-                <a href="{% url 'app_hub' %}" class="btn btn-outline" style="font-weight: 700; color: var(--accent); border-color: #BFDBFE; background-color: #EFF6FF;">📊 Hub & Analytics</a>
                 {% block topbar_actions %}
                     <a href="{% url 'create_order' %}" class="btn btn-outline">+ Create Order</a>
                     <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">+ New Invoice</a>
