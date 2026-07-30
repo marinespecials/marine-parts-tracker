@@ -2,7 +2,13 @@ from django.db import models
 from django.utils import timezone
 from tracker.models import Customer
 
+
 class Invoice(models.Model):
+    INVOICE_TYPE_CHOICES = [
+        ('SALE', 'Client Sale Invoice'),
+        ('BILL', 'Supplier Vendor Bill'),
+    ]
+
     STATUS_CHOICES = [
         ('DRAFT', 'DRAFT / INVOICE'),
         ('ORDER', 'ORDER (Παραγγελία)'),
@@ -10,21 +16,43 @@ class Invoice(models.Model):
         ('PAID', 'PAID'),
         ('VOID', 'VOID'),
     ]
+
     invoice_number = models.CharField(max_length=100)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    invoice_type = models.CharField(
+        max_length=10, choices=INVOICE_TYPE_CHOICES, default='SALE'
+    )
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, null=True, blank=True
+    )
+    supplier = models.ForeignKey(
+        'tracker.Supplier', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00
+    )
     issue_date = models.DateField(default=timezone.now)
-    due_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='DRAFT'
+    )
     google_drive_url = models.URLField(max_length=500, blank=True, null=True)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
 
     def __str__(self):
-        return f"{self.invoice_number} - {self.customer.name}"
+        type_label = self.get_invoice_type_display()
+        party = (
+            self.customer.name
+            if self.customer
+            else (self.supplier.name if self.supplier else "No Party")
+        )
+        return f"{type_label} #{self.invoice_number} - {party}"
+
 
 class ClientFinancialProfile(models.Model):
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
-    lifetime_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    lifetime_revenue = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0.00
+    )
     negotiation_notes = models.TextField(blank=True, null=True)
     payment_terms_days = models.IntegerField(default=30)
     internal_rating = models.CharField(max_length=5, default='B')
@@ -32,11 +60,14 @@ class ClientFinancialProfile(models.Model):
     def __str__(self):
         return f"Profile: {self.customer.name}"
 
+
 class PriceRecord(models.Model):
     part_name = models.CharField(max_length=255)
     part_code = models.CharField(max_length=100, blank=True, null=True)
     supplier_or_client_name = models.CharField(max_length=255)
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    customer = models.ForeignKey(
+        Customer, on_delete=models.SET_NULL, null=True, blank=True
+    )
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='EUR')
     date_recorded = models.DateField(default=timezone.now)
@@ -47,6 +78,7 @@ class PriceRecord(models.Model):
 
     def __str__(self):
         return f"{self.part_name} - {self.unit_price} {self.currency} ({self.supplier_or_client_name})"
+
 
 class MasterPricelistItem(models.Model):
     CATEGORY_CHOICES = [
@@ -64,13 +96,42 @@ class MasterPricelistItem(models.Model):
     ]
 
     part_name = models.CharField(max_length=255)
-    part_code = models.CharField(max_length=100, blank=True, null=True, help_text="OEM or Manufacturer Part Number")
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='General')
-    brand = models.CharField(max_length=100, blank=True, null=True, help_text="e.g. Yanmar, Victron, Jabsco")
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Internal Purchase Cost (€)")
-    markup_percent = models.DecimalField(max_digits=5, decimal_places=2, default=30.00, help_text="Default Markup %")
-    client_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Calculated Selling Price (€)")
-    availability = models.CharField(max_length=50, choices=AVAILABILITY_CHOICES, default='In Stock')
+    part_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="OEM or Manufacturer Part Number",
+    )
+    category = models.CharField(
+        max_length=50, choices=CATEGORY_CHOICES, default='General'
+    )
+    brand = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="e.g. Yanmar, Victron, Jabsco",
+    )
+    cost_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="Internal Purchase Cost (€)",
+    )
+    markup_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=30.00,
+        help_text="Default Markup %",
+    )
+    client_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="Calculated Selling Price (€)",
+    )
+    availability = models.CharField(
+        max_length=50, choices=AVAILABILITY_CHOICES, default='In Stock'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -78,7 +139,9 @@ class MasterPricelistItem(models.Model):
 
     def save(self, *args, **kwargs):
         if self.cost_price is not None and self.markup_percent is not None:
-            calc_price = float(self.cost_price) * (1 + (float(self.markup_percent) / 100))
+            calc_price = float(self.cost_price) * (
+                1 + (float(self.markup_percent) / 100)
+            )
             self.client_price = round(calc_price, 2)
         super().save(*args, **kwargs)
 
