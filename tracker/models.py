@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.utils import timezone
 
@@ -28,7 +30,7 @@ class InventoryItem(models.Model):
 
     @property
     def total_stock_value(self):
-        return self.quantity * float(self.unit_cost)
+        return self.quantity * Decimal(str(self.unit_cost))
 
     @property
     def is_low_stock(self):
@@ -49,7 +51,7 @@ class OrderItem(models.Model):
 
     @property
     def total_price(self):
-        return self.quantity * float(self.unit_price)
+        return self.quantity * Decimal(str(self.unit_price))
 
     def __str__(self):
         return f"{self.quantity}x {self.description} for {self.order.invoice_number}"
@@ -82,4 +84,4 @@ class PurchaseOrderItem(models.Model):
 
     @property
     def total_cost(self):
-        return float(self.quantity) * float(self.unit_cost)
+        return self.quantity * Decimal(str(self.unit_cost))

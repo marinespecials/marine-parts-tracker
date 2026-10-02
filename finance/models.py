@@ -10,11 +10,14 @@ class Invoice(models.Model):
     ]
 
     STATUS_CHOICES = [
-        ('DRAFT', 'DRAFT / INVOICE'),
-        ('ORDER', 'ORDER (Παραγγελία)'),
-        ('DELIVERY', 'DELIVERY NOTE (Δελτίο Αποστολής)'),
-        ('PAID', 'PAID'),
-        ('VOID', 'VOID'),
+        ('DRAFT', 'Draft'),
+        ('PENDING', 'Order - Pending'),
+        ('PROCESSING', 'Order - Processing'),
+        ('DELIVERED', 'Order - Delivered'),
+        ('UNPAID', 'Invoice - Unpaid'),
+        ('OVERDUE', 'Invoice - Overdue'),
+        ('PAID', 'Invoice - Paid'),
+        ('VOID', 'Void'),
     ]
 
     invoice_number = models.CharField(max_length=100)

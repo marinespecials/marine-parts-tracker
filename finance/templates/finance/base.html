@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0F172A">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>⚓</text></svg>">
     <title>{% block title %}Logistics & Operations{% endblock %} | Marine Specials</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -212,10 +214,65 @@
             background: #E2E8F0;
             color: #334155;
         }
+
+        /* ---------- UI polish ---------- */
+        * { box-sizing: border-box; }
+        a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid var(--accent); outline-offset: 2px;
+        }
+        input, select, textarea { font-family: inherit; }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn:active { transform: translateY(1px); }
+        .card { overflow-x: auto; }
+        .menu-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: 6px;
+                       font-size: 1.2rem; line-height: 1; padding: 6px 10px; cursor: pointer; margin-right: 10px; }
+        .sidebar-backdrop { display: none; }
+        .user-chip { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+                     color: #CBD5E1; font-size: 0.8rem; margin-top: 12px; }
+        .user-chip button { background: none; border: 1px solid #334155; color: #CBD5E1; border-radius: 6px;
+                            padding: 4px 10px; cursor: pointer; font-size: 0.75rem; }
+        .user-chip button:hover { background: #1E293B; color: #fff; }
+
+        /* ---------- Toast messages ---------- */
+        .toasts { position: fixed; top: 76px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; max-width: 360px; }
+        .toast { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+                 border-radius: 8px; padding: 12px 16px; box-shadow: 0 8px 24px rgba(15,23,42,.12);
+                 font-size: 0.875rem; display: flex; gap: 12px; align-items: flex-start;
+                 animation: toast-in .2s ease-out; }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error, .toast.warning { border-left-color: var(--danger); }
+        .toast button { background: none; border: 0; cursor: pointer; color: var(--text-secondary); font-size: 1rem; line-height: 1; margin-left: auto; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+        /* ---------- Phones & small tablets ---------- */
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); transition: transform .25s ease; }
+            body.nav-open .sidebar { transform: none; }
+            body.nav-open .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 99; }
+            .main-wrapper { margin-left: 0; }
+            .menu-toggle { display: inline-block; }
+            .topbar { padding: 0 14px; gap: 8px; }
+            .topbar form { flex: 1; min-width: 0; }
+            .topbar form input { width: 100% !important; }
+            .topbar-actions .btn { padding: 7px 10px; font-size: 0.78rem; }
+            .content-body { padding: 18px 14px; }
+            .toasts { left: 14px; right: 14px; max-width: none; }
+        }
+        @media (max-width: 560px) { .topbar-actions { display: none; } }
+
+        /* ---------- Printing (invoices, delivery notes) ---------- */
+        @media print {
+            .sidebar, .topbar, .toasts, .sidebar-backdrop, .no-print { display: none !important; }
+            .main-wrapper { margin: 0; }
+            .content-body { padding: 0; }
+            body { background: #fff; }
+            .card { box-shadow: none; border: 0; }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <div class="sidebar-backdrop" onclick="document.body.classList.remove('nav-open')"></div>
 
     <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar">
@@ -294,17 +351,27 @@
 
         <div class="sidebar-footer">
             <a href="{% url 'finance:export_finances' %}" class="btn btn-success" style="width: 100%; justify-content: center; font-size: 0.8rem;">
-                📥 Export Financials
+                📥 Export Financials (CSV)
             </a>
+            {% if user.is_authenticated %}
+            <div class="user-chip">
+                <span>👤 {{ user.get_username }}</span>
+                <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit">Sign out</button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </aside>
 
     <!-- MAIN CONTENT AREA -->
     <div class="main-wrapper">
         <header class="topbar">
+            <button type="button" class="menu-toggle" aria-label="Open menu" onclick="document.body.classList.toggle('nav-open')">☰</button>
             <!-- GLOBAL SEARCH BAR IN TOPBAR -->
             <form method="GET" action="{% url 'global_search' %}" style="display: flex; align-items: center; gap: 8px;">
-                <input type="text" name="q" value="{{ query }}" placeholder="🔍 Universal Search (Orders, Invoices, Parts...)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
+                <input type="text" name="q" value="{{ query }}" placeholder="🔍 Search orders, invoices, parts…  ( / )" id="global-search" autocomplete="off" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; width: 310px;">
             </form>
 
             <div class="topbar-actions">
@@ -315,11 +382,38 @@
             </div>
         </header>
 
+        {% if messages %}
+        <div class="toasts" role="status" aria-live="polite">
+            {% for message in messages %}
+            <div class="toast {{ message.tags }}"><span>{{ message }}</span><button type="button" aria-label="Dismiss" onclick="this.parentElement.remove()">×</button></div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <main class="content-body">
             {% block content %}{% endblock %}
         </main>
     </div>
 
+    <script>
+        // auto-dismiss toasts
+        setTimeout(function () {
+            document.querySelectorAll('.toast').forEach(function (t) { t.style.transition = 'opacity .4s'; t.style.opacity = 0; setTimeout(function () { t.remove(); }, 400); });
+        }, 5000);
+        // "/" focuses search, Esc closes the mobile menu
+        document.addEventListener('keydown', function (e) {
+            var tag = (document.activeElement && document.activeElement.tagName) || '';
+            if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(tag)) { e.preventDefault(); document.getElementById('global-search').focus(); }
+            if (e.key === 'Escape') { document.body.classList.remove('nav-open'); }
+        });
+        // stop double-submits (double stock deductions!)
+        document.addEventListener('submit', function (e) {
+            var f = e.target;
+            if (f.dataset.submitting) { e.preventDefault(); return; }
+            f.dataset.submitting = '1';
+            setTimeout(function () { delete f.dataset.submitting; }, 4000);
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -23,5 +23,6 @@ urlpatterns = [
     path('import/', views.bulk_import, name='bulk_import'),
     path('pricelist/', views.pricelist_dashboard, name='pricelist_dashboard'),
     path('history/', views.price_history, name='price_history'),
+    path('history/<int:record_id>/delete/', views.delete_price_record, name='delete_price_record'),
     path('export/', views.export_finances, name='export_finances'),
 ]

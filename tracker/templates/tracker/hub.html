@@ -102,6 +102,10 @@
         <div class="value">{{ total_inventory_items }}</div>
     </div>
     <div class="metric-card">
+        <div class="title">Unpaid Invoices ({{ unpaid_count }})</div>
+        <div class="value" style="color: {% if unpaid_count %}var(--danger){% else %}var(--text-secondary){% endif %};">€{{ unpaid_total|floatformat:2 }}</div>
+    </div>
+    <div class="metric-card">
         <div class="title">Low Stock Alerts</div>
         <div class="value" style="color: {% if low_stock_count > 0 %}var(--danger){% else %}var(--text-secondary){% endif %};">
             {{ low_stock_count }}
@@ -157,4 +161,26 @@
         </tbody>
     </table>
 </div>
+
+{% if low_stock_items %}
+<div class="card">
+    <div class="card-table-header">
+        <h2>⚠️ Needs Reordering</h2>
+        <a href="{% url 'inventory_list' %}" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Open Warehouse →</a>
+    </div>
+    <table>
+        <thead><tr><th>Part</th><th>Code</th><th>In stock</th><th>Reorder level</th></tr></thead>
+        <tbody>
+            {% for item in low_stock_items %}
+            <tr>
+                <td><strong>{{ item.part_name }}</strong></td>
+                <td>{{ item.part_code|default:"—" }}</td>
+                <td style="color: var(--danger); font-weight: 700;">{{ item.quantity }}</td>
+                <td>{{ item.reorder_level }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 {% endblock %}

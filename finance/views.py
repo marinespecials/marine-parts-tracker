@@ -1,5 +1,9 @@
 import random
 from datetime import date, timedelta
+from decimal import Decimal
+from django.contrib import messages
+from django.db import transaction
+from core.utils import to_decimal, to_int, redirect_back
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, Sum, Count, Avg, F, Value
 from django.utils import timezone
@@ -37,7 +41,7 @@ def client_ledger(request, client_id):
     # Handle Settings Form Submission
     if request.method == 'POST' and 'update_profile' in request.POST:
         profile.internal_rating = request.POST.get('internal_rating', profile.internal_rating)
-        profile.payment_terms_days = int(request.POST.get('payment_terms_days') or 30)
+        profile.payment_terms_days = to_int(request.POST.get('payment_terms_days'), 30, 0)
         profile.negotiation_notes = request.POST.get('negotiation_notes', '')
         profile.save()
         return redirect('finance:client_ledger', client_id=client.id)
@@ -117,18 +121,18 @@ def create_invoice(request):
 
             inventory_id = request.POST.get('inventory_id')
             custom_desc = request.POST.get('custom_description', '').strip()
-            quantity = int(request.POST.get('quantity') or 1)
+            quantity = to_int(request.POST.get('quantity'), 1, 1)
             unit_price = request.POST.get('unit_price')
 
             if inventory_id or custom_desc:
                 if inventory_id:
                     inv_item = InventoryItem.objects.filter(id=inventory_id).first()
                     desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-                    price = float(unit_price) if unit_price else float(inv_item.unit_cost if inv_item else 0.0)
+                    price = to_decimal(unit_price, default=(inv_item.unit_cost if inv_item else 0), minimum=0)
                 else:
                     inv_item = None
                     desc = custom_desc
-                    price = float(unit_price or 0.0)
+                    price = to_decimal(unit_price, minimum=0)
 
                 OrderItem.objects.create(
                     order=invoice,
@@ -163,18 +167,18 @@ def add_invoice_item(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
     if request.method == 'POST':
         inventory_id = request.POST.get('inventory_id')
-        quantity = int(request.POST.get('quantity') or 1)
+        quantity = to_int(request.POST.get('quantity'), 1, 1)
         custom_price = request.POST.get('unit_price')
         custom_desc = request.POST.get('description', '').strip()
 
         if inventory_id:
             inv_item = InventoryItem.objects.filter(id=inventory_id).first()
             desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-            unit_price = float(custom_price) if custom_price else float(inv_item.unit_cost if inv_item else 0.0)
+            unit_price = to_decimal(custom_price, default=(inv_item.unit_cost if inv_item else 0), minimum=0)
         else:
             inv_item = None
             desc = custom_desc or 'Billed Item / Service'
-            unit_price = float(custom_price or 0.00)
+            unit_price = to_decimal(custom_price, minimum=0)
 
         OrderItem.objects.create(
             order=invoice,
@@ -197,6 +201,7 @@ def delete_invoice_item(request, item_id):
         invoice.total_amount = sum(i.total_price for i in invoice.order_items.all())
         invoice.save()
         return redirect('finance:invoice_detail', invoice_id=invoice.id)
+    return redirect('finance:dashboard')
 
 
 def delete_invoice(request, invoice_id):
@@ -243,6 +248,37 @@ def price_history(request):
     return render(request, 'finance/price_history.html', {'records': records})
 
 
+def delete_price_record(request, record_id):
+    if request.method == 'POST':
+        get_object_or_404(PriceRecord, id=record_id).delete()
+    return redirect('finance:price_history')
+
+
+def _csv_safe(value):
+    """Stop spreadsheet formula injection: a cell starting with = + - @ would run as a formula in Excel."""
+    text = '' if value is None else str(value)
+    return "'" + text if text[:1] in ('=', '+', '-', '@') else text
+
+
 def export_finances(request):
-    return redirect('finance:dashboard')
-    
+    """Download every invoice/order as a CSV that opens cleanly in Excel (Greek-safe)."""
+    import csv
+    from django.http import HttpResponse
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="marine-finances-{timezone.localdate().isoformat()}.csv"'
+    response.write('\ufeff')  # BOM so Excel detects UTF-8
+    writer = csv.writer(response)
+    writer.writerow(['Number', 'Type', 'Client / Supplier', 'Status', 'Issue date', 'Due date', 'Total (EUR)'])
+
+    invoices = Invoice.objects.select_related('customer', 'supplier').order_by('-issue_date', '-id')
+    status = request.GET.get('status', '').upper()
+    if status:
+        invoices = invoices.filter(status=status)
+    for inv in invoices:
+        party = inv.customer.name if inv.customer_id else (inv.supplier.name if inv.supplier_id else '')
+        writer.writerow([
+            _csv_safe(inv.invoice_number), inv.invoice_type, _csv_safe(party), inv.status,
+            inv.issue_date, inv.due_date or '', inv.total_amount,
+        ])
+    return response

@@ -1,10 +1,15 @@
 import json
 import random
+from decimal import Decimal
 from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Q, F, Sum
 from django.utils import timezone
 from django.urls import reverse
+from django.db import transaction
+from django.contrib import messages
+
+from core.utils import to_decimal, to_int, redirect_back
 
 from .models import Customer, InventoryItem, OrderItem
 from finance.models import Invoice
@@ -13,7 +18,7 @@ from finance.models import Invoice
 def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
     inv_item = None
     desc = ""
-    price = 0.0
+    price = Decimal('0.00')
 
     if inventory_id:
         inv_item = InventoryItem.objects.filter(id=inventory_id).first()
@@ -27,11 +32,11 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
 
     if inv_item:
         desc = clean_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
-        price = float(unit_price) if unit_price is not None and str(unit_price).strip() != '' else float(inv_item.unit_cost)
+        price = to_decimal(unit_price, default=inv_item.unit_cost, minimum=0)
         inv_item.quantity = max(0, inv_item.quantity - quantity)
         inv_item.save()
     elif clean_desc:
-        price = float(unit_price or 0.0)
+        price = to_decimal(unit_price, minimum=0)
         inv_item = InventoryItem.objects.create(
             part_name=clean_desc,
             part_code='',
@@ -46,6 +51,7 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
     return inv_item, desc, price
 
 
+@transaction.atomic
 def sync_all_historical_orders(request):
     if request.method == 'POST':
         unlinked_items = OrderItem.objects.filter(inventory_item__isnull=True)
@@ -72,7 +78,7 @@ def sync_all_historical_orders(request):
                     quantity=0,
                     reorder_level=5,
                     location='Piraeus Warehouse',
-                    unit_cost=float(item.unit_price or 0.0)
+                    unit_cost=item.unit_price or 0
                 )
                 item.inventory_item = new_inv
                 item.save()
@@ -89,7 +95,11 @@ def hub_view(request):
         'total_inventory_items': InventoryItem.objects.count(),
         'low_stock_count': InventoryItem.objects.filter(quantity__lte=F('reorder_level')).count(),
         'active_orders': Invoice.objects.filter(status__in=['PENDING', 'PROCESSING']).order_by('-issue_date')[:5],
+        'low_stock_items': InventoryItem.objects.filter(quantity__lte=F('reorder_level')).order_by('quantity')[:8],
     }
+    unpaid = Invoice.objects.filter(status__in=['UNPAID', 'OVERDUE'])
+    context['unpaid_count'] = unpaid.count()
+    context['unpaid_total'] = unpaid.aggregate(t=Sum('total_amount'))['t'] or 0
     return render(request, 'tracker/hub.html', context)
 
 app_hub = hub_view
@@ -139,6 +149,7 @@ def orders_dashboard(request):
     })
 
 
+@transaction.atomic
 def create_order(request):
     if request.method == 'POST':
         customer_name = request.POST.get('customer_name', '').strip()
@@ -171,7 +182,7 @@ def create_order(request):
 
             inventory_id = request.POST.get('inventory_id')
             custom_desc = request.POST.get('custom_description', '').strip()
-            quantity = int(request.POST.get('quantity') or 1)
+            quantity = to_int(request.POST.get('quantity'), 1, 1)
             unit_price = request.POST.get('unit_price')
 
             if inventory_id or custom_desc:
@@ -202,9 +213,10 @@ def order_detail(request, order_id):
     return render(request, 'tracker/order_detail.html', {'order': order, 'master_items': master_items})
 
 
+@transaction.atomic
 def link_order_item_to_inventory(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
     if request.method == 'POST':
-        item = get_object_or_404(OrderItem, id=item_id)
         inventory_id = request.POST.get('inventory_id')
         if inventory_id:
             inv = get_object_or_404(InventoryItem, id=inventory_id)
@@ -213,19 +225,18 @@ def link_order_item_to_inventory(request, item_id):
             inv.quantity = max(0, inv.quantity - item.quantity)
             inv.save()
 
-    referer = request.META.get('HTTP_REFERER')
-    if referer:
-        return redirect(referer)
+    return redirect_back(request, 'orders_dashboard')
 
     return redirect('order_detail', order_id=item.order.id)
 
 
+@transaction.atomic
 def add_order_item(request, order_id):
     order = get_object_or_404(Invoice, id=order_id)
     if request.method == 'POST':
         inventory_id = request.POST.get('inventory_id')
         custom_desc = request.POST.get('description', '').strip()
-        quantity = int(request.POST.get('quantity') or 1)
+        quantity = to_int(request.POST.get('quantity'), 1, 1)
         unit_price = request.POST.get('unit_price')
 
         if inventory_id or custom_desc:
@@ -243,9 +254,11 @@ def add_order_item(request, order_id):
     return redirect('order_detail', order_id=order.id)
 
 
+@transaction.atomic
 def adjust_order_item_qty(request, item_id, action):
+    item = get_object_or_404(OrderItem, id=item_id)
+    order_id = item.order_id
     if request.method == 'POST':
-        item = get_object_or_404(OrderItem, id=item_id)
         order = item.order
 
         if action == 'increase':
@@ -273,16 +286,14 @@ def adjust_order_item_qty(request, item_id, action):
         order.total_amount = sum(i.total_price for i in order.order_items.all())
         order.save()
 
-        referer = request.META.get('HTTP_REFERER')
-        if referer:
-            return redirect(referer)
+        return redirect_back(request, 'orders_dashboard')
 
-    return redirect('order_detail', order_id=item.order.id)
+    return redirect('order_detail', order_id=order_id)
 
 
 def toggle_item_packed(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
     if request.method == 'POST':
-        item = get_object_or_404(OrderItem, id=item_id)
         item.is_packed = not item.is_packed
         item.save()
         
@@ -290,20 +301,17 @@ def toggle_item_packed(request, item_id):
         total = order.order_items.count()
         packed = order.order_items.filter(is_packed=True).count()
         
-        if packed == total and total > 0:
-            order.status = 'PROCESSING'
-        elif packed > 0:
+        if packed > 0 and order.status == 'PENDING':
             order.status = 'PROCESSING'
         
         order.save()
         
-        referer = request.META.get('HTTP_REFERER')
-        if referer:
-            return redirect(referer)
+        return redirect_back(request, 'orders_dashboard')
             
     return redirect('order_detail', order_id=item.order.id)
 
 
+@transaction.atomic
 def delete_order_item(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
@@ -318,21 +326,24 @@ def delete_order_item(request, item_id):
         order.total_amount = sum(i.total_price for i in order.order_items.all())
         order.save()
         return redirect('order_detail', order_id=order.id)
+    return redirect('orders_dashboard')
 
 
 def change_order_status(request, order_id, new_status):
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
-        order.status = new_status.upper()
-        order.save()
-        
-    referer = request.META.get('HTTP_REFERER')
-    if referer:
-        return redirect(referer)
+        new_status = new_status.upper()
+        if new_status in {code for code, _label in Invoice.STATUS_CHOICES}:
+            order.status = new_status
+            order.save()
+            messages.success(request, f"{order.invoice_number} marked {new_status.title()}.")
+        else:
+            messages.error(request, f"'{new_status}' is not a valid status.")
 
-    return redirect('orders_dashboard')
+    return redirect_back(request, 'orders_dashboard')
 
 
+@transaction.atomic
 def convert_order_to_invoice(request, order_id):
     if request.method == 'POST':
         original_order = get_object_or_404(Invoice, id=order_id)
@@ -370,6 +381,7 @@ def convert_order_to_invoice(request, order_id):
     return redirect('order_detail', order_id=order_id)
 
 
+@transaction.atomic
 def delete_order(request, order_id):
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
@@ -389,9 +401,9 @@ def inventory_list(request):
     if request.method == 'POST' and 'add_item' in request.POST:
         part_name = request.POST.get('part_name', '').strip()
         part_code = request.POST.get('part_code', '').strip()
-        quantity = int(request.POST.get('quantity') or 1)
+        quantity = to_int(request.POST.get('quantity'), 1, 1)
         location = request.POST.get('location', 'Piraeus Warehouse').strip()
-        unit_cost = float(request.POST.get('unit_cost') or 0.00)
+        unit_cost = to_decimal(request.POST.get('unit_cost'), minimum=0)
 
         if part_name:
             InventoryItem.objects.create(
@@ -451,6 +463,7 @@ def client_pricelist(request):
     })
 
 
+@transaction.atomic
 def adjust_stock(request, item_id, action):
     if request.method == 'POST':
         item = get_object_or_404(InventoryItem, id=item_id)
@@ -462,19 +475,21 @@ def adjust_stock(request, item_id, action):
     return redirect('inventory_list')
 
 
+@transaction.atomic
 def edit_inventory_item(request, item_id):
     item = get_object_or_404(InventoryItem, id=item_id)
     if request.method == 'POST':
         item.part_name = request.POST.get('part_name', item.part_name)
         item.part_code = request.POST.get('part_code', item.part_code)
-        item.quantity = int(request.POST.get('quantity') or item.quantity)
+        item.quantity = to_int(request.POST.get('quantity'), item.quantity, 0)
         item.location = request.POST.get('location', item.location)
-        item.unit_cost = float(request.POST.get('unit_cost') or item.unit_cost)
+        item.unit_cost = to_decimal(request.POST.get('unit_cost'), default=item.unit_cost, minimum=0)
         item.save()
         return redirect('inventory_list')
     return render(request, 'tracker/inventory_edit.html', {'item': item})
 
 
+@transaction.atomic
 def delete_inventory_item(request, item_id):
     if request.method == 'POST':
         InventoryItem.objects.filter(id=item_id).delete()
@@ -609,6 +624,7 @@ def po_list(request):
     suppliers = Supplier.objects.all().order_by('name')
     return render(request, 'tracker/po_list.html', {'pos': pos, 'suppliers': suppliers})
 
+@transaction.atomic
 def po_detail(request, po_id):
     po = get_object_or_404(PurchaseOrder, id=po_id)
     inventory_items = InventoryItem.objects.all().order_by('part_name')
@@ -616,8 +632,8 @@ def po_detail(request, po_id):
     if request.method == 'POST':
         if 'add_item' in request.POST:
             inv_id = request.POST.get('inventory_id')
-            qty = int(request.POST.get('quantity', 1))
-            cost = float(request.POST.get('unit_cost', 0.0))
+            qty = to_int(request.POST.get('quantity'), 1, 1)
+            cost = to_decimal(request.POST.get('unit_cost'), minimum=0)
             if inv_id:
                 inv_item = get_object_or_404(InventoryItem, id=inv_id)
                 PurchaseOrderItem.objects.create(
@@ -639,12 +655,14 @@ def po_detail(request, po_id):
         return redirect('po_detail', po_id=po.id)
         
     return render(request, 'tracker/po_detail.html', {'po': po, 'inventory_items': inventory_items})
+@transaction.atomic
 def delete_po(request, po_id):
     if request.method == 'POST':
         po = get_object_or_404(PurchaseOrder, id=po_id)
         po.delete()
     return redirect('po_list')
 
+@transaction.atomic
 def delete_po_item(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(PurchaseOrderItem, id=item_id)
