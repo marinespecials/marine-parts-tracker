@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.shortcuts import redirect
 from django.utils.http import urlencode
+from django.urls import reverse
 
 
 class LoginRequiredMiddleware:
@@ -22,5 +23,8 @@ class LoginRequiredMiddleware:
             and not request.path.startswith(self.EXEMPT_PREFIXES)
         ):
             query = urlencode({'next': request.get_full_path()})
-            return redirect(f"{settings.LOGIN_URL}?{query}")
+            # Resolve the view name (e.g. 'login') to a path (e.g. '/login/') first
+            login_url = reverse(settings.LOGIN_URL)
+            return redirect(f"{login_url}?{query}")
+            
         return self.get_response(request)
