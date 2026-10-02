@@ -69,7 +69,8 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=0,             # FIX: Disable connection pooling
+            conn_health_checks=True,    # FIX: Ensure connection is alive before using
             ssl_require=True
         )
     }
