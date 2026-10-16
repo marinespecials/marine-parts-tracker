@@ -15,6 +15,15 @@
             <button type="submit" class="btn" title="{% trans "Sort parts in General Hardware into categories" %}">{% icon "sparkles" %}{% trans "Auto-sort" %} {{ counts.GENERAL }} {% trans "uncategorised" %}</button>
         </form>
         {% endif %}
+        <details class="dropdown">
+            <summary class="btn">{% icon "more" %}{% trans "Tools" %}</summary>
+            <div class="dropdown-menu">
+                <a href="{% url 'stock_count' %}">{% icon "clipboard-check" %}{% trans "Stock count" %}</a>
+                <a href="{% url 'print_labels' %}">{% icon "qr" %}{% trans "Print part labels" %}</a>
+                <a href="{% url 'print_labels' %}?kind=shelves">{% icon "pin" %}{% trans "Print shelf labels" %}</a>
+                <a href="{% url 'dead_stock' %}">{% icon "alert" %}{% trans "Dead stock report" %}</a>
+            </div>
+        </details>
         <a href="#new-part" class="btn btn-primary" onclick="document.getElementById('part_name').focus()">{% icon "plus" %}{% trans "Add part" %}</a>
     </div>
 </div>

@@ -40,6 +40,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'core.middleware.RoleAccessMiddleware',  # after messages: it shows a notice
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 

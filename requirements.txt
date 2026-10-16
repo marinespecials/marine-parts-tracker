@@ -6,3 +6,4 @@ psycopg2-binary==2.9.12   # PostgreSQL on Render
 gunicorn==26.0.0          # Render web server (not used on Windows)
 waitress==3.0.2           # production-grade server for Windows
 tzdata==2026.1
+segno==1.6.1             # QR codes for warehouse labels (pure Python)

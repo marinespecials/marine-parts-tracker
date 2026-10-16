@@ -1,0 +1,73 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Team members" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% trans "Team members" %}</h1>
+        <p class="lede">{% trans "Give each person their own login. Their name is recorded on every stock change and in the activity log." %}</p>
+    </div>
+    <div class="actions"><a href="#new-member" class="btn btn-primary" onclick="document.getElementById('m-username').focus()">{% icon "plus" %}{% trans "Add person" %}</a></div>
+</div>
+
+<div class="grid grid-3 mb-20">
+    {% for code, label, help in role_help %}
+    <div class="card" style="margin:0"><div class="card-body"><span class="badge {% if code == 'Admin' %}badge-info{% elif code == 'Technician' %}badge-warning{% else %}badge-neutral{% endif %}">{{ label }}</span><p class="muted" style="margin-top:8px;font-size:13px">{{ help }}</p></div></div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>{% trans "Person" %}</th><th>{% trans "Role" %}</th><th>{% trans "Status" %}</th><th>{% trans "Last sign-in" %}</th><th>{% trans "Change" %}</th></tr></thead>
+        <tbody>{% for m in members %}
+            <tr class="{% if not m.is_active %}is-done{% endif %}">
+                <td><div style="display:flex;align-items:center;gap:10px"><span class="avatar">{{ m.get_username|initials }}</span><div><span class="primary">{{ m.get_username }}</span>{% if m.first_name %}<span class="secondary">{{ m.get_full_name }}</span>{% endif %}</div></div></td>
+                <td>{% for code, label in role_choices %}{% if code == m.role %}{{ label }}{% endif %}{% endfor %}{% if m.is_superuser %} <span class="subtle" style="font-size:12px">({% trans "owner" %})</span>{% endif %}</td>
+                <td>{% if m.is_active %}<span class="badge badge-success">{% trans "Active" %}</span>{% else %}<span class="badge badge-neutral">{% trans "Deactivated" %}</span>{% endif %}</td>
+                <td class="muted nowrap">{{ m.last_login|date:"d M Y H:i"|default:"—" }}</td>
+                <td>
+                    <details class="dropdown">
+                        <summary class="btn btn-sm">{% icon "edit" %}{% trans "Edit" %}</summary>
+                        <form method="POST" class="dropdown-menu team-edit">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update">
+                            <input type="hidden" name="user_id" value="{{ m.id }}">
+                            <div class="field"><label>{% trans "Role" %}</label>
+                                <select name="role" {% if m.is_superuser %}disabled{% endif %}>
+                                    {% for code, label in role_choices %}<option value="{{ code }}" {% if code == m.role %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="field"><label>{% trans "Status" %}</label>
+                                <select name="is_active">
+                                    <option value="1" {% if m.is_active %}selected{% endif %}>{% trans "Active — can sign in" %}</option>
+                                    <option value="0" {% if not m.is_active %}selected{% endif %}>{% trans "Deactivated — cannot sign in" %}</option>
+                                </select>
+                            </div>
+                            <div class="field"><label>{% trans "New password (optional)" %}</label><input type="password" name="password" autocomplete="new-password"></div>
+                            <div class="field"><label>{% trans "Repeat new password" %}</label><input type="password" name="password2" autocomplete="new-password"></div>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">{% icon "check" %}{% trans "Save" %}</button>
+                        </form>
+                    </details>
+                </td>
+            </tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+
+<form method="POST" class="card" id="new-member">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create">
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a person" %}</div></div>
+    <div class="card-body">
+        <div class="form-grid">
+            <div class="field"><label for="m-username">{% trans "Username *" %}</label><input type="text" id="m-username" name="username" required autocomplete="off" placeholder="{% trans 'e.g. nikos' %}"></div>
+            <div class="field"><label for="m-name">{% trans "Name" %}</label><input type="text" id="m-name" name="first_name" placeholder="{% trans 'e.g. Nikos Papadopoulos' %}"></div>
+            <div class="field"><label for="m-role">{% trans "Role *" %}</label>
+                <select id="m-role" name="role">{% for code, label in role_choices %}<option value="{{ code }}" {% if code == 'Office' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="field"><label for="m-pw">{% trans "Password *" %}</label><input type="password" id="m-pw" name="password" required autocomplete="new-password"><span class="hint">{% trans "At least 8 characters, not too common. They can change it later." %}</span></div>
+            <div class="field"><label for="m-pw2">{% trans "Repeat password *" %}</label><input type="password" id="m-pw2" name="password2" required autocomplete="new-password"></div>
+        </div>
+    </div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add person" %}</button></div>
+</form>
+{% endblock %}

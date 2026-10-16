@@ -15,7 +15,9 @@
         window.MS_TEXT = {
             inStock: "{% trans 'in stock' %}",
             copied: "{% trans 'Copied' %}",
-            savedHere: "{% trans 'Saved on this device' %}"
+            savedHere: "{% trans 'Saved on this device' %}",
+            noMatch: "{% trans 'No matching parts' %}",
+            clear: "{% trans 'Clear' %}"
         };
     </script>
     <meta name="theme-color" content="#0A0F17" media="(prefers-color-scheme: dark)">
@@ -47,7 +49,7 @@
                     {% icon "orders" %}{% trans "Orders" %}{% if nav_counts.active_orders %}<span class="count">{{ nav_counts.active_orders }}</span>{% endif %}
                 </a>
                 <a href="{% url 'active_board' %}" class="{% active 'active_board' %}">{% icon "board" %}{% trans "Live board" %}</a>
-                <a href="{% url 'research_hub' %}" class="{% active 'research_hub' %}">{% icon "chart" %}{% trans "Analytics" %}</a>
+                {% if can_money %}<a href="{% url 'research_hub' %}" class="{% active 'research_hub' %}">{% icon "chart" %}{% trans "Analytics" %}</a>{% endif %}
             </div>
 
             <div class="nav-section">
@@ -55,10 +57,15 @@
                 <a href="{% url 'inventory_list' %}" class="{% active 'inventory_list' 'edit_inventory_item' 'part_detail' %}">
                     {% icon "box" %}{% trans "Warehouse" %}{% if nav_counts.low_stock %}<span class="count alert" title="{% trans 'Low stock' %}">{{ nav_counts.low_stock }}</span>{% endif %}
                 </a>
+                <a href="{% url 'stock_count' %}" class="{% active 'stock_count' 'scan_part' %}">{% icon "clipboard-check" %}{% trans "Stock count" %}</a>
+                <a href="{% url 'print_labels' %}" class="{% active 'print_labels' %}">{% icon "qr" %}{% trans "QR labels" %}</a>
+                {% if can_money %}
                 <a href="{% url 'client_pricelist' %}" class="{% active 'client_pricelist' %}">{% icon "tag" %}{% trans "Client catalog" %}</a>
                 <a href="{% url 'finance:pricelist_dashboard' %}" class="{% active 'finance:pricelist_dashboard' %}">{% icon "list" %}{% trans "Master price list" %}</a>
+                {% endif %}
             </div>
 
+            {% if can_money %}
             <div class="nav-section">
                 <div class="nav-label">{% trans "Finance" %}</div>
                 <a href="{% url 'finance:dashboard' %}" class="{% active 'finance:dashboard' 'finance:invoice_detail' 'finance:create_invoice' %}">
@@ -76,9 +83,16 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-label">{% trans "Team" %}</div>
+                <a href="{% url 'activity' %}" class="{% active 'activity' %}">{% icon "history" %}{% trans "Activity" %}</a>
+                {% if is_admin %}<a href="{% url 'team' %}" class="{% active 'team' %}">{% icon "users" %}{% trans "Team members" %}</a>{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="nav-section">
                 <div class="nav-label">{% trans "Shortcuts" %}</div>
                 <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener">{% icon "folder" %}Google Drive{% icon "external" "icon-sm subtle" %}</a>
-                <a href="{% url 'finance:export_finances' %}">{% icon "download" %}{% trans "Export CSV" %}</a>
+                {% if can_money %}<a href="{% url 'finance:export_finances' %}">{% icon "download" %}{% trans "Export CSV" %}</a>{% endif %}
             </div>
         </nav>
 
@@ -88,6 +102,7 @@
             <div class="user-row">
                 <span class="avatar">{{ user.get_username|initials }}</span>
                 <span class="who">{{ user.get_username }}</span>
+                <a href="{% url 'password_change' %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans 'Change my password' %}" aria-label="{% trans 'Change my password' %}">{% icon "key" %}</a>
                 <button type="button" class="btn btn-ghost btn-icon btn-sm" data-theme-toggle title="{% trans 'Switch light / dark' %}" aria-label="{% trans 'Switch light / dark' %}">
                     {% icon "moon" "when-light" %}{% icon "sun" "when-dark" %}
                 </button>
@@ -115,12 +130,16 @@
                     <summary class="btn btn-primary">{% icon "plus" %}<span class="btn-label">{% trans "New" %}</span></summary>
                     <div class="dropdown-menu">
                         <a href="{% url 'create_order' %}">{% icon "orders" %}{% trans "Order" %}</a>
+                        {% if can_money %}
                         <a href="{% url 'finance:create_invoice' %}">{% icon "receipt" %}{% trans "Invoice" %}</a>
                         <a href="{% url 'po_list' %}#new-po">{% icon "cart" %}{% trans "Purchase order" %}</a>
+                        {% endif %}
                         <hr>
                         <a href="{% url 'inventory_list' %}#new-part">{% icon "box" %}{% trans "Warehouse part" %}</a>
+                        {% if can_money %}
                         <a href="{% url 'supplier_list' %}#new-supplier">{% icon "building" %}{% trans "Supplier" %}</a>
                         <a href="{% url 'finance:price_history' %}#new-price">{% icon "trending" %}{% trans "Price record" %}</a>
+                        {% endif %}
                     </div>
                 </details>
             </div>

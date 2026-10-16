@@ -1,0 +1,53 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "QR labels" %}{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+    <div>
+        <h1>{% trans "QR labels" %}</h1>
+        <p class="lede">{% trans "Print and stick on parts or shelves. Scanning with any phone camera opens the part (to adjust or count stock) or the shelf count." %}</p>
+    </div>
+    <div class="actions"><button type="button" class="btn btn-primary" onclick="window.print()" {% if not labels %}disabled{% endif %}>{% icon "printer" %}{% trans "Print" %} ({{ labels|length }})</button></div>
+</div>
+
+<div class="card no-print">
+    <nav class="tabs">
+        <a href="?kind=parts" class="tab {% if kind != 'shelves' %}active{% endif %}">{% icon "box" "icon-sm" %}{% trans "Part labels" %}</a>
+        <a href="?kind=shelves" class="tab {% if kind == 'shelves' %}active{% endif %}">{% icon "pin" "icon-sm" %}{% trans "Shelf labels" %}</a>
+    </nav>
+    <form method="GET" class="toolbar">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        {% if kind != 'shelves' %}
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans 'Name or code…' %}" aria-label="{% trans 'Search parts' %}"></div>
+        <select name="category" data-autosubmit aria-label="{% trans 'Category' %}">
+            <option value="ALL">{% trans "All categories" %}</option>
+            {% for code, label in categories %}<option value="{{ code }}" {% if category == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        {% endif %}
+        <select name="location" data-autosubmit aria-label="{% trans 'Location' %}">
+            <option value="ALL">{% trans "All locations" %}</option>
+            {% for loc in locations %}<option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm">{% trans "Filter" %}</button>
+        <span class="meta">{{ labels|length }} {% trans "labels" %}{% if labels|length == 300 %} · {% trans "max 300 per print" %}{% endif %}</span>
+    </form>
+</div>
+
+{% if labels %}
+<div class="labels">
+    {% for l in labels %}
+    <div class="qr-label">
+        <div class="qr-label-code">{{ l.qr }}</div>
+        <div class="qr-label-text">
+            <strong>{{ l.title }}</strong>
+            {% if l.sub %}<span class="mono">{{ l.sub }}</span>{% endif %}
+            {% if l.meta %}<span>{{ l.meta }}</span>{% endif %}
+            <small>MARINE SPECIALS</small>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">{% include 'partials/empty.html' with icon='qr' title=_("No labels to print") text=_("Change the filters above.") %}</div>
+{% endif %}
+{% endblock %}

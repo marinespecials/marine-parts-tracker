@@ -14,6 +14,8 @@ from django.utils import timezone
 from .models import Invoice, PriceRecord, MasterPricelistItem, ClientFinancialProfile
 from tracker.models import Customer, InventoryItem, OrderItem, PART_CATEGORIES, guess_category
 from tracker.views import parts_json, related_document, ORDER_STATUSES, INVOICE_STATUSES
+from tracker.stock import log_activity
+from django.urls import reverse
 
 STATUS_CODES = {code for code, _label in Invoice.STATUS_CHOICES}
 
@@ -59,7 +61,7 @@ def finance_dashboard(request):
 def client_ledger(request, client_id):
     """One client: money, orders, invoices, what they buy, prices and account settings."""
     client = get_object_or_404(Customer, id=client_id)
-    profile, _ = ClientFinancialProfile.objects.get_or_create(customer=client)
+    profile, _created = ClientFinancialProfile.objects.get_or_create(customer=client)
 
     if request.method == 'POST' and 'update_profile' in request.POST:
         rating = request.POST.get('internal_rating', profile.internal_rating)
@@ -139,7 +141,7 @@ def create_invoice(request):
             due_date = issue_date + timedelta(days=30)
 
         if customer_name:
-            customer, _ = Customer.objects.get_or_create(name=customer_name)
+            customer, _created = Customer.objects.get_or_create(name=customer_name)
             invoice = Invoice.objects.create(
                 invoice_number=invoice_number,
                 customer=customer,
@@ -175,6 +177,7 @@ def create_invoice(request):
                 invoice.total_amount = sum(item.total_price for item in invoice.order_items.all())
                 invoice.save()
 
+            log_activity(request, 'invoice_created', invoice.invoice_number, reverse('finance:invoice_detail', args=[invoice.id]))
             messages.success(request, _("Invoice %(n)s created.") % {'n': invoice.invoice_number})
             return redirect('finance:invoice_detail', invoice_id=invoice.id)
         messages.error(request, _("Please enter a client or vessel name."))
@@ -250,6 +253,7 @@ def delete_invoice(request, invoice_id):
         client_id = invoice.customer.id if invoice.customer else None
         number = invoice.invoice_number
         invoice.delete()
+        log_activity(request, 'invoice_deleted', number)
         messages.success(request, _("%(n)s deleted.") % {'n': number})
         if client_id and request.POST.get('next') == 'client':
             return redirect('finance:client_ledger', client_id=client_id)
@@ -270,6 +274,7 @@ def update_invoice_details(request, invoice_id):
             except ValueError:
                 pass
         invoice.save()
+        log_activity(request, 'invoice_updated', f'{invoice.invoice_number} · {invoice.get_status_display()}', reverse('finance:invoice_detail', args=[invoice.id]))
         messages.success(request, _("%(n)s updated.") % {'n': invoice.invoice_number})
     return redirect('finance:invoice_detail', invoice_id=invoice.id)
 
@@ -389,6 +394,7 @@ def price_history(request):
                 date_recorded=recorded,
                 notes=request.POST.get('notes', '').strip(),
             )
+            log_activity(request, 'price_logged', f'{part_name} · {party}', reverse('finance:price_history'))
             messages.success(request, _("Price for %(part)s logged.") % {'part': part_name})
         else:
             messages.error(request, _("Part name and supplier / client are required."))

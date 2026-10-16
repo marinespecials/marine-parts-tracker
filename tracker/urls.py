@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, team_views, warehouse_tools
 
 urlpatterns = [
     # Main Portal Hub
@@ -33,6 +33,10 @@ urlpatterns = [
     # Warehouse & Stock
     path('warehouse/', views.inventory_list, name='inventory_list'),
     path('warehouse/auto-categorise/', views.auto_categorise, name='auto_categorise'),
+    path('warehouse/labels/', warehouse_tools.print_labels, name='print_labels'),
+    path('warehouse/count/', warehouse_tools.stock_count, name='stock_count'),
+    path('warehouse/dead-stock/', warehouse_tools.dead_stock, name='dead_stock'),
+    path('warehouse/<int:item_id>/scan/', warehouse_tools.scan_part, name='scan_part'),
     path('warehouse/<int:item_id>/', views.part_detail, name='part_detail'),
     path('warehouse/<int:item_id>/adjust/<str:action>/', views.adjust_stock, name='adjust_stock'),
     path('warehouse/<int:item_id>/edit/', views.edit_inventory_item, name='edit_inventory_item'),
@@ -47,4 +51,9 @@ urlpatterns = [
     path('purchasing/<int:po_id>/', views.po_detail, name='po_detail'),
     path('purchasing/<int:po_id>/delete/', views.delete_po, name='delete_po'),
     path('purchasing/item/<int:item_id>/delete/', views.delete_po_item, name='delete_po_item'),
+
+    # Team, activity log, own password
+    path('team/', team_views.team, name='team'),
+    path('activity/', team_views.activity, name='activity'),
+    path('account/password/', team_views.PasswordChange.as_view(), name='password_change'),
 ]

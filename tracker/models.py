@@ -136,3 +136,67 @@ class PurchaseOrderItem(models.Model):
     @property
     def total_cost(self):
         return self.quantity * Decimal(str(self.unit_cost))
+
+class StockMovement(models.Model):
+    """One line per stock change: who, when, how much and why (the part's stock history)."""
+    REASON_CHOICES = [
+        ('NEW', _('New part')),
+        ('SALE', _('Added to order')),
+        ('RETURN', _('Returned from order')),
+        ('PURCHASE', _('Purchase order received')),
+        ('ADJUST', _('Manual adjustment')),
+        ('COUNT', _('Stock count')),
+        ('EDIT', _('Edited')),
+    ]
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='movements')
+    change = models.IntegerField()
+    quantity_after = models.IntegerField()
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    note = models.CharField(max_length=255, blank=True, default='')
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return f"{self.item.part_name}: {self.change:+d} ({self.reason})"
+
+
+class ActivityLog(models.Model):
+    """Who did what, shown on the Activity page."""
+    ACTION_LABELS = {
+        'order_created': _('Created order'),
+        'order_deleted': _('Deleted order'),
+        'order_status': _('Changed order status'),
+        'order_invoiced': _('Converted order to invoice'),
+        'invoice_created': _('Created invoice'),
+        'invoice_updated': _('Updated invoice'),
+        'invoice_deleted': _('Deleted invoice'),
+        'part_created': _('Added part'),
+        'part_updated': _('Edited part'),
+        'part_deleted': _('Deleted part'),
+        'stock_count': _('Counted stock'),
+        'po_created': _('Created purchase order'),
+        'po_received': _('Received purchase order'),
+        'po_deleted': _('Deleted purchase order'),
+        'supplier_created': _('Added supplier'),
+        'price_logged': _('Logged price'),
+        'user_created': _('Added team member'),
+        'user_updated': _('Changed team member'),
+    }
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=40)
+    target = models.CharField(max_length=255, blank=True, default='')
+    url = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    @property
+    def action_label(self):
+        return self.ACTION_LABELS.get(self.action, self.action)
+
+    def __str__(self):
+        return f"{self.user} {self.action} {self.target}"

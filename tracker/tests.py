@@ -195,3 +195,82 @@ class LanguageTests(TestCase):
             self.assertEqual(money(Decimal('1234.5')), '1.234,50 €')
         with translation.override('en'):
             self.assertEqual(money(Decimal('1234.5')), '1,234.50 €')
+
+
+class StockHistoryRolesAndToolsTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        from django.contrib.auth.models import Group
+        self.admin = User.objects.create_superuser('boss', password='pw-for-tests-123')
+        self.client.login(username='boss', password='pw-for-tests-123')
+        self.part = InventoryItem.objects.create(part_name='Impeller', part_code='IMP-1', quantity=10, location='Bin A1')
+
+    def test_creating_order_invoice_and_client_settings_work(self):
+        from finance.models import Invoice
+        r = self.client.post(reverse('create_order'), {'customer_name': 'M/V Test', 'inventory_id': self.part.id, 'quantity': 2})
+        self.assertEqual(r.status_code, 302)
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.quantity, 8)
+        move = self.part.movements.first()
+        self.assertEqual((move.change, move.reason, move.user), (-2, 'SALE', self.admin))
+        r = self.client.post(reverse('finance:create_invoice'), {'customer_name': 'M/V Test'})
+        self.assertEqual(r.status_code, 302)
+        client = Customer.objects.get(name='M/V Test')
+        r = self.client.post(reverse('finance:client_ledger', args=[client.id]), {'update_profile': '1', 'internal_rating': 'A', 'payment_terms_days': '45'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Invoice.objects.filter(customer=client).count() == 2)
+
+    def test_manual_adjust_and_scan_count_are_logged(self):
+        self.client.post(reverse('adjust_stock', args=[self.part.id, 'increase']))
+        self.client.post(reverse('scan_part', args=[self.part.id]), {'action': 'count', 'counted': '7'})
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.quantity, 7)
+        reasons = list(self.part.movements.values_list('reason', 'change'))
+        self.assertEqual(reasons, [('COUNT', -4), ('ADJUST', 1)])
+
+    def test_shelf_count_records_differences(self):
+        other = InventoryItem.objects.create(part_name='Anode', quantity=3, location='Bin A1')
+        self.client.post(reverse('stock_count'), {'location': 'Bin A1', f'count_{self.part.id}': '10', f'count_{other.id}': '5'})
+        other.refresh_from_db()
+        self.assertEqual(other.quantity, 5)
+        self.assertEqual(self.part.movements.get().change, 0)  # counted, no difference, still logged
+
+    def test_purchase_order_receive_is_logged(self):
+        from tracker.models import Supplier, PurchaseOrder, PurchaseOrderItem
+        po = PurchaseOrder.objects.create(po_number='PO-9', supplier=Supplier.objects.create(name='S'))
+        PurchaseOrderItem.objects.create(purchase_order=po, inventory_item=self.part, quantity=5, unit_cost=Decimal('3'))
+        self.client.post(reverse('po_detail', args=[po.id]), {'receive_po': '1'})
+        self.assertEqual(self.part.movements.first().reason, 'PURCHASE')
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.quantity, 15)
+
+    def test_tool_pages_render(self):
+        for url in [reverse('print_labels'), reverse('print_labels') + '?kind=shelves', reverse('stock_count') + '?location=Bin+A1',
+                    reverse('dead_stock'), reverse('scan_part', args=[self.part.id]), reverse('team'), reverse('activity'),
+                    reverse('activity') + '?tab=stock', reverse('password_change'), reverse('part_detail', args=[self.part.id])]:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+        self.assertContains(self.client.get(reverse('print_labels')), '<svg')
+
+    def test_team_page_creates_member_with_role(self):
+        from tracker.roles import user_role
+        self.client.post(reverse('team'), {'action': 'create', 'username': 'nikos', 'first_name': 'Nikos', 'role': 'Technician',
+                                           'password': 'Sea-Battery-4471', 'password2': 'Sea-Battery-4471'})
+        self.assertEqual(user_role(User.objects.get(username='nikos')), 'Technician')
+
+    def test_technician_cannot_open_money_pages(self):
+        from tracker.roles import set_role
+        tech = User.objects.create_user('tech', password='pw-for-tests-123')
+        set_role(tech, 'Technician')
+        self.client.logout()
+        self.client.login(username='tech', password='pw-for-tests-123')
+        for url in ('/finance/', '/clients/', '/purchasing/', '/team/', '/activity/'):
+            self.assertRedirects(self.client.get(url), reverse('app_hub'), fetch_redirect_response=False, msg_prefix=url)
+        self.assertEqual(self.client.get(reverse('inventory_list')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('scan_part', args=[self.part.id])).status_code, 200)
+
+    def test_office_cannot_open_team_page(self):
+        User.objects.create_user('office', password='pw-for-tests-123')
+        self.client.logout()
+        self.client.login(username='office', password='pw-for-tests-123')
+        self.assertEqual(self.client.get('/team/').status_code, 302)
+        self.assertEqual(self.client.get('/finance/').status_code, 200)

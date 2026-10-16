@@ -93,6 +93,108 @@
                 if (opt && opt.dataset.cost && !priceInput.dataset.touched) priceInput.value = opt.dataset.cost;
             });
             if (priceInput) priceInput.addEventListener('input', function () { priceInput.dataset.touched = '1'; });
+            makeSearchable(sel, parts, mode);
+        });
+    }
+
+    // ---- Searchable picker: type part name or code instead of scrolling a long list ----
+    // The original <select> stays in the form (hidden) and keeps the chosen value.
+    function norm(t) { return (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+    function makeSearchable(sel, parts, mode) {
+        var wrap = document.createElement('div');
+        wrap.className = 'combo';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'combo-input';
+        input.autocomplete = 'off';
+        input.placeholder = sel.options[0] ? sel.options[0].textContent : '';
+        input.setAttribute('role', 'combobox');
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-expanded', 'false');
+        if (sel.getAttribute('style')) input.setAttribute('style', sel.getAttribute('style'));
+        if (sel.id) { input.id = sel.id; sel.removeAttribute('id'); }  // keeps <label for=...> working
+        if (sel.required) { input.required = true; sel.required = false; }
+        var clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'combo-clear';
+        clear.setAttribute('aria-label', TEXT.clear || 'Clear');
+        clear.innerHTML = '&times;';
+        var list = document.createElement('ul');
+        list.className = 'combo-list';
+        list.setAttribute('role', 'listbox');
+        list.hidden = true;
+        sel.style.display = 'none';
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(input); wrap.appendChild(clear); wrap.appendChild(list); wrap.appendChild(sel);
+
+        var shown = [], active = -1;
+        function meta(p) {
+            var cost = root.lang === 'el' ? p.cost.replace('.', ',') : p.cost;
+            return (mode === 'price' ? cost + ' € · ' : '') + p.qty + ' ' + TEXT.inStock;
+        }
+        function highlight() {
+            Array.prototype.forEach.call(list.children, function (li, i) { li.classList.toggle('on', i === active); });
+            var on = list.children[active];
+            if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
+        }
+        function open(query) {
+            var words = norm(query).split(/\s+/).filter(Boolean);
+            shown = parts.filter(function (p) {
+                var hay = norm(p.name + ' ' + p.code);
+                return words.every(function (w) { return hay.indexOf(w) >= 0; });
+            }).slice(0, 60);
+            list.innerHTML = '';
+            if (!shown.length) {
+                var none = document.createElement('li');
+                none.className = 'none';
+                none.textContent = TEXT.noMatch || 'No matching parts';
+                list.appendChild(none);
+            }
+            shown.forEach(function (p, i) {
+                var li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                var name = document.createElement('span');
+                name.textContent = p.name + (p.code ? ' (' + p.code + ')' : '');
+                var small = document.createElement('small');
+                small.textContent = meta(p);
+                li.appendChild(name); li.appendChild(small);
+                li.addEventListener('mousedown', function (e) { e.preventDefault(); choose(p); });
+                list.appendChild(li);
+            });
+            active = shown.length ? 0 : -1;
+            list.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
+            highlight();
+        }
+        function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); }
+        function choose(p) {
+            sel.value = String(p.id);
+            input.value = p.name + (p.code ? ' (' + p.code + ')' : '');
+            wrap.classList.add('has-value');
+            close();
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        input.addEventListener('focus', function () { open(wrap.classList.contains('has-value') ? '' : input.value); });
+        input.addEventListener('input', function () {
+            if (wrap.classList.contains('has-value')) { sel.value = ''; wrap.classList.remove('has-value'); }
+            open(input.value);
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (list.hidden) return open(input.value);
+                if (shown.length) active = (active + (e.key === 'ArrowDown' ? 1 : shown.length - 1)) % shown.length;
+                highlight();
+            } else if (e.key === 'Enter' && !list.hidden && active >= 0) {
+                e.preventDefault();
+                choose(shown[active]);
+            } else if (e.key === 'Escape') {
+                close();
+            }
+        });
+        input.addEventListener('blur', function () { setTimeout(close, 120); });
+        clear.addEventListener('click', function () {
+            sel.value = ''; input.value = ''; wrap.classList.remove('has-value'); input.focus();
         });
     }
 

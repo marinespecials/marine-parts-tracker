@@ -1,0 +1,60 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{{ item.part_name }}{% endblock %}
+
+{% block content %}
+<div class="pack">
+    <div class="crumbs"><a href="{% url 'part_detail' item.id %}">{% icon "arrow-left" %} {% trans "Full part page" %}</a></div>
+
+    <section class="card">
+        <div class="pack-head">
+            <div class="subtle" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">{{ item.get_category_display }}</div>
+            <h1 style="font-size:21px;margin-top:2px">{{ item.part_name }}</h1>
+            <div class="pack-item" style="padding:8px 0 0;border:0">
+                <div class="meta">
+                    {% if item.part_code %}<span class="chip mono">{{ item.part_code }}</span>{% endif %}
+                    <span class="chip">{% icon "pin" "icon-sm" %}{{ item.location }}</span>
+                </div>
+            </div>
+            <div class="scan-qty {% if item.is_low_stock %}low{% endif %}">
+                <span class="num">{{ item.quantity }}</span>
+                <small>{% trans "in stock" %} · {% trans "reorder at" %} {{ item.reorder_level }}</small>
+            </div>
+            <div class="subtle" style="font-size:12.5px;text-align:center">
+                {% if last_count %}{% trans "Last counted" %} {{ last_count.created_at|date:"d M Y" }}{% if last_count.user %} · {{ last_count.user.get_username }}{% endif %}{% else %}{% trans "Never counted" %}{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "box" %}{% trans "Took or added some?" %}</div></div>
+        <form method="POST" class="card-body scan-adjust">
+            {% csrf_token %}
+            <button type="submit" name="action" value="minus" class="btn scan-btn">−</button>
+            <input type="number" name="amount" value="1" min="1" aria-label="{% trans 'Quantity' %}" inputmode="numeric">
+            <button type="submit" name="action" value="plus" class="btn scan-btn">+</button>
+            <input type="text" name="note" placeholder="{% trans 'Note (optional)' %}" style="grid-column:1/-1">
+        </form>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "clipboard-check" %}{% trans "Count this shelf" %}</div></div>
+        <form method="POST" class="card-body" style="display:grid;gap:10px">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="count">
+            <label class="label" for="counted">{% trans "How many are actually there?" %}</label>
+            <input type="number" id="counted" name="counted" min="0" required inputmode="numeric" placeholder="{{ item.quantity }}" style="height:46px;font-size:18px">
+            <button type="submit" class="btn btn-primary btn-block" style="height:46px">{% icon "check" %}{% trans "Save count" %}</button>
+        </form>
+    </section>
+
+    {% if movements %}
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "history" %}{% trans "Recent changes" %}</div></div>
+        <div class="table-wrap"><table class="table"><tbody>{% for m in movements %}
+            <tr><td><span class="primary">{{ m.get_reason_display }}</span><span class="secondary">{{ m.created_at|date:"d M H:i" }}{% if m.user %} · {{ m.user.get_username }}{% endif %}</span></td>
+                <td class="num"><strong>{% if m.change > 0 %}+{% endif %}{{ m.change }}</strong> → {{ m.quantity_after }}</td></tr>
+        {% endfor %}</tbody></table></div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

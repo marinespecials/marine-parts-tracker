@@ -28,3 +28,23 @@ class LoginRequiredMiddleware:
             return redirect(f"{login_url}?{query}")
             
         return self.get_response(request)
+
+
+class RoleAccessMiddleware:
+    """Technicians can't open money pages; only Admins can open the Team page."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, 'user', None)
+        if user is not None and user.is_authenticated:
+            from django.contrib import messages
+            from django.utils.translation import gettext as _
+            from tracker.roles import ADMIN, ADMIN_ONLY, TECHNICIAN, TECHNICIAN_BLOCKED, user_role
+            role = user_role(user)
+            blocked = (request.path.startswith(ADMIN_ONLY) and role != ADMIN) or                       (role == TECHNICIAN and request.path.startswith(TECHNICIAN_BLOCKED))
+            if blocked:
+                messages.warning(request, _("That page isn't available for your role."))
+                return redirect('app_hub')
+        return self.get_response(request)

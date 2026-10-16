@@ -1,0 +1,61 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Activity" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% trans "Activity" %}</h1>
+        <p class="lede">{% trans "Who did what, newest first. Recording started with this update." %}</p>
+    </div>
+</div>
+
+<div class="card">
+    <nav class="tabs">
+        <a href="?tab=actions&user={{ who }}" class="tab {% if tab != 'stock' %}active{% endif %}">{% icon "history" "icon-sm" %}{% trans "Actions" %}</a>
+        <a href="?tab=stock&user={{ who }}" class="tab {% if tab == 'stock' %}active{% endif %}">{% icon "box" "icon-sm" %}{% trans "Stock changes" %}</a>
+    </nav>
+    <form method="GET" class="toolbar">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <select name="user" data-autosubmit aria-label="{% trans 'Person' %}">
+            <option value="">{% trans "Everyone" %}</option>
+            {% for p in people %}<option value="{{ p.id }}" {% if who == p.id|stringformat:"s" %}selected{% endif %}>{{ p.get_username }}</option>{% endfor %}
+        </select>
+        <span class="meta">{% trans "Latest 200" %}</span>
+    </form>
+
+    {% if tab == 'stock' %}
+        {% if moves %}
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>{% trans "When" %}</th><th>{% trans "Person" %}</th><th>{% trans "Part" %}</th><th>{% trans "Reason" %}</th><th>{% trans "Note" %}</th><th class="num">{% trans "Change" %}</th><th class="num">{% trans "After" %}</th></tr></thead>
+            <tbody>{% for m in moves %}
+                <tr>
+                    <td class="nowrap muted">{{ m.created_at|date:"d M Y H:i" }}</td>
+                    <td>{{ m.user.get_username|default:"—" }}</td>
+                    <td><a class="entity" href="{% url 'part_detail' m.item.id %}">{{ m.item.part_name }}</a></td>
+                    <td>{{ m.get_reason_display }}</td>
+                    <td class="muted">{{ m.note|default:"—" }}</td>
+                    <td class="num"><strong style="color:{% if m.change > 0 %}var(--success){% elif m.change < 0 %}var(--danger){% else %}var(--text-3){% endif %}">{% if m.change > 0 %}+{% endif %}{{ m.change }}</strong></td>
+                    <td class="num">{{ m.quantity_after }}</td>
+                </tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}
+            {% include 'partials/empty.html' with icon='box' title=_("No stock changes yet") %}
+        {% endif %}
+    {% else %}
+        {% if logs %}
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>{% trans "When" %}</th><th>{% trans "Person" %}</th><th>{% trans "Action" %}</th><th>{% trans "Details" %}</th></tr></thead>
+            <tbody>{% for l in logs %}
+                <tr>
+                    <td class="nowrap muted">{{ l.created_at|date:"d M Y H:i" }}</td>
+                    <td>{{ l.user.get_username|default:"—" }}</td>
+                    <td>{{ l.action_label }}</td>
+                    <td>{% if l.url %}<a class="entity" href="{{ l.url }}">{{ l.target }}</a>{% else %}{{ l.target }}{% endif %}</td>
+                </tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}
+            {% include 'partials/empty.html' with icon='history' title=_("No activity yet") text=_("Actions like creating orders, receiving purchase orders or counting stock appear here.") %}
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

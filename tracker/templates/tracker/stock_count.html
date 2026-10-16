@@ -1,0 +1,66 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Stock count" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% trans "Stock count" %}</h1>
+        <p class="lede">{% trans "Pick a shelf, type what you actually find, save. Empty boxes are skipped. Differences go into each part's stock history." %}</p>
+    </div>
+    <div class="actions"><a href="{% url 'print_labels' %}?kind=shelves" class="btn">{% icon "qr" %}{% trans "Print shelf labels" %}</a></div>
+</div>
+
+{% if results is not None %}
+<section class="card">
+    <div class="card-header"><div class="card-title">{% icon "check" %}{% trans "Count saved" %}</div><span class="card-sub">{{ results|length }} {% trans "parts counted" %}</span></div>
+    {% if results %}
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>{% trans "Part" %}</th><th class="num">{% trans "Expected" %}</th><th class="num">{% trans "Counted" %}</th><th class="num">{% trans "Difference" %}</th></tr></thead>
+        <tbody>{% for r in results %}
+            <tr class="{% if not r.diff %}is-done{% endif %}">
+                <td><a class="entity" href="{% url 'part_detail' r.item.id %}">{{ r.item.part_name }}</a></td>
+                <td class="num">{{ r.expected }}</td><td class="num">{{ r.counted }}</td>
+                <td class="num">{% if r.diff %}<span class="badge {% if r.diff > 0 %}badge-success{% else %}badge-danger{% endif %} plain">{% if r.diff > 0 %}+{% endif %}{{ r.diff }}</span>{% else %}<span class="subtle">✓</span>{% endif %}</td>
+            </tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}
+        {% include 'partials/empty.html' with icon='clipboard-check' title=_("Nothing was entered") text=_("Type a number next to each part you counted.") %}
+    {% endif %}
+</section>
+{% endif %}
+
+<div class="card">
+    <form method="GET" class="toolbar">
+        <select name="location" data-autosubmit aria-label="{% trans 'Shelf / location' %}" style="min-width:240px">
+            <option value="">{% trans "Choose a shelf…" %}</option>
+            <option value="ALL" {% if location == 'ALL' %}selected{% endif %}>{% trans "Whole warehouse" %}</option>
+            {% for loc in locations %}<option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm">{% trans "Open" %}</button>
+        {% if rows %}<span class="meta">{{ rows|length }} {% trans "parts" %}</span>{% endif %}
+    </form>
+
+    {% if rows %}
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="location" value="{{ location }}">
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Location" %}</th><th>{% trans "Last counted" %}</th><th class="num">{% trans "Expected" %}</th><th style="width:130px">{% trans "Counted" %}</th></tr></thead>
+            <tbody>{% for row in rows %}
+                <tr>
+                    <td><a class="entity" href="{% url 'part_detail' row.item.id %}">{{ row.item.part_name }}</a>{% if row.item.part_code %}<span class="secondary mono">{{ row.item.part_code }}</span>{% endif %}</td>
+                    <td class="muted">{{ row.item.location }}</td>
+                    <td class="muted nowrap">{{ row.last|date:"d M Y"|default:"—" }}</td>
+                    <td class="num">{{ row.item.quantity }}</td>
+                    <td><input type="number" name="count_{{ row.item.id }}" min="0" inputmode="numeric" style="height:32px" aria-label="{% trans 'Counted' %} {{ row.item.part_name }}"></td>
+                </tr>{% endfor %}</tbody>
+        </table></div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "check" %}{% trans "Save count" %}</button></div>
+    </form>
+    {% elif location %}
+        {% include 'partials/empty.html' with icon='box' title=_("No parts on this shelf") %}
+    {% else %}
+        {% include 'partials/empty.html' with icon='clipboard-check' title=_("Choose a shelf to start") text=_("Or scan a shelf label with your phone.") %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -14,4 +14,6 @@ def nav_counts(request):
         overdue=Count('id', filter=Q(status='OVERDUE')),
     )
     counts['low_stock'] = InventoryItem.objects.filter(quantity__lte=F('reorder_level')).count()
-    return {'nav_counts': counts}
+    from tracker.roles import ADMIN, TECHNICIAN, user_role
+    role = user_role(request.user)
+    return {'nav_counts': counts, 'role': role, 'can_money': role != TECHNICIAN, 'is_admin': role == ADMIN}

@@ -18,6 +18,8 @@ from .models import (
 )
 from finance.models import Invoice, PriceRecord, MasterPricelistItem
 from tracker.templatetags.ui import STATUS_LABELS
+from .stock import move_stock, set_stock, log_activity
+from .roles import can_see_money
 
 ORDER_STATUSES = ['PENDING', 'PROCESSING', 'DELIVERED']
 INVOICE_STATUSES = ['UNPAID', 'OVERDUE', 'PAID']
@@ -58,7 +60,7 @@ def _recalc_total(doc):
     doc.save()
 
 
-def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
+def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price, who=None, note=''):
     inv_item = None
     desc = ""
     price = Decimal('0.00')
@@ -76,8 +78,7 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price):
     if inv_item:
         desc = clean_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
         price = to_decimal(unit_price, default=inv_item.unit_cost, minimum=0)
-        inv_item.quantity = max(0, inv_item.quantity - quantity)
-        inv_item.save()
+        move_stock(inv_item, -quantity, 'SALE', who, note)
     elif clean_desc:
         price = to_decimal(unit_price, minimum=0)
         inv_item = InventoryItem.objects.create(
@@ -112,8 +113,7 @@ def sync_all_historical_orders(request):
             if match:
                 item.inventory_item = match
                 item.save()
-                match.quantity = max(0, match.quantity - item.quantity)
-                match.save()
+                move_stock(match, -item.quantity, 'SALE', request, item.order.invoice_number)
                 linked += 1
             else:
                 new_inv = InventoryItem.objects.create(
@@ -237,7 +237,7 @@ def create_order(request):
             due_date = issue_date + timedelta(days=14)
 
         if customer_name:
-            customer, _ = Customer.objects.get_or_create(name=customer_name)
+            customer, _created = Customer.objects.get_or_create(name=customer_name)
             order = Invoice.objects.create(
                 invoice_number=order_number,
                 customer=customer,
@@ -254,7 +254,7 @@ def create_order(request):
             unit_price = request.POST.get('unit_price')
 
             if inventory_id or custom_desc:
-                inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price)
+                inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price, request, order.invoice_number)
                 OrderItem.objects.create(
                     order=order,
                     inventory_item=inv_item,
@@ -264,6 +264,7 @@ def create_order(request):
                 )
                 _recalc_total(order)
 
+            log_activity(request, 'order_created', order.invoice_number, reverse('order_detail', args=[order.id]))
             messages.success(request, _("Order %(n)s created.") % {'n': order.invoice_number})
             return redirect('order_detail', order_id=order.id)
         messages.error(request, _("Please enter a client or vessel name."))
@@ -300,8 +301,7 @@ def link_order_item_to_inventory(request, item_id):
             inv = get_object_or_404(InventoryItem, id=inventory_id)
             item.inventory_item = inv
             item.save()
-            inv.quantity = max(0, inv.quantity - item.quantity)
-            inv.save()
+            move_stock(inv, -item.quantity, 'SALE', request, item.order.invoice_number)
             messages.success(request, _("Linked to %(part)s; stock reduced by %(qty)s.") % {'part': inv.part_name, 'qty': item.quantity})
 
     return redirect_back(request, 'order_detail', order_id=item.order_id)
@@ -317,7 +317,7 @@ def add_order_item(request, order_id):
         unit_price = request.POST.get('unit_price')
 
         if inventory_id or custom_desc:
-            inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price)
+            inv_item, desc, price = _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price, request, order.invoice_number)
             OrderItem.objects.create(
                 order=order,
                 inventory_item=inv_item,
@@ -343,22 +343,14 @@ def adjust_order_item_qty(request, item_id, action):
             item.quantity += 1
             item.save()
             if item.inventory_item:
-                inv = item.inventory_item
-                inv.quantity = max(0, inv.quantity - 1)
-                inv.save()
+                move_stock(item.inventory_item, -1, 'SALE', request, order.invoice_number)
         elif action == 'decrease':
+            if item.inventory_item:
+                move_stock(item.inventory_item, 1, 'RETURN', request, order.invoice_number)
             if item.quantity > 1:
                 item.quantity -= 1
                 item.save()
-                if item.inventory_item:
-                    inv = item.inventory_item
-                    inv.quantity += 1
-                    inv.save()
             else:
-                if item.inventory_item:
-                    inv = item.inventory_item
-                    inv.quantity += 1
-                    inv.save()
                 item.delete()
 
         _recalc_total(order)
@@ -390,9 +382,7 @@ def delete_order_item(request, item_id):
         order = item.order
 
         if item.inventory_item:
-            inv = item.inventory_item
-            inv.quantity += item.quantity
-            inv.save()
+            move_stock(item.inventory_item, item.quantity, 'RETURN', request, order.invoice_number)
 
         item.delete()
         _recalc_total(order)
@@ -407,6 +397,8 @@ def change_order_status(request, order_id, new_status):
         if new_status in {code for code, _label in Invoice.STATUS_CHOICES}:
             order.status = new_status
             order.save()
+            log_activity(request, 'order_status', f'{order.invoice_number} → {STATUS_LABELS.get(new_status, new_status)}',
+                         reverse('order_detail', args=[order.id]))
             messages.success(request, _("%(n)s marked %(status)s.") % {'n': order.invoice_number, 'status': STATUS_LABELS.get(new_status, new_status)})
         else:
             messages.error(request, _("'%(status)s' is not a valid status.") % {'status': new_status})
@@ -452,6 +444,7 @@ def convert_order_to_invoice(request, order_id):
                 is_packed=True
             )
 
+        log_activity(request, 'order_invoiced', f'{original_order.invoice_number} → {inv_num}', reverse('finance:invoice_detail', args=[new_invoice.id]))
         messages.success(request, _("Invoice %(inv)s created from %(order)s.") % {'inv': inv_num, 'order': original_order.invoice_number})
         return redirect('finance:invoice_detail', invoice_id=new_invoice.id)
 
@@ -462,13 +455,12 @@ def convert_order_to_invoice(request, order_id):
 def delete_order(request, order_id):
     if request.method == 'POST':
         order = get_object_or_404(Invoice, id=order_id)
+        number = order.invoice_number
         for item in order.order_items.all():
             if item.inventory_item:
-                inv = item.inventory_item
-                inv.quantity += item.quantity
-                inv.save()
-        number = order.invoice_number
+                move_stock(item.inventory_item, item.quantity, 'RETURN', request, number)
         order.delete()
+        log_activity(request, 'order_deleted', number)
         messages.success(request, _("Order %(n)s deleted and its stock returned to the warehouse.") % {'n': number})
     return redirect('orders_dashboard')
 
@@ -513,11 +505,14 @@ def inventory_list(request):
                 part_name=part_name,
                 part_code=part_code,
                 category=category,
-                quantity=quantity,
+                quantity=0,
                 reorder_level=to_int(request.POST.get('reorder_level'), 5, 0),
                 location=location,
                 unit_cost=unit_cost
             )
+            if quantity:
+                move_stock(item, quantity, 'NEW', request)
+            log_activity(request, 'part_created', item.part_name, reverse('part_detail', args=[item.id]))
             messages.success(request, _("%(part)s added to the warehouse (%(category)s).") % {'part': item.part_name, 'category': item.get_category_display()})
         return redirect('inventory_list')
 
@@ -607,6 +602,8 @@ def part_detail(request, item_id):
         'price_records': price_records,
         'pricelist': pricelist,
         'categories': PART_CATEGORIES,
+        'movements': item.movements.select_related('user')[:30],
+        'last_count': item.movements.filter(reason='COUNT').select_related('user').first(),
     })
 
 
@@ -640,11 +637,8 @@ def client_pricelist(request):
 def adjust_stock(request, item_id, action):
     if request.method == 'POST':
         item = get_object_or_404(InventoryItem, id=item_id)
-        if action == 'increase':
-            item.quantity += 1
-        elif action == 'decrease' and item.quantity > 0:
-            item.quantity -= 1
-        item.save()
+        if action in ('increase', 'decrease'):
+            move_stock(item, 1 if action == 'increase' else -1, 'ADJUST', request, request.POST.get('note', ''))
     return redirect_back(request, 'inventory_list')
 
 
@@ -654,7 +648,7 @@ def edit_inventory_item(request, item_id):
     if request.method == 'POST':
         item.part_name = request.POST.get('part_name', item.part_name).strip() or item.part_name
         item.part_code = request.POST.get('part_code', item.part_code)
-        item.quantity = to_int(request.POST.get('quantity'), item.quantity, 0)
+        new_quantity = to_int(request.POST.get('quantity'), item.quantity, 0)
         item.reorder_level = to_int(request.POST.get('reorder_level'), item.reorder_level, 0)
         item.location = request.POST.get('location', item.location)
         item.unit_cost = to_decimal(request.POST.get('unit_cost'), default=item.unit_cost, minimum=0)
@@ -662,6 +656,8 @@ def edit_inventory_item(request, item_id):
         if category in CATEGORY_CODES:
             item.category = category
         item.save()
+        set_stock(item, new_quantity, 'EDIT', request)
+        log_activity(request, 'part_updated', item.part_name, reverse('part_detail', args=[item.id]))
         messages.success(request, _("%(part)s saved.") % {'part': item.part_name})
         return redirect('part_detail', item_id=item.id)
     return render(request, 'tracker/inventory_edit.html', {'item': item, 'categories': PART_CATEGORIES})
@@ -670,7 +666,10 @@ def edit_inventory_item(request, item_id):
 @transaction.atomic
 def delete_inventory_item(request, item_id):
     if request.method == 'POST':
-        InventoryItem.objects.filter(id=item_id).delete()
+        item = InventoryItem.objects.filter(id=item_id).first()
+        if item:
+            log_activity(request, 'part_deleted', item.part_name)
+            item.delete()
         messages.success(request, _("Part deleted."))
     return redirect('inventory_list')
 
@@ -716,6 +715,8 @@ def global_search(request):
         pos = PurchaseOrder.objects.filter(
             Q(po_number__icontains=query) | Q(supplier__name__icontains=query)
         ).select_related('supplier').order_by('-issue_date')
+        if not can_see_money(request.user):  # technicians only see orders and parts
+            invoices = clients = suppliers = pos = []
 
     results = {
         'orders': list(orders), 'invoices': list(invoices), 'inventory': list(inventory),
@@ -793,6 +794,7 @@ def supplier_list(request):
                 email=request.POST.get('email', '').strip(),
                 phone=request.POST.get('phone', '').strip(),
             )
+            log_activity(request, 'supplier_created', s.name, reverse('supplier_detail', args=[s.id]))
             messages.success(request, _("Supplier %(name)s added.") % {'name': s.name})
             return redirect('supplier_detail', supplier_id=s.id)
         return redirect('supplier_list')
@@ -839,6 +841,7 @@ def po_list(request):
         if supplier_id:
             supplier = get_object_or_404(Supplier, id=supplier_id)
             po = PurchaseOrder.objects.create(po_number=po_number, supplier=supplier, status='DRAFT')
+            log_activity(request, 'po_created', f'{po.po_number} · {supplier.name}', reverse('po_detail', args=[po.id]))
             messages.success(request, _("%(n)s created — add the parts you need.") % {'n': po.po_number})
             return redirect('po_detail', po_id=po.id)
         messages.error(request, _("Choose a supplier first."))
@@ -883,12 +886,13 @@ def po_detail(request, po_id):
             if po.status != 'RECEIVED':
                 for item in po.items.all():
                     if item.inventory_item:
-                        # Auto-add quantity to warehouse stock & update cost!
-                        item.inventory_item.quantity += item.quantity
+                        # add the quantity to warehouse stock and update the cost
                         item.inventory_item.unit_cost = item.unit_cost
-                        item.inventory_item.save()
+                        item.inventory_item.save(update_fields=['unit_cost'])
+                        move_stock(item.inventory_item, item.quantity, 'PURCHASE', request, po.po_number)
                 po.status = 'RECEIVED'
                 po.save()
+                log_activity(request, 'po_received', f'{po.po_number} · {po.supplier.name}', reverse('po_detail', args=[po.id]))
                 messages.success(request, _("%(n)s received — warehouse stock updated.") % {'n': po.po_number})
         return redirect('po_detail', po_id=po.id)
 
@@ -905,6 +909,7 @@ def delete_po(request, po_id):
         po = get_object_or_404(PurchaseOrder, id=po_id)
         number = po.po_number
         po.delete()
+        log_activity(request, 'po_deleted', number)
         messages.success(request, _("%(n)s deleted.") % {'n': number})
     return redirect('po_list')
 

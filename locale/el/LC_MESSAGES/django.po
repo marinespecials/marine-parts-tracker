@@ -642,6 +642,12 @@ msgstr "Αναλύσεις"
 msgid "Inventory"
 msgstr "Απόθεμα"
 
+msgid "Stock count"
+msgstr "Απογραφή"
+
+msgid "QR labels"
+msgstr "Ετικέτες QR"
+
 msgid "Client catalog"
 msgstr "Κατάλογος πελάτη"
 
@@ -656,6 +662,15 @@ msgstr "Παραγγελίες αγοράς"
 
 msgid "Suppliers"
 msgstr "Προμηθευτές"
+
+msgid "Team"
+msgstr "Ομάδα"
+
+msgid "Activity"
+msgstr "Δραστηριότητα"
+
+msgid "Team members"
+msgstr "Μέλη ομάδας"
 
 msgid "Shortcuts"
 msgstr "Συντομεύσεις"
@@ -678,11 +693,17 @@ msgstr "Αντιγράφηκε"
 msgid "Saved on this device"
 msgstr "Αποθηκεύτηκε σε αυτή τη συσκευή"
 
+msgid "No matching parts"
+msgstr "Δεν βρέθηκαν ανταλλακτικά"
+
 msgid "Main navigation"
 msgstr "Κύρια πλοήγηση"
 
 msgid "Low stock"
 msgstr "Χαμηλό απόθεμα"
+
+msgid "Change my password"
+msgstr "Αλλαγή κωδικού"
 
 msgid "Switch light / dark"
 msgstr "Φωτεινό / σκοτεινό"
@@ -737,6 +758,48 @@ msgstr "Όλες οι παραγγελίες έχουν παραδοθεί. Οι
 
 msgid "Create order"
 msgstr "Δημιουργία παραγγελίας"
+
+msgid "Who did what, newest first. Recording started with this update."
+msgstr "Ποιος έκανε τι, με τα πιο πρόσφατα πρώτα. Η καταγραφή ξεκίνησε με αυτή την ενημέρωση."
+
+msgid "Actions"
+msgstr "Ενέργειες"
+
+msgid "Stock changes"
+msgstr "Κινήσεις αποθέματος"
+
+msgid "Everyone"
+msgstr "Όλοι"
+
+msgid "Latest 200"
+msgstr "Τελευταίες 200"
+
+msgid "When"
+msgstr "Πότε"
+
+msgid "Person"
+msgstr "Άτομο"
+
+msgid "Reason"
+msgstr "Αιτία"
+
+msgid "Change"
+msgstr "Μεταβολή"
+
+msgid "After"
+msgstr "Μετά"
+
+msgid "Action"
+msgstr "Ενέργεια"
+
+msgid "No stock changes yet"
+msgstr "Δεν υπάρχουν κινήσεις αποθέματος ακόμα"
+
+msgid "No activity yet"
+msgstr "Δεν υπάρχει δραστηριότητα ακόμα"
+
+msgid "Actions like creating orders, receiving purchase orders or counting stock appear here."
+msgstr "Εδώ εμφανίζονται ενέργειες όπως νέες παραγγελίες, παραλαβές και απογραφές."
 
 msgid "Clients &amp; vessels"
 msgstr "Πελάτες &amp; σκάφη"
@@ -797,6 +860,45 @@ msgstr "Τα ανταλλακτικά της αποθήκης εμφανίζον
 
 msgid "Go to warehouse"
 msgstr "Μετάβαση στην αποθήκη"
+
+msgid "Dead stock report"
+msgstr "Αναφορά αδρανούς αποθέματος"
+
+msgid "Parts in stock that haven't been on any order in the chosen period — candidates to sell off, return or clear out."
+msgstr "Ανταλλακτικά σε απόθεμα που δεν μπήκαν σε καμία παραγγελία στην περίοδο — υποψήφια για ξεπούλημα, επιστροφή ή απόσυρση."
+
+msgid "Parts"
+msgstr "Ανταλλακτικά"
+
+msgid "Value tied up"
+msgstr "Δεσμευμένη αξία"
+
+msgid "Never sold"
+msgstr "Δεν πουλήθηκαν ποτέ"
+
+msgid "6 months"
+msgstr "6 μήνες"
+
+msgid "12 months"
+msgstr "12 μήνες"
+
+msgid "24 months"
+msgstr "24 μήνες"
+
+msgid "Location"
+msgstr "Θέση"
+
+msgid "Last sold"
+msgstr "Τελευταία πώληση"
+
+msgid "Never"
+msgstr "Ποτέ"
+
+msgid "No dead stock"
+msgstr "Δεν υπάρχει αδρανές απόθεμα"
+
+msgid "Every part in stock has sold in this period."
+msgstr "Κάθε ανταλλακτικό σε απόθεμα πουλήθηκε σε αυτή την περίοδο."
 
 msgid "Good to see you"
 msgstr "Καλώς ήρθατε"
@@ -906,6 +1008,15 @@ msgstr "Αυτόματη ταξινόμηση"
 msgid "uncategorised"
 msgstr "χωρίς κατηγορία"
 
+msgid "Tools"
+msgstr "Εργαλεία"
+
+msgid "Print part labels"
+msgstr "Εκτύπωση ετικετών ανταλλακτικών"
+
+msgid "Print shelf labels"
+msgstr "Εκτύπωση ετικετών ραφιών"
+
 msgid "Add part"
 msgstr "Προσθήκη ανταλλακτικού"
 
@@ -920,9 +1031,6 @@ msgstr "Όνομα, κωδικός ή ράφι…"
 
 msgid "Search parts"
 msgstr "Αναζήτηση ανταλλακτικών"
-
-msgid "Location"
-msgstr "Θέση"
 
 msgid "Unit cost"
 msgstr "Κόστος μονάδας"
@@ -965,6 +1073,36 @@ msgstr "Να προταθεί κατηγορία για τα %(n)s ανταλλ�
 
 msgid "Delete %(name)s from the warehouse?"
 msgstr "Διαγραφή του %(name)s από την αποθήκη;"
+
+msgid "Print and stick on parts or shelves. Scanning with any phone camera opens the part (to adjust or count stock) or the shelf count."
+msgstr "Εκτυπώστε και κολλήστε στα ανταλλακτικά ή στα ράφια. Με σάρωση από την κάμερα του κινητού ανοίγει το ανταλλακτικό (για αλλαγή ή καταμέτρηση) ή η απογραφή του ραφιού."
+
+msgid "Part labels"
+msgstr "Ετικέτες ανταλλακτικών"
+
+msgid "Shelf labels"
+msgstr "Ετικέτες ραφιών"
+
+msgid "All locations"
+msgstr "Όλες οι θέσεις"
+
+msgid "Filter"
+msgstr "Φίλτρο"
+
+msgid "labels"
+msgstr "ετικέτες"
+
+msgid "max 300 per print"
+msgstr "έως 300 ανά εκτύπωση"
+
+msgid "Name or code…"
+msgstr "Όνομα ή κωδικός…"
+
+msgid "No labels to print"
+msgstr "Δεν υπάρχουν ετικέτες για εκτύπωση"
+
+msgid "Change the filters above."
+msgstr "Αλλάξτε τα φίλτρα παραπάνω."
 
 msgid "Back to"
 msgstr "Πίσω στο"
@@ -1167,6 +1305,12 @@ msgstr "Τιμή καταλόγου"
 msgid "· value"
 msgstr "· αξία"
 
+msgid "Count"
+msgstr "Καταμέτρηση"
+
+msgid "Label"
+msgstr "Ετικέτα"
+
 msgid "Reorder"
 msgstr "Αναπαραγγελία"
 
@@ -1212,6 +1356,18 @@ msgstr "Ιστορικό αγορών"
 msgid "PO"
 msgstr "ΠΑ"
 
+msgid "Stock history"
+msgstr "Ιστορικό αποθέματος"
+
+msgid "Last counted"
+msgstr "Τελευταία καταμέτρηση"
+
+msgid "Never counted"
+msgstr "Δεν έχει καταμετρηθεί"
+
+msgid "By"
+msgstr "Από"
+
 msgid "Top clients"
 msgstr "Κορυφαίοι πελάτες"
 
@@ -1242,6 +1398,12 @@ msgstr "Δεν έχει αγοραστεί μέσω παραγγελίας αγ�
 msgid "Add this part to a purchase order to track where it comes from."
 msgstr "Προσθέστε το σε παραγγελία αγοράς για να φαίνεται από πού προέρχεται."
 
+msgid "No stock changes recorded yet"
+msgstr "Δεν έχουν καταγραφεί κινήσεις ακόμα"
+
+msgid "From now on every change is logged here: orders, purchases, counts and manual adjustments."
+msgstr "Από εδώ και πέρα κάθε αλλαγή καταγράφεται εδώ: παραγγελίες, αγορές, καταμετρήσεις και χειροκίνητες αλλαγές."
+
 msgid "No clients yet"
 msgstr "Δεν υπάρχουν πελάτες ακόμα"
 
@@ -1253,6 +1415,24 @@ msgstr "Οι προμηθευτές εμφανίζονται όταν το αν�
 
 msgid "Log supplier quotes to compare prices over time."
 msgstr "Καταγράψτε προσφορές προμηθευτών για να συγκρίνετε τιμές στον χρόνο."
+
+msgid "Signed in as"
+msgstr "Συνδεδεμένος ως"
+
+msgid "Current password"
+msgstr "Τρέχων κωδικός"
+
+msgid "New password"
+msgstr "Νέος κωδικός"
+
+msgid "At least 8 characters, not too common, not only numbers."
+msgstr "Τουλάχιστον 8 χαρακτήρες, όχι πολύ συνηθισμένος, όχι μόνο αριθμοί."
+
+msgid "Repeat new password"
+msgstr "Επανάληψη νέου κωδικού"
+
+msgid "Change password"
+msgstr "Αλλαγή κωδικού"
 
 msgid "Mark received &amp; add to stock"
 msgstr "Παραλαβή &amp; προσθήκη στο απόθεμα"
@@ -1335,9 +1515,6 @@ msgstr "Αναλύσεις &amp; έρευνα ανταλλακτικών"
 msgid "What sells, who buys, where the stock value sits — plus a quick parts lookup."
 msgstr "Τι πουλάει, ποιος αγοράζει, πού βρίσκεται η αξία του αποθέματος — και γρήγορη αναζήτηση ανταλλακτικών."
 
-msgid "Parts"
-msgstr "Ανταλλακτικά"
-
 msgid "Orders &amp; invoices"
 msgstr "Παραγγελίες &amp; τιμολόγια"
 
@@ -1392,6 +1569,30 @@ msgstr "Δεν υπάρχει απόθεμα ακόμα"
 msgid "Try another name or code."
 msgstr "Δοκιμάστε άλλο όνομα ή κωδικό."
 
+msgid "Full part page"
+msgstr "Πλήρης σελίδα ανταλλακτικού"
+
+msgid "reorder at"
+msgstr "αναπαραγγελία στα"
+
+msgid "Took or added some?"
+msgstr "Πήρατε ή προσθέσατε;"
+
+msgid "Count this shelf"
+msgstr "Καταμέτρηση"
+
+msgid "How many are actually there?"
+msgstr "Πόσα υπάρχουν πραγματικά;"
+
+msgid "Save count"
+msgstr "Αποθήκευση καταμέτρησης"
+
+msgid "Recent changes"
+msgstr "Πρόσφατες κινήσεις"
+
+msgid "Note (optional)"
+msgstr "Σημείωση (προαιρετικά)"
+
 msgid "Results for “"
 msgstr "Αποτελέσματα για «"
 
@@ -1415,6 +1616,48 @@ msgstr "Δεν βρέθηκε τίποτα"
 
 msgid "Check the spelling, or search by a part code, order number or client name."
 msgstr "Ελέγξτε την ορθογραφία ή αναζητήστε με κωδικό ανταλλακτικού, αριθμό παραγγελίας ή όνομα πελάτη."
+
+msgid "Pick a shelf, type what you actually find, save. Empty boxes are skipped. Differences go into each part's stock history."
+msgstr "Επιλέξτε ράφι, γράψτε τι βρίσκετε πραγματικά και αποθηκεύστε. Τα κενά πεδία παραλείπονται. Οι διαφορές καταγράφονται στο ιστορικό κάθε ανταλλακτικού."
+
+msgid "Count saved"
+msgstr "Η καταμέτρηση αποθηκεύτηκε"
+
+msgid "parts counted"
+msgstr "ανταλλακτικά καταμετρήθηκαν"
+
+msgid "Expected"
+msgstr "Αναμενόμενα"
+
+msgid "Counted"
+msgstr "Καταμετρήθηκαν"
+
+msgid "Difference"
+msgstr "Διαφορά"
+
+msgid "Choose a shelf…"
+msgstr "Επιλέξτε ράφι…"
+
+msgid "Whole warehouse"
+msgstr "Όλη η αποθήκη"
+
+msgid "Shelf / location"
+msgstr "Ράφι / θέση"
+
+msgid "Nothing was entered"
+msgstr "Δεν συμπληρώθηκε τίποτα"
+
+msgid "Type a number next to each part you counted."
+msgstr "Γράψτε αριθμό δίπλα σε κάθε ανταλλακτικό που μετρήσατε."
+
+msgid "No parts on this shelf"
+msgstr "Δεν υπάρχουν ανταλλακτικά σε αυτό το ράφι"
+
+msgid "Choose a shelf to start"
+msgstr "Επιλέξτε ράφι για να ξεκινήσετε"
+
+msgid "Or scan a shelf label with your phone."
+msgstr "Ή σαρώστε την ετικέτα του ραφιού με το κινητό."
 
 msgid "Total ordered"
 msgstr "Σύνολο παραγγελιών"
@@ -1496,6 +1739,66 @@ msgstr "Δεν υπάρχουν προμηθευτές ακόμα"
 
 msgid "Add the vendors you buy from below, then raise purchase orders against them."
 msgstr "Προσθέστε παρακάτω τους προμηθευτές σας και μετά κάντε παραγγελίες αγοράς."
+
+msgid "Give each person their own login. Their name is recorded on every stock change and in the activity log."
+msgstr "Δώστε σε κάθε άτομο δικό του λογαριασμό. Το όνομά του καταγράφεται σε κάθε κίνηση αποθέματος και στη δραστηριότητα."
+
+msgid "Add person"
+msgstr "Προσθήκη ατόμου"
+
+msgid "Role"
+msgstr "Ρόλος"
+
+msgid "Last sign-in"
+msgstr "Τελευταία σύνδεση"
+
+msgid "owner"
+msgstr "ιδιοκτήτης"
+
+msgid "Active"
+msgstr "Ενεργός"
+
+msgid "Deactivated"
+msgstr "Απενεργοποιημένος"
+
+msgid "Active — can sign in"
+msgstr "Ενεργός — μπορεί να συνδεθεί"
+
+msgid "Deactivated — cannot sign in"
+msgstr "Απενεργοποιημένος — δεν μπορεί να συνδεθεί"
+
+msgid "New password (optional)"
+msgstr "Νέος κωδικός (προαιρετικά)"
+
+msgid "Add a person"
+msgstr "Προσθήκη ατόμου"
+
+msgid "Username *"
+msgstr "Όνομα χρήστη *"
+
+msgid "Name"
+msgstr "Ονοματεπώνυμο"
+
+msgid "Role *"
+msgstr "Ρόλος *"
+
+msgid "Password *"
+msgstr "Κωδικός *"
+
+msgid "At least 8 characters, not too common. They can change it later."
+msgstr "Τουλάχιστον 8 χαρακτήρες, όχι πολύ συνηθισμένος. Μπορεί να τον αλλάξει αργότερα."
+
+msgid "Repeat password *"
+msgstr "Επανάληψη κωδικού *"
+
+msgid "e.g. nikos"
+msgstr "π.χ. nikos"
+
+msgid "e.g. Nikos Papadopoulos"
+msgstr "π.χ. Νίκος Παπαδόπουλος"
+
+msgid "That page isn't available for your role."
+msgstr "Αυτή η σελίδα δεν είναι διαθέσιμη για τον ρόλο σας."
 
 msgid "Client Sale Invoice"
 msgstr "Τιμολόγιο πώλησης"
@@ -1623,6 +1926,123 @@ msgstr "Λάδια & λιπαντικά"
 msgid "Safety Equipment"
 msgstr "Εξοπλισμός ασφαλείας"
 
+msgid "New part"
+msgstr "Νέο ανταλλακτικό"
+
+msgid "Added to order"
+msgstr "Σε παραγγελία"
+
+msgid "Returned from order"
+msgstr "Επιστροφή από παραγγελία"
+
+msgid "Purchase order received"
+msgstr "Παραλαβή παραγγελίας αγοράς"
+
+msgid "Manual adjustment"
+msgstr "Χειροκίνητη αλλαγή"
+
+msgid "Edited"
+msgstr "Επεξεργασία"
+
+msgid "Created order"
+msgstr "Νέα παραγγελία"
+
+msgid "Deleted order"
+msgstr "Διαγραφή παραγγελίας"
+
+msgid "Changed order status"
+msgstr "Αλλαγή κατάστασης παραγγελίας"
+
+msgid "Converted order to invoice"
+msgstr "Μετατροπή σε τιμολόγιο"
+
+msgid "Created invoice"
+msgstr "Νέο τιμολόγιο"
+
+msgid "Updated invoice"
+msgstr "Ενημέρωση τιμολογίου"
+
+msgid "Deleted invoice"
+msgstr "Διαγραφή τιμολογίου"
+
+msgid "Added part"
+msgstr "Νέο ανταλλακτικό"
+
+msgid "Edited part"
+msgstr "Επεξεργασία ανταλλακτικού"
+
+msgid "Counted stock"
+msgstr "Απογραφή"
+
+msgid "Created purchase order"
+msgstr "Νέα παραγγελία αγοράς"
+
+msgid "Received purchase order"
+msgstr "Παραλαβή παραγγελίας αγοράς"
+
+msgid "Deleted purchase order"
+msgstr "Διαγραφή παραγγελίας αγοράς"
+
+msgid "Added supplier"
+msgstr "Νέος προμηθευτής"
+
+msgid "Logged price"
+msgstr "Καταγραφή τιμής"
+
+msgid "Added team member"
+msgstr "Νέο μέλος ομάδας"
+
+msgid "Changed team member"
+msgstr "Αλλαγή μέλους ομάδας"
+
+msgid "Admin"
+msgstr "Διαχειριστής"
+
+msgid "Office"
+msgstr "Γραφείο"
+
+msgid "Technician"
+msgstr "Τεχνικός"
+
+msgid "Everything, plus adding team members"
+msgstr "Όλα, μαζί με τη διαχείριση της ομάδας"
+
+msgid "Everything except the Team page"
+msgstr "Όλα εκτός από τη σελίδα Ομάδας"
+
+msgid "Orders, packing, live board and warehouse — no invoices, clients or suppliers"
+msgstr "Παραγγελίες, συσκευασία, ζωντανός πίνακας και αποθήκη — χωρίς τιμολόγια, πελάτες ή προμηθευτές"
+
+msgid "The two passwords don't match."
+msgstr "Οι δύο κωδικοί δεν ταιριάζουν."
+
+msgid "Username and role are required."
+msgstr "Απαιτούνται όνομα χρήστη και ρόλος."
+
+msgid "The username %(u)s is already taken."
+msgstr "Το όνομα χρήστη %(u)s χρησιμοποιείται ήδη."
+
+msgid "%(u)s can now sign in."
+msgstr "Ο/Η %(u)s μπορεί πλέον να συνδεθεί."
+
+msgid "You can't remove your own admin access."
+msgstr "Δεν μπορείτε να αφαιρέσετε τη δική σας πρόσβαση διαχειριστή."
+
+msgid "%(u)s updated."
+msgstr "Ο/Η %(u)s ενημερώθηκε."
+
+msgid "Your password was changed."
+msgstr "Ο κωδικός σας άλλαξε."
+
+msgid "active"
+msgstr "ενεργός"
+
+msgid "deactivated"
+msgstr "απενεργοποιήθηκε"
+
+msgid "new password"
+msgstr "νέος κωδικός"
+
 msgid "Sent"
 msgstr "Απεστάλη"
 
@@ -1682,3 +2102,21 @@ msgstr "Επιλέξτε ανταλλακτικό."
 
 msgid "%(n)s received — warehouse stock updated."
 msgstr "Η %(n)s παραλήφθηκε — το απόθεμα ενημερώθηκε."
+
+msgid "Stock is now %(q)s (%(c)+d)."
+msgstr "Το απόθεμα είναι τώρα %(q)s (%(c)+d)."
+
+msgid "Counted %(q)s (difference %(c)+d)."
+msgstr "Καταμετρήθηκαν %(q)s (διαφορά %(c)+d)."
+
+msgid "Counted %(n)s parts — %(d)s differences recorded."
+msgstr "Καταμετρήθηκαν %(n)s ανταλλακτικά — καταγράφηκαν %(d)s διαφορές."
+
+msgid "%(n)s parts · scan to count"
+msgstr "%(n)s ανταλλακτικά · σαρώστε για απογραφή"
+
+msgid "Shelf count: %(l)s"
+msgstr "Απογραφή ραφιού: %(l)s"
+
+msgid "all"
+msgstr "όλα"

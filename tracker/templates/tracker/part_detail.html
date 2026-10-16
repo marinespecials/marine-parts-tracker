@@ -33,8 +33,12 @@
             <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="{% trans "One more" %}">+</button></form>
         </div>
         <div class="button-row">
+            <a href="{% url 'scan_part' item.id %}" class="btn btn-sm">{% icon "clipboard-check" %}{% trans "Count" %}</a>
+            <a href="{% url 'print_labels' %}?q={{ item.part_code|default:item.part_name|urlencode }}" class="btn btn-sm">{% icon "qr" %}{% trans "Label" %}</a>
+            {% if can_money %}
             <a href="{% url 'po_list' %}#new-po" class="btn btn-sm">{% icon "cart" %}{% trans "Reorder" %}</a>
             <a href="{% url 'finance:price_history' %}?q={{ item.part_name|urlencode }}" class="btn btn-sm">{% icon "trending" %}{% trans "Price history" %}</a>
+            {% endif %}
             <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-sm btn-primary">{% icon "edit" %}{% trans "Edit part" %}</a>
         </div>
     </div>
@@ -97,6 +101,29 @@
             </table></div>
             {% else %}
                 {% include 'partials/empty.html' with icon='cart' title=_("Never purchased through a PO") text=_("Add this part to a purchase order to track where it comes from.") %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-title">{% icon "history" %}{% trans "Stock history" %}</div>
+                <span class="card-sub">{% if last_count %}{% trans "Last counted" %} {{ last_count.created_at|date:"d M Y" }}{% if last_count.user %} · {{ last_count.user.get_username }}{% endif %}{% else %}{% trans "Never counted" %}{% endif %}</span>
+            </div>
+            {% if movements %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>{% trans "When" %}</th><th>{% trans "Reason" %}</th><th>{% trans "Note" %}</th><th>{% trans "By" %}</th><th class="num">{% trans "Change" %}</th><th class="num">{% trans "After" %}</th></tr></thead>
+                <tbody>{% for m in movements %}
+                    <tr>
+                        <td class="nowrap">{{ m.created_at|date:"d M Y H:i" }}</td>
+                        <td>{{ m.get_reason_display }}</td>
+                        <td class="muted">{{ m.note|default:"—" }}</td>
+                        <td class="muted">{{ m.user.get_username|default:"—" }}</td>
+                        <td class="num"><strong style="color:{% if m.change > 0 %}var(--success){% elif m.change < 0 %}var(--danger){% else %}var(--text-3){% endif %}">{% if m.change > 0 %}+{% endif %}{{ m.change }}</strong></td>
+                        <td class="num">{{ m.quantity_after }}</td>
+                    </tr>{% endfor %}</tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='history' title=_("No stock changes recorded yet") text=_("From now on every change is logged here: orders, purchases, counts and manual adjustments.") %}
             {% endif %}
         </section>
     </div>

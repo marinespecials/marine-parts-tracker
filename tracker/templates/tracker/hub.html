@@ -19,6 +19,7 @@
         <div class="stat-value">{{ total_orders }}</div>
         <div class="stat-meta">{{ total_deliveries }} {% trans "delivered so far" %}</div>
     </a>
+    {% if can_money %}
     <a class="stat {% if overdue_count %}tone-danger{% endif %}" href="{% url 'finance:dashboard' %}?status={% if overdue_count %}OVERDUE{% else %}UNPAID{% endif %}">
         <div class="stat-label">{% icon "receipt" %}{% trans "Outstanding" %}</div>
         <div class="stat-value">{{ unpaid_total|money }}</div>
@@ -29,6 +30,7 @@
         <div class="stat-value">{{ paid_this_month|money }}</div>
         <div class="stat-meta">{% trans "Invoices issued this month" %}</div>
     </a>
+    {% endif %}
     <a class="stat" href="{% url 'inventory_list' %}">
         <div class="stat-label">{% icon "box" %}{% trans "Warehouse value" %}</div>
         <div class="stat-value">{{ warehouse_value|money }}</div>
@@ -76,6 +78,7 @@
             {% endif %}
         </section>
 
+        {% if can_money %}
         <section class="card">
             <div class="card-header">
                 <div class="card-title">{% icon "receipt" %}{% trans "Recent invoices" %}</div>
@@ -103,6 +106,7 @@
                 {% include 'partials/empty.html' with icon='receipt' title=_("No invoices yet") text=_("Convert a delivered order or create an invoice directly.") action_url=new_inv_url action_label=_("New invoice") %}
             {% endif %}
         </section>
+        {% endif %}
     </div>
 
     <div class="stack">
@@ -130,6 +134,7 @@
             {% endif %}
         </section>
 
+        {% if can_money %}
         <section class="card">
             <div class="card-header">
                 <div class="card-title">{% icon "cart" %}{% trans "Open purchase orders" %}</div>
@@ -152,6 +157,7 @@
                 {% include 'partials/empty.html' with icon='cart' title=_("Nothing on order") text=_("Purchase orders waiting for delivery appear here.") %}
             {% endif %}
         </section>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
