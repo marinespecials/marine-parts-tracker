@@ -1,23 +1,24 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from tracker.models import Customer, PART_CATEGORIES
 
 
 class Invoice(models.Model):
     INVOICE_TYPE_CHOICES = [
-        ('SALE', 'Client Sale Invoice'),
-        ('BILL', 'Supplier Vendor Bill'),
+        ('SALE', _('Client Sale Invoice')),
+        ('BILL', _('Supplier Vendor Bill')),
     ]
 
     STATUS_CHOICES = [
-        ('DRAFT', 'Draft'),
-        ('PENDING', 'Order - Pending'),
-        ('PROCESSING', 'Order - Processing'),
-        ('DELIVERED', 'Order - Delivered'),
-        ('UNPAID', 'Invoice - Unpaid'),
-        ('OVERDUE', 'Invoice - Overdue'),
-        ('PAID', 'Invoice - Paid'),
-        ('VOID', 'Void'),
+        ('DRAFT', _('Draft')),
+        ('PENDING', _('Order - Pending')),
+        ('PROCESSING', _('Order - Processing')),
+        ('DELIVERED', _('Order - Delivered')),
+        ('UNPAID', _('Invoice - Unpaid')),
+        ('OVERDUE', _('Invoice - Overdue')),
+        ('PAID', _('Invoice - Paid')),
+        ('VOID', _('Void')),
     ]
 
     invoice_number = models.CharField(max_length=100)
@@ -52,7 +53,7 @@ class Invoice(models.Model):
 
 
 class ClientFinancialProfile(models.Model):
-    RATING_LABELS = {'A': 'A · Excellent', 'B': 'B · Good', 'C': 'C · Risky'}
+    RATING_LABELS = {'A': _('A · Excellent'), 'B': _('B · Good'), 'C': _('C · Risky')}
 
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
     lifetime_revenue = models.DecimalField(
@@ -88,9 +89,9 @@ class PriceRecord(models.Model):
 class MasterPricelistItem(models.Model):
     CATEGORY_CHOICES = PART_CATEGORIES  # same list as the warehouse
     AVAILABILITY_CHOICES = [
-        ('In Stock', 'In Stock (Piraeus Warehouse)'),
-        ('2-3 Days', 'Available (2-3 Business Days)'),
-        ('7-10 Days', 'Special Order (7-10 Days)'),
+        ('In Stock', _('In Stock (Piraeus Warehouse)')),
+        ('2-3 Days', _('Available (2-3 Business Days)')),
+        ('7-10 Days', _('Special Order (7-10 Days)')),
     ]
 
     part_name = models.CharField(max_length=255)

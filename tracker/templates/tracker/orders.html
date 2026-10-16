@@ -1,49 +1,49 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Orders{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Orders" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Orders &amp; delivery notes</h1>
-        <p class="lede">Jobs and packing lists for vessels and clients. Stock is deducted as parts are added.</p>
+        <h1>{% trans "Orders &amp; delivery notes" %}</h1>
+        <p class="lede">{% trans "Jobs and packing lists for vessels and clients. Stock is deducted as parts are added." %}</p>
     </div>
     <div class="actions">
         <form method="POST" action="{% url 'sync_all_historical_orders' %}" class="inline-form"
-              data-confirm="Link every unlinked order line to a warehouse part (creating parts where none match) and deduct stock?">
+              data-confirm="{% trans "Link every unlinked order line to a warehouse part (creating parts where none match) and deduct stock?" %}">
             {% csrf_token %}
-            <button type="submit" class="btn" title="Link old order lines to warehouse parts">{% icon "refresh" %}Sync old orders to stock</button>
+            <button type="submit" class="btn" title="{% trans "Link old order lines to warehouse parts" %}">{% icon "refresh" %}{% trans "Sync old orders to stock" %}</button>
         </form>
-        <a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}New order</a>
+        <a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}{% trans "New order" %}</a>
     </div>
 </div>
 
 <div class="card">
-    <nav class="tabs" aria-label="Filter by status">
-        <a href="?status=PENDING" class="tab {% if status_filter == 'PENDING' %}active{% endif %}">{% icon "clock" "icon-sm" %}Pending <span class="count">{{ counts.PENDING }}</span></a>
-        <a href="?status=PROCESSING" class="tab {% if status_filter == 'PROCESSING' %}active{% endif %}">{% icon "refresh" "icon-sm" %}Processing <span class="count">{{ counts.PROCESSING }}</span></a>
-        <a href="?status=DELIVERED" class="tab {% if status_filter == 'DELIVERED' %}active{% endif %}">{% icon "truck" "icon-sm" %}Delivered <span class="count">{{ counts.DELIVERED }}</span></a>
-        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">All documents <span class="count">{{ counts.ALL }}</span></a>
+    <nav class="tabs" aria-label="{% trans "Filter by status" %}">
+        <a href="?status=PENDING" class="tab {% if status_filter == 'PENDING' %}active{% endif %}">{% icon "clock" "icon-sm" %}{% trans "Pending" %} <span class="count">{{ counts.PENDING }}</span></a>
+        <a href="?status=PROCESSING" class="tab {% if status_filter == 'PROCESSING' %}active{% endif %}">{% icon "refresh" "icon-sm" %}{% trans "Processing" %} <span class="count">{{ counts.PROCESSING }}</span></a>
+        <a href="?status=DELIVERED" class="tab {% if status_filter == 'DELIVERED' %}active{% endif %}">{% icon "truck" "icon-sm" %}{% trans "Delivered" %} <span class="count">{{ counts.DELIVERED }}</span></a>
+        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">{% trans "All documents" %} <span class="count">{{ counts.ALL }}</span></a>
     </nav>
     <form method="GET" class="toolbar">
         <input type="hidden" name="status" value="{{ status_filter }}">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Order number or client…" aria-label="Search orders"></div>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query %}<a href="?status={{ status_filter }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ records|length }} shown</span>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Order number or client…" %}" aria-label="{% trans "Search orders" %}"></div>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query %}<a href="?status={{ status_filter }}" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ records|length }} {% trans "shown" %}</span>
     </form>
 
     {% if records %}
     <div class="table-wrap">
         <table class="table">
             <thead>
-                <tr><th>Order</th><th>Client / vessel</th><th>Status</th><th>Date</th><th class="num">Lines</th><th class="num">Value</th><th></th></tr>
+                <tr><th>{% trans "Order" %}</th><th>{% trans "Client / vessel" %}</th><th>{% trans "Status" %}</th><th>{% trans "Date" %}</th><th class="num">{% trans "Lines" %}</th><th class="num">{% trans "Value" %}</th><th></th></tr>
             </thead>
             <tbody>
             {% for record in records %}
                 {% if record.status in order_statuses %}{% url 'order_detail' record.id as doc_url %}{% else %}{% url 'finance:invoice_detail' record.id as doc_url %}{% endif %}
                 <tr data-href="{{ doc_url }}" class="row-link">
                     <td><a class="entity" href="{{ doc_url }}">{{ record.invoice_number }}</a></td>
-                    <td>{% if record.customer %}<a class="entity" href="{% url 'finance:client_ledger' record.customer.id %}">{{ record.customer.name }}</a>{% else %}<span class="subtle">No client</span>{% endif %}</td>
+                    <td>{% if record.customer %}<a class="entity" href="{% url 'finance:client_ledger' record.customer.id %}">{{ record.customer.name }}</a>{% else %}<span class="subtle">{% trans "No client" %}</span>{% endif %}</td>
                     <td>
                         {% if record.status in order_statuses %}
                             {% include 'partials/order_status_menu.html' with doc=record statuses=order_statuses %}
@@ -55,8 +55,8 @@
                     <td class="num">{{ record.line_count }}</td>
                     <td class="num">{{ record.total_amount|money }}</td>
                     <td class="actions">
-                        {% if record.status in order_statuses %}<a href="{% url 'mobile_packing_list' record.id %}" class="btn btn-ghost btn-icon btn-sm" title="Packing mode">{% icon "smartphone" %}</a>{% endif %}
-                        <a href="{{ doc_url }}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a>
+                        {% if record.status in order_statuses %}<a href="{% url 'mobile_packing_list' record.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Packing mode" %}">{% icon "smartphone" %}</a>{% endif %}
+                        <a href="{{ doc_url }}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Open" %}">{% icon "chevron-right" %}</a>
                     </td>
                 </tr>
             {% endfor %}
@@ -66,9 +66,9 @@
     {% else %}
         {% url 'create_order' as new_order_url %}
         {% if query %}
-            {% include 'partials/empty.html' with icon='search' title='No matching orders' text='Try another order number or client name, or switch to “All documents”.' %}
+            {% include 'partials/empty.html' with icon='search' title=_("No matching orders") text=_("Try another order number or client name, or switch to “All documents”.") %}
         {% else %}
-            {% include 'partials/empty.html' with icon='orders' title='Nothing here yet' text='No orders have this status right now.' action_url=new_order_url action_label='Create order' %}
+            {% include 'partials/empty.html' with icon='orders' title=_("Nothing here yet") text=_("No orders have this status right now.") action_url=new_order_url action_label=_("Create order") %}
         {% endif %}
     {% endif %}
 </div>

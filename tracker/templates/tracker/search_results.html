@@ -1,23 +1,23 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Search{% if query %}: {{ query }}{% endif %}{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Search" %}{% if query %}: {{ query }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>{% if query %}Results for “{{ query }}”{% else %}Search{% endif %}</h1>
-        <p class="lede">{% if query %}{{ total_hits }} match{{ total_hits|pluralize:"es" }} across orders, invoices, parts, clients and suppliers.{% else %}Type in the search bar above (shortcut: <kbd>/</kbd>).{% endif %}</p>
+        <h1>{% if query %}{% trans "Results for “" %}{{ query }}”{% else %}{% trans "Search" %}{% endif %}</h1>
+        <p class="lede">{% if query %}{{ total_hits }} {% if total_hits == 1 %}{% trans "match" %}{% else %}{% trans "matches" %}{% endif %} {% trans "across orders, invoices, parts, clients and suppliers." %}{% else %}{% trans "Type in the search bar above (shortcut:" %} <kbd>/</kbd>).{% endif %}</p>
     </div>
 </div>
 
 {% if query and not total_hits %}
-<div class="card">{% include 'partials/empty.html' with icon='search' title='Nothing found' text='Check the spelling, or search by a part code, order number or client name.' %}</div>
+<div class="card">{% include 'partials/empty.html' with icon='search' title=_("Nothing found") text=_("Check the spelling, or search by a part code, order number or client name.") %}</div>
 {% endif %}
 
 {% if orders %}
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "orders" %}Orders <span class="card-sub">{{ orders|length }}</span></div></div>
+    <div class="card-header"><div class="card-title">{% icon "orders" %}{% trans "Orders" %} <span class="card-sub">{{ orders|length }}</span></div></div>
     <div class="table-wrap"><table class="table">
-        <thead><tr><th>Order</th><th>Client</th><th>Date</th><th>Status</th><th class="num">Value</th></tr></thead>
+        <thead><tr><th>{% trans "Order" %}</th><th>{% trans "Client" %}</th><th>{% trans "Date" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Value" %}</th></tr></thead>
         <tbody>{% for o in orders %}
             <tr data-href="{% url 'order_detail' o.id %}" class="row-link">
                 <td><a class="entity" href="{% url 'order_detail' o.id %}">{{ o.invoice_number }}</a></td>
@@ -30,9 +30,9 @@
 
 {% if invoices %}
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "receipt" %}Invoices <span class="card-sub">{{ invoices|length }}</span></div></div>
+    <div class="card-header"><div class="card-title">{% icon "receipt" %}{% trans "Invoices" %} <span class="card-sub">{{ invoices|length }}</span></div></div>
     <div class="table-wrap"><table class="table">
-        <thead><tr><th>Invoice</th><th>Client</th><th>Date</th><th>Status</th><th class="num">Amount</th></tr></thead>
+        <thead><tr><th>{% trans "Invoice" %}</th><th>{% trans "Client" %}</th><th>{% trans "Date" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Amount" %}</th></tr></thead>
         <tbody>{% for inv in invoices %}
             <tr data-href="{% url 'finance:invoice_detail' inv.id %}" class="row-link">
                 <td><a class="entity" href="{% url 'finance:invoice_detail' inv.id %}">{{ inv.invoice_number }}</a></td>
@@ -45,9 +45,9 @@
 
 {% if inventory %}
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "box" %}Warehouse parts <span class="card-sub">{{ inventory|length }}</span></div></div>
+    <div class="card-header"><div class="card-title">{% icon "box" %}{% trans "Warehouse parts" %} <span class="card-sub">{{ inventory|length }}</span></div></div>
     <div class="table-wrap"><table class="table">
-        <thead><tr><th>Part</th><th>Category</th><th>Location</th><th class="num">In stock</th><th class="num">Unit cost</th></tr></thead>
+        <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Category" %}</th><th>{% trans "Location" %}</th><th class="num">{% trans "In stock" %}</th><th class="num">{% trans "Unit cost" %}</th></tr></thead>
         <tbody>{% for item in inventory %}
             <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
                 <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a>{% if item.part_code %}<span class="secondary mono">{{ item.part_code }}</span>{% endif %}</td>
@@ -62,7 +62,7 @@
 <div class="grid grid-2">
     {% if clients %}
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "users" %}Clients <span class="card-sub">{{ clients|length }}</span></div></div>
+        <div class="card-header"><div class="card-title">{% icon "users" %}{% trans "Clients" %} <span class="card-sub">{{ clients|length }}</span></div></div>
         <div class="table-wrap"><table class="table"><tbody>{% for c in clients %}
             <tr data-href="{% url 'finance:client_ledger' c.id %}" class="row-link"><td><a class="entity" href="{% url 'finance:client_ledger' c.id %}">{{ c.name }}</a></td><td class="actions">{% icon "chevron-right" "subtle" %}</td></tr>
         {% endfor %}</tbody></table></div>
@@ -70,7 +70,7 @@
     {% endif %}
     {% if suppliers %}
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "building" %}Suppliers <span class="card-sub">{{ suppliers|length }}</span></div></div>
+        <div class="card-header"><div class="card-title">{% icon "building" %}{% trans "Suppliers" %} <span class="card-sub">{{ suppliers|length }}</span></div></div>
         <div class="table-wrap"><table class="table"><tbody>{% for s in suppliers %}
             <tr data-href="{% url 'supplier_detail' s.id %}" class="row-link"><td><a class="entity" href="{% url 'supplier_detail' s.id %}">{{ s.name }}</a><span class="secondary">{{ s.contact_person|default:"" }}</span></td><td class="actions">{% icon "chevron-right" "subtle" %}</td></tr>
         {% endfor %}</tbody></table></div>
@@ -78,7 +78,7 @@
     {% endif %}
     {% if pos %}
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "cart" %}Purchase orders <span class="card-sub">{{ pos|length }}</span></div></div>
+        <div class="card-header"><div class="card-title">{% icon "cart" %}{% trans "Purchase orders" %} <span class="card-sub">{{ pos|length }}</span></div></div>
         <div class="table-wrap"><table class="table"><tbody>{% for po in pos %}
             <tr data-href="{% url 'po_detail' po.id %}" class="row-link"><td><a class="entity" href="{% url 'po_detail' po.id %}">{{ po.po_number }}</a><span class="secondary">{{ po.supplier.name }}</span></td><td>{% status_badge po.status %}</td><td class="num">{{ po.total_amount|money }}</td></tr>
         {% endfor %}</tbody></table></div>

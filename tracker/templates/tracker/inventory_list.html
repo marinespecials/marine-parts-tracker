@@ -1,45 +1,45 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Warehouse{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Warehouse" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Warehouse stock</h1>
-        <p class="lede">Every part on record — click a part to see its orders, suppliers and price history.</p>
+        <h1>{% trans "Warehouse stock" %}</h1>
+        <p class="lede">{% trans "Every part on record — click a part to see its orders, suppliers and price history." %}</p>
     </div>
     <div class="actions">
         {% if counts.GENERAL %}
         <form method="POST" action="{% url 'auto_categorise' %}" class="inline-form"
-              data-confirm="Suggest a category for the {{ counts.GENERAL }} parts still in General Hardware, based on their names? You can change any of them afterwards.">
+              data-confirm="{% blocktrans with n=counts.GENERAL %}Suggest a category for the {{ n }} parts still in General Hardware, based on their names? You can change any of them afterwards.{% endblocktrans %}">
             {% csrf_token %}
-            <button type="submit" class="btn" title="Sort parts in General Hardware into categories">{% icon "sparkles" %}Auto-sort {{ counts.GENERAL }} uncategorised</button>
+            <button type="submit" class="btn" title="{% trans "Sort parts in General Hardware into categories" %}">{% icon "sparkles" %}{% trans "Auto-sort" %} {{ counts.GENERAL }} {% trans "uncategorised" %}</button>
         </form>
         {% endif %}
-        <a href="#new-part" class="btn btn-primary" onclick="document.getElementById('part_name').focus()">{% icon "plus" %}Add part</a>
+        <a href="#new-part" class="btn btn-primary" onclick="document.getElementById('part_name').focus()">{% icon "plus" %}{% trans "Add part" %}</a>
     </div>
 </div>
 
 <div class="card">
-    <nav class="tabs" aria-label="Stock filter">
-        <a href="?filter=ALL&category={{ category_filter }}" class="tab {% if filter_type != 'LOW_STOCK' %}active{% endif %}">All parts <span class="count">{{ counts.ALL }}</span></a>
-        <a href="?filter=LOW_STOCK&category={{ category_filter }}" class="tab {% if filter_type == 'LOW_STOCK' %}active{% endif %}">{% icon "alert" "icon-sm" %}Low stock <span class="count">{{ counts.LOW_STOCK }}</span></a>
+    <nav class="tabs" aria-label="{% trans "Stock filter" %}">
+        <a href="?filter=ALL&category={{ category_filter }}" class="tab {% if filter_type != 'LOW_STOCK' %}active{% endif %}">{% trans "All parts" %} <span class="count">{{ counts.ALL }}</span></a>
+        <a href="?filter=LOW_STOCK&category={{ category_filter }}" class="tab {% if filter_type == 'LOW_STOCK' %}active{% endif %}">{% icon "alert" "icon-sm" %}{% trans "Low stock" %} <span class="count">{{ counts.LOW_STOCK }}</span></a>
     </nav>
     <form method="GET" class="toolbar">
         <input type="hidden" name="filter" value="{{ filter_type }}">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Name, code or bin…" aria-label="Search parts"></div>
-        <select name="category" data-autosubmit aria-label="Category">
-            <option value="ALL">All categories</option>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Name, code or bin…" %}" aria-label="{% trans "Search parts" %}"></div>
+        <select name="category" data-autosubmit aria-label="{% trans "Category" %}">
+            <option value="ALL">{% trans "All categories" %}</option>
             {% for code, label, n in categories %}<option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }} ({{ n }})</option>{% endfor %}
         </select>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query or category_filter != 'ALL' %}<a href="?filter={{ filter_type }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ total_items }} part{{ total_items|pluralize }} · <strong>{{ total_warehouse_value|money }}</strong></span>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query or category_filter != 'ALL' %}<a href="?filter={{ filter_type }}" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ total_items }} {% if total_items == 1 %}{% trans "part" %}{% else %}{% trans "parts" %}{% endif %} · <strong>{{ total_warehouse_value|money }}</strong></span>
     </form>
 
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Part</th><th>Category</th><th>Location</th><th>In stock</th><th class="num">Unit cost</th><th class="num">Value</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Category" %}</th><th>{% trans "Location" %}</th><th>{% trans "In stock" %}</th><th class="num">{% trans "Unit cost" %}</th><th class="num">{% trans "Value" %}</th><th></th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
@@ -48,17 +48,17 @@
                     <td class="muted">{{ item.location }}</td>
                     <td>
                         <div class="stepper">
-                            <form method="POST" action="{% url 'adjust_stock' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="One less">−</button></form>
-                            <span class="val {% if item.is_low_stock %}low{% endif %}" title="{% if item.is_low_stock %}At or below reorder level ({{ item.reorder_level }}){% endif %}">{{ item.quantity }}</span>
-                            <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="One more">+</button></form>
+                            <form method="POST" action="{% url 'adjust_stock' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="{% trans "One less" %}">−</button></form>
+                            <span class="val {% if item.is_low_stock %}low{% endif %}" title="{% if item.is_low_stock %}{% trans 'At or below reorder level' %} ({{ item.reorder_level }}){% endif %}">{{ item.quantity }}</span>
+                            <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="{% trans "One more" %}">+</button></form>
                         </div>
                     </td>
                     <td class="num">{{ item.unit_cost|money }}</td>
                     <td class="num"><strong>{{ item.stock_value|money }}</strong></td>
                     <td class="actions">
-                        <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">{% icon "edit" %}</a>
-                        <form method="POST" action="{% url 'delete_inventory_item' item.id %}" class="inline-form" data-confirm="Delete {{ item.part_name }} from the warehouse?">
-                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Delete">{% icon "trash" %}</button>
+                        <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Edit" %}">{% icon "edit" %}</a>
+                        <form method="POST" action="{% url 'delete_inventory_item' item.id %}" class="inline-form" data-confirm="{% blocktrans with name=item.part_name %}Delete {{ name }} from the warehouse?{% endblocktrans %}">
+                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Delete" %}">{% icon "trash" %}</button>
                         </form>
                     </td>
                 </tr>
@@ -68,9 +68,9 @@
     </div>
     {% else %}
         {% if query or category_filter != 'ALL' or filter_type == 'LOW_STOCK' %}
-            {% include 'partials/empty.html' with icon='search' title='No parts match' text='Try a different search, category or filter.' %}
+            {% include 'partials/empty.html' with icon='search' title=_("No parts match") text=_("Try a different search, category or filter.") %}
         {% else %}
-            {% include 'partials/empty.html' with icon='box' title='The warehouse is empty' text='Add your first part below, or receive a purchase order.' %}
+            {% include 'partials/empty.html' with icon='box' title=_("The warehouse is empty") text=_("Add your first part below, or receive a purchase order.") %}
         {% endif %}
     {% endif %}
 </div>
@@ -78,24 +78,24 @@
 <form method="POST" class="card" id="new-part">
     {% csrf_token %}
     <input type="hidden" name="add_item" value="1">
-    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a part</div></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a part" %}</div></div>
     <div class="card-body">
         <div class="form-grid">
-            <div class="field"><label for="part_name">Part name *</label><input type="text" id="part_name" name="part_name" placeholder="e.g. Raw water impeller" required></div>
-            <div class="field"><label for="part_code">OEM / part code</label><input type="text" id="part_code" name="part_code" placeholder="e.g. 128990-42200"></div>
+            <div class="field"><label for="part_name">{% trans "Part name *" %}</label><input type="text" id="part_name" name="part_name" placeholder="{% trans "e.g. Raw water impeller" %}" required></div>
+            <div class="field"><label for="part_code">{% trans "OEM / part code" %}</label><input type="text" id="part_code" name="part_code" placeholder="{% trans "e.g. 128990-42200" %}"></div>
             <div class="field">
-                <label for="category">Category</label>
+                <label for="category">{% trans "Category" %}</label>
                 <select id="category" name="category">
-                    <option value="AUTO">Detect from name</option>
+                    <option value="AUTO">{% trans "Detect from name" %}</option>
                     {% for code, label, n in categories %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="field"><label for="location">Location / bin</label><input type="text" id="location" name="location" value="Piraeus Warehouse"></div>
-            <div class="field"><label for="quantity">Quantity</label><input type="number" id="quantity" name="quantity" value="1" min="0"></div>
-            <div class="field"><label for="reorder_level">Reorder at</label><input type="number" id="reorder_level" name="reorder_level" value="5" min="0"></div>
-            <div class="field"><label for="unit_cost">Unit cost €</label><input type="number" step="0.01" min="0" id="unit_cost" name="unit_cost" placeholder="0.00"></div>
+            <div class="field"><label for="location">{% trans "Location / bin" %}</label><input type="text" id="location" name="location" value="Piraeus Warehouse"></div>
+            <div class="field"><label for="quantity">{% trans "Quantity" %}</label><input type="number" id="quantity" name="quantity" value="1" min="0"></div>
+            <div class="field"><label for="reorder_level">{% trans "Reorder at" %}</label><input type="number" id="reorder_level" name="reorder_level" value="5" min="0"></div>
+            <div class="field"><label for="unit_cost">{% trans "Unit cost €" %}</label><input type="number" step="0.01" min="0" id="unit_cost" name="unit_cost" placeholder="0.00"></div>
         </div>
     </div>
-    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}Save part</button></div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Save part" %}</button></div>
 </form>
 {% endblock %}

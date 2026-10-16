@@ -1,0 +1,6 @@
+{% load i18n %}{% get_current_language as LANG %}<form action="{% url 'set_language' %}" method="post" class="segmented lang-switch" aria-label="{% trans 'Language' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" name="language" value="el" class="{% if LANG == 'el' %}on{% endif %}" title="Ελληνικά">ΕΛ</button>
+    <button type="submit" name="language" value="en" class="{% if LANG == 'en' %}on{% endif %}" title="English">EN</button>
+</form>

@@ -1,20 +1,20 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Packing {{ order.invoice_number }}{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Packing" %} {{ order.invoice_number }}{% endblock %}
 
 {% block content %}
 <div class="pack">
-    <div class="crumbs"><a href="{% url 'order_detail' order.id %}">{% icon "arrow-left" %} Back to {{ order.invoice_number }}</a></div>
+    <div class="crumbs"><a href="{% url 'order_detail' order.id %}">{% icon "arrow-left" %} {% trans "Back to" %} {{ order.invoice_number }}</a></div>
 
     <section class="card">
         <div class="pack-head">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
                 <div>
-                    <div class="eyebrow subtle" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Packing · {{ order.invoice_number }}</div>
-                    <h1 style="font-size:20px;margin-top:2px">{{ order.customer.name|default:"No client" }}</h1>
+                    <div class="eyebrow subtle" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">{% trans "Packing ·" %} {{ order.invoice_number }}</div>
+                    <h1 style="font-size:20px;margin-top:2px">{{ order.customer.name|default:_("No client") }}</h1>
                 </div>
                 <div style="text-align:right">
                     <div style="font-size:24px;font-weight:700" class="num">{{ progress }}%</div>
-                    <div class="subtle" style="font-size:12.5px">{{ packed_items }}/{{ total_items }} packed</div>
+                    <div class="subtle" style="font-size:12.5px">{{ packed_items }}/{{ total_items }} {% trans "packed" %}</div>
                 </div>
             </div>
             <div class="progress {% if progress == 100 %}done{% endif %}" style="margin-top:12px;height:8px"><span style="width:{{ progress }}%"></span></div>
@@ -26,7 +26,7 @@
         <div class="pack-item {% if item.is_packed %}packed{% endif %}">
             <form method="POST" action="{% url 'toggle_item_packed' item.id %}" class="inline-form">
                 {% csrf_token %}
-                <button type="submit" class="check {% if item.is_packed %}on{% endif %}" aria-label="{% if item.is_packed %}Mark not packed{% else %}Mark packed{% endif %}">{% icon "check" %}</button>
+                <button type="submit" class="check {% if item.is_packed %}on{% endif %}" aria-label="{% if item.is_packed %}{% trans 'Mark not packed' %}{% else %}{% trans 'Mark packed' %}{% endif %}">{% icon "check" %}</button>
             </form>
             <div style="min-width:0">
                 <div class="desc">{{ item.description }}</div>
@@ -38,15 +38,15 @@
             </div>
         </div>
         {% empty %}
-            {% include 'partials/empty.html' with icon='box' title='Nothing to pack' text='Add items to this order first.' %}
+            {% include 'partials/empty.html' with icon='box' title=_("Nothing to pack") text=_("Add items to this order first.") %}
         {% endfor %}
     </section>
 
     {% if total_items and progress == 100 %}
-        <div class="callout success">{% icon "check" %}<div><strong>All packed.</strong> Mark the order delivered when it leaves the warehouse.</div></div>
-        <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}">{% csrf_token %}<button type="submit" class="btn btn-success btn-block" style="height:46px">{% icon "truck" %}Mark delivered</button></form>
+        <div class="callout success">{% icon "check" %}<div><strong>{% trans "All packed." %}</strong> {% trans "Mark the order delivered when it leaves the warehouse." %}</div></div>
+        <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}">{% csrf_token %}<button type="submit" class="btn btn-success btn-block" style="height:46px">{% icon "truck" %}{% trans "Mark delivered" %}</button></form>
     {% else %}
-        <a href="{% url 'order_detail' order.id %}" class="btn btn-block" style="height:46px">Save &amp; exit</a>
+        <a href="{% url 'order_detail' order.id %}" class="btn btn-block" style="height:46px">{% trans "Save &amp; exit" %}</a>
     {% endif %}
 </div>
 {% endblock %}

@@ -1,40 +1,40 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Price history{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Price history" %}{% endblock %}
 {% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Price history</h1>
-        <p class="lede">Supplier quotes and client prices over time — compare before you buy or quote.</p>
+        <h1>{% trans "Price history" %}</h1>
+        <p class="lede">{% trans "Supplier quotes and client prices over time — compare before you buy or quote." %}</p>
     </div>
-    <div class="actions"><a href="#new-price" class="btn btn-primary" onclick="document.getElementById('ph-part').focus()">{% icon "plus" %}Log a price</a></div>
+    <div class="actions"><a href="#new-price" class="btn btn-primary" onclick="document.getElementById('ph-part').focus()">{% icon "plus" %}{% trans "Log a price" %}</a></div>
 </div>
 
 <div class="stats">
-    <div class="stat"><div class="stat-label">{% icon "box" %}Parts tracked</div><div class="stat-value">{{ unique_parts_count }}</div></div>
-    <div class="stat"><div class="stat-label">{% icon "list" %}Price records</div><div class="stat-value">{{ total_records }}</div></div>
-    <div class="stat"><div class="stat-label">{% icon "building" %}Suppliers &amp; clients</div><div class="stat-value">{{ party_count }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "box" %}{% trans "Parts tracked" %}</div><div class="stat-value">{{ unique_parts_count }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "list" %}{% trans "Price records" %}</div><div class="stat-value">{{ total_records }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "building" %}{% trans "Suppliers &amp; clients" %}</div><div class="stat-value">{{ party_count }}</div></div>
 </div>
 
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "trending" %}Unit price over time</div><span class="card-sub">{% if query %}matching “{{ query }}” · {% endif %}most-logged parts</span></div>
+    <div class="card-header"><div class="card-title">{% icon "trending" %}{% trans "Unit price over time" %}</div><span class="card-sub">{% if query %}{% trans "matching “" %}{{ query }}” · {% endif %}{% trans "most-logged parts" %}</span></div>
     <div class="card-body">
         {% if chart.series %}<div class="chart-box" style="height:300px"><canvas id="priceTrendChart"></canvas></div>
-        {% else %}{% include 'partials/empty.html' with icon='trending' title='No prices to chart yet' text='Log a few prices for the same part to see how it moves.' %}{% endif %}
+        {% else %}{% include 'partials/empty.html' with icon='trending' title=_("No prices to chart yet") text=_("Log a few prices for the same part to see how it moves.") %}{% endif %}
     </div>
 </section>
 
 <div class="grid grid-main-side">
     <section class="card">
         <form method="GET" class="toolbar">
-            <div class="search-box" style="max-width:none;flex:1">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Part, code, supplier or client…" aria-label="Search prices"></div>
-            <button type="submit" class="btn btn-sm">Search</button>
-            {% if query %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+            <div class="search-box" style="max-width:none;flex:1">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Part, code, supplier or client…" %}" aria-label="{% trans "Search prices" %}"></div>
+            <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+            {% if query %}<a href="?" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
         </form>
         {% if records %}
         <div class="table-wrap"><table class="table">
-            <thead><tr><th>Part</th><th>Supplier / client</th><th class="num">Unit price</th><th>Date</th><th>Notes</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Supplier / client" %}</th><th class="num">{% trans "Unit price" %}</th><th>{% trans "Date" %}</th><th>{% trans "Notes" %}</th><th></th></tr></thead>
             <tbody>{% for r in records %}
                 <tr>
                     <td>{% if r.part_id %}<a class="entity" href="{% url 'part_detail' r.part_id %}">{{ r.part_name }}</a>{% else %}<span class="primary">{{ r.part_name }}</span>{% endif %}{% if r.part_code %}<span class="secondary mono">{{ r.part_code }}</span>{% endif %}</td>
@@ -43,38 +43,38 @@
                     <td class="nowrap">{{ r.date_recorded|date:"d M Y" }}</td>
                     <td class="muted" style="max-width:220px">{{ r.notes|default:"—"|truncatechars:60 }}</td>
                     <td class="actions">
-                        <form method="POST" action="{% url 'finance:delete_price_record' r.id %}" class="inline-form" data-confirm="Delete this price record?">
-                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Delete">{% icon "trash" %}</button>
+                        <form method="POST" action="{% url 'finance:delete_price_record' r.id %}" class="inline-form" data-confirm="{% trans "Delete this price record?" %}">
+                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Delete" %}">{% icon "trash" %}</button>
                         </form>
                     </td>
                 </tr>{% endfor %}</tbody>
         </table></div>
         {% else %}
-            {% if query %}{% include 'partials/empty.html' with icon='search' title='No matching prices' text='Try another part, code or supplier.' %}
-            {% else %}{% include 'partials/empty.html' with icon='trending' title='No prices logged yet' text='Use the form to record your first quote.' %}{% endif %}
+            {% if query %}{% include 'partials/empty.html' with icon='search' title=_("No matching prices") text=_("Try another part, code or supplier.") %}
+            {% else %}{% include 'partials/empty.html' with icon='trending' title=_("No prices logged yet") text=_("Use the form to record your first quote.") %}{% endif %}
         {% endif %}
     </section>
 
     <form method="POST" class="card" id="new-price">
         {% csrf_token %}
-        <div class="card-header"><div class="card-title">{% icon "plus" %}Log a price</div></div>
+        <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Log a price" %}</div></div>
         <div class="card-body" style="display:grid;gap:14px">
-            <div class="field"><label for="ph-part">Part name *</label><input type="text" id="ph-part" name="part_name" placeholder="e.g. Oil filter, impeller, gasket" required></div>
-            <div class="field"><label for="ph-code">OEM / part code</label><input type="text" id="ph-code" name="part_code" placeholder="e.g. 35-802893Q01"></div>
+            <div class="field"><label for="ph-part">{% trans "Part name *" %}</label><input type="text" id="ph-part" name="part_name" placeholder="{% trans "e.g. Oil filter, impeller, gasket" %}" required></div>
+            <div class="field"><label for="ph-code">{% trans "OEM / part code" %}</label><input type="text" id="ph-code" name="part_code" placeholder="{% trans "e.g. 35-802893Q01" %}"></div>
             <div class="field">
-                <label for="ph-party">Supplier or client *</label>
-                <input type="text" id="ph-party" name="supplier_name" placeholder="e.g. Idealakku, Offgridtec" required list="party-list" autocomplete="off">
+                <label for="ph-party">{% trans "Supplier or client *" %}</label>
+                <input type="text" id="ph-party" name="supplier_name" placeholder="{% trans "e.g. Idealakku, Offgridtec" %}" required list="party-list" autocomplete="off">
                 <datalist id="party-list">{% for name in customers %}<option value="{{ name }}"></option>{% endfor %}</datalist>
-                <span class="hint">If it matches a client name, the price also shows on that client's page.</span>
+                <span class="hint">{% trans "If it matches a client name, the price also shows on that client's page." %}</span>
             </div>
             <div class="form-row">
-                <div class="field grow"><label for="ph-price">Unit price *</label><input type="number" step="0.01" min="0" id="ph-price" name="unit_price" placeholder="0.00" required></div>
-                <div class="field" style="flex:0 0 110px"><label for="ph-cur">Currency</label><select id="ph-cur" name="currency"><option value="EUR">EUR €</option><option value="USD">USD $</option><option value="GBP">GBP £</option></select></div>
+                <div class="field grow"><label for="ph-price">{% trans "Unit price *" %}</label><input type="number" step="0.01" min="0" id="ph-price" name="unit_price" placeholder="0.00" required></div>
+                <div class="field" style="flex:0 0 110px"><label for="ph-cur">{% trans "Currency" %}</label><select id="ph-cur" name="currency"><option value="EUR">{% trans "EUR €" %}</option><option value="USD">{% trans "USD $" %}</option><option value="GBP">{% trans "GBP £" %}</option></select></div>
             </div>
-            <div class="field"><label for="ph-date">Date *</label><input type="date" id="ph-date" name="date_recorded" value="{{ today|date:'Y-m-d' }}" required></div>
-            <div class="field"><label for="ph-notes">Notes</label><textarea id="ph-notes" name="notes" rows="2" placeholder="Volume discount, urgent delivery rate…"></textarea></div>
+            <div class="field"><label for="ph-date">{% trans "Date *" %}</label><input type="date" id="ph-date" name="date_recorded" value="{{ today|date:'Y-m-d' }}" required></div>
+            <div class="field"><label for="ph-notes">{% trans "Notes" %}</label><textarea id="ph-notes" name="notes" rows="2" placeholder="{% trans "Volume discount, urgent delivery rate…" %}"></textarea></div>
         </div>
-        <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "plus" %}Log price</button></div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "plus" %}{% trans "Log price" %}</button></div>
     </form>
 </div>
 {{ chart|json_script:"chart-data" }}
@@ -94,7 +94,7 @@ window.addEventListener('load', function () {
             }) },
             options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'nearest', intersect: false },
                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } } },
-                       scales: { y: { title: { display: true, text: 'Unit price' } }, x: { grid: { display: false } } } }
+                       scales: { y: { title: { display: true, text: '{% trans "Unit price" %}' } }, x: { grid: { display: false } } } }
         };
     });
 });

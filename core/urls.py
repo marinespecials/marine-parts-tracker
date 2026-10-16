@@ -6,6 +6,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('healthz/', healthz, name='healthz'),
+    path('i18n/', include('django.conf.urls.i18n')),  # set_language (ΕΛ / EN switch)
     path('admin/', admin.site.urls),
     path('login/', ThrottledLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

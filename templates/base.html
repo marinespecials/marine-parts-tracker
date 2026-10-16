@@ -1,9 +1,9 @@
-{% load static ui %}<!DOCTYPE html>
-<html lang="en">
+{% load static ui i18n %}{% get_current_language as LANG %}<!DOCTYPE html>
+<html lang="{{ LANG }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Operations{% endblock %} · Marine Specials</title>
+    <title>{% block title %}{% trans "Operations" %}{% endblock %} · Marine Specials</title>
     <script>
         /* apply the saved theme before first paint (no white flash in dark mode) */
         (function () {
@@ -12,6 +12,11 @@
             if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', t);
         })();
+        window.MS_TEXT = {
+            inStock: "{% trans 'in stock' %}",
+            copied: "{% trans 'Copied' %}",
+            savedHere: "{% trans 'Saved on this device' %}"
+        };
     </script>
     <meta name="theme-color" content="#0A0F17" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#F6F7F9">
@@ -27,67 +32,68 @@
 <div class="app">
     <div class="backdrop"></div>
 
-    <aside class="sidebar" aria-label="Main navigation">
+    <aside class="sidebar" aria-label="{% trans 'Main navigation' %}">
         <a href="{% url 'app_hub' %}" class="brand">
             <span class="brand-mark">{% icon "anchor" %}</span>
-            <span class="brand-name">MARINE SPECIALS<small>Operations Platform</small></span>
+            <span class="brand-name">MARINE SPECIALS<small>{% trans "Operations Platform" %}</small></span>
         </a>
 
         <nav class="nav">
-            <a href="{% url 'app_hub' %}" class="{% active 'hub' 'app_hub' %}">{% icon "home" %}Dashboard</a>
+            <a href="{% url 'app_hub' %}" class="{% active 'hub' 'app_hub' %}">{% icon "home" %}{% trans "Dashboard" %}</a>
 
             <div class="nav-section">
-                <div class="nav-label">Operations</div>
+                <div class="nav-label">{% trans "Operations" %}</div>
                 <a href="{% url 'orders_dashboard' %}" class="{% active 'orders_dashboard' 'create_order' 'order_detail' 'mobile_packing_list' %}">
-                    {% icon "orders" %}Orders{% if nav_counts.active_orders %}<span class="count">{{ nav_counts.active_orders }}</span>{% endif %}
+                    {% icon "orders" %}{% trans "Orders" %}{% if nav_counts.active_orders %}<span class="count">{{ nav_counts.active_orders }}</span>{% endif %}
                 </a>
-                <a href="{% url 'active_board' %}" class="{% active 'active_board' %}">{% icon "board" %}Live board</a>
-                <a href="{% url 'research_hub' %}" class="{% active 'research_hub' %}">{% icon "chart" %}Analytics</a>
+                <a href="{% url 'active_board' %}" class="{% active 'active_board' %}">{% icon "board" %}{% trans "Live board" %}</a>
+                <a href="{% url 'research_hub' %}" class="{% active 'research_hub' %}">{% icon "chart" %}{% trans "Analytics" %}</a>
             </div>
 
             <div class="nav-section">
-                <div class="nav-label">Inventory</div>
+                <div class="nav-label">{% trans "Inventory" %}</div>
                 <a href="{% url 'inventory_list' %}" class="{% active 'inventory_list' 'edit_inventory_item' 'part_detail' %}">
-                    {% icon "box" %}Warehouse{% if nav_counts.low_stock %}<span class="count alert" title="Low stock">{{ nav_counts.low_stock }}</span>{% endif %}
+                    {% icon "box" %}{% trans "Warehouse" %}{% if nav_counts.low_stock %}<span class="count alert" title="{% trans 'Low stock' %}">{{ nav_counts.low_stock }}</span>{% endif %}
                 </a>
-                <a href="{% url 'client_pricelist' %}" class="{% active 'client_pricelist' %}">{% icon "tag" %}Client catalog</a>
-                <a href="{% url 'finance:pricelist_dashboard' %}" class="{% active 'finance:pricelist_dashboard' %}">{% icon "list" %}Master price list</a>
+                <a href="{% url 'client_pricelist' %}" class="{% active 'client_pricelist' %}">{% icon "tag" %}{% trans "Client catalog" %}</a>
+                <a href="{% url 'finance:pricelist_dashboard' %}" class="{% active 'finance:pricelist_dashboard' %}">{% icon "list" %}{% trans "Master price list" %}</a>
             </div>
 
             <div class="nav-section">
-                <div class="nav-label">Finance</div>
+                <div class="nav-label">{% trans "Finance" %}</div>
                 <a href="{% url 'finance:dashboard' %}" class="{% active 'finance:dashboard' 'finance:invoice_detail' 'finance:create_invoice' %}">
-                    {% icon "receipt" %}Invoices{% if nav_counts.overdue %}<span class="count alert" title="Overdue">{{ nav_counts.overdue }}</span>{% endif %}
+                    {% icon "receipt" %}{% trans "Invoices" %}{% if nav_counts.overdue %}<span class="count alert" title="{% trans 'Overdue' %}">{{ nav_counts.overdue }}</span>{% endif %}
                 </a>
-                <a href="{% url 'client_list' %}" class="{% active 'client_list' 'finance:client_ledger' %}">{% icon "users" %}Clients</a>
-                <a href="{% url 'finance:price_history' %}" class="{% active 'finance:price_history' %}">{% icon "trending" %}Price history</a>
-                <a href="{% url 'finance:bulk_import' %}" class="{% active 'finance:bulk_import' %}">{% icon "upload" %}Drive links</a>
+                <a href="{% url 'client_list' %}" class="{% active 'client_list' 'finance:client_ledger' %}">{% icon "users" %}{% trans "Clients" %}</a>
+                <a href="{% url 'finance:price_history' %}" class="{% active 'finance:price_history' %}">{% icon "trending" %}{% trans "Price history" %}</a>
+                <a href="{% url 'finance:bulk_import' %}" class="{% active 'finance:bulk_import' %}">{% icon "upload" %}{% trans "Drive links" %}</a>
             </div>
 
             <div class="nav-section">
-                <div class="nav-label">Purchasing</div>
-                <a href="{% url 'po_list' %}" class="{% active 'po_list' 'po_detail' %}">{% icon "cart" %}Purchase orders</a>
-                <a href="{% url 'supplier_list' %}" class="{% active 'supplier_list' 'supplier_detail' %}">{% icon "building" %}Suppliers</a>
+                <div class="nav-label">{% trans "Purchasing" %}</div>
+                <a href="{% url 'po_list' %}" class="{% active 'po_list' 'po_detail' %}">{% icon "cart" %}{% trans "Purchase orders" %}</a>
+                <a href="{% url 'supplier_list' %}" class="{% active 'supplier_list' 'supplier_detail' %}">{% icon "building" %}{% trans "Suppliers" %}</a>
             </div>
 
             <div class="nav-section">
-                <div class="nav-label">Shortcuts</div>
+                <div class="nav-label">{% trans "Shortcuts" %}</div>
                 <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener">{% icon "folder" %}Google Drive{% icon "external" "icon-sm subtle" %}</a>
-                <a href="{% url 'finance:export_finances' %}">{% icon "download" %}Export CSV</a>
+                <a href="{% url 'finance:export_finances' %}">{% icon "download" %}{% trans "Export CSV" %}</a>
             </div>
         </nav>
 
         <div class="sidebar-footer">
+            {% include 'partials/language_switch.html' %}
             {% if user.is_authenticated %}
             <div class="user-row">
                 <span class="avatar">{{ user.get_username|initials }}</span>
                 <span class="who">{{ user.get_username }}</span>
-                <button type="button" class="btn btn-ghost btn-icon btn-sm" data-theme-toggle title="Switch light / dark" aria-label="Switch light or dark theme">
+                <button type="button" class="btn btn-ghost btn-icon btn-sm" data-theme-toggle title="{% trans 'Switch light / dark' %}" aria-label="{% trans 'Switch light / dark' %}">
                     {% icon "moon" "when-light" %}{% icon "sun" "when-dark" %}
                 </button>
                 <form method="post" action="{% url 'logout' %}" class="inline-form">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Sign out" aria-label="Sign out">{% icon "logout" %}</button>
+                    <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans 'Sign out' %}" aria-label="{% trans 'Sign out' %}">{% icon "logout" %}</button>
                 </form>
             </div>
             {% endif %}
@@ -96,25 +102,25 @@
 
     <div class="main">
         <header class="topbar">
-            <button type="button" class="btn btn-ghost btn-icon menu-toggle" data-nav-toggle aria-label="Open menu">{% icon "menu" %}</button>
+            <button type="button" class="btn btn-ghost btn-icon menu-toggle" data-nav-toggle aria-label="{% trans 'Open menu' %}">{% icon "menu" %}</button>
             <form method="GET" action="{% url 'global_search' %}" class="search-box" role="search">
                 {% icon "search" %}
-                <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search orders, invoices, parts, clients…" id="global-search" autocomplete="off" aria-label="Search everything">
+                <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="{% trans 'Search orders, invoices, parts, clients…' %}" id="global-search" autocomplete="off" aria-label="{% trans 'Search everything' %}">
                 <kbd>/</kbd>
             </form>
             <div class="topbar-spacer"></div>
             <div class="topbar-actions">
                 {% block topbar_actions %}{% endblock %}
                 <details class="dropdown">
-                    <summary class="btn btn-primary">{% icon "plus" %}<span class="btn-label">New</span></summary>
+                    <summary class="btn btn-primary">{% icon "plus" %}<span class="btn-label">{% trans "New" %}</span></summary>
                     <div class="dropdown-menu">
-                        <a href="{% url 'create_order' %}">{% icon "orders" %}Order</a>
-                        <a href="{% url 'finance:create_invoice' %}">{% icon "receipt" %}Invoice</a>
-                        <a href="{% url 'po_list' %}#new-po">{% icon "cart" %}Purchase order</a>
+                        <a href="{% url 'create_order' %}">{% icon "orders" %}{% trans "Order" %}</a>
+                        <a href="{% url 'finance:create_invoice' %}">{% icon "receipt" %}{% trans "Invoice" %}</a>
+                        <a href="{% url 'po_list' %}#new-po">{% icon "cart" %}{% trans "Purchase order" %}</a>
                         <hr>
-                        <a href="{% url 'inventory_list' %}#new-part">{% icon "box" %}Warehouse part</a>
-                        <a href="{% url 'supplier_list' %}#new-supplier">{% icon "building" %}Supplier</a>
-                        <a href="{% url 'finance:price_history' %}#new-price">{% icon "trending" %}Price record</a>
+                        <a href="{% url 'inventory_list' %}#new-part">{% icon "box" %}{% trans "Warehouse part" %}</a>
+                        <a href="{% url 'supplier_list' %}#new-supplier">{% icon "building" %}{% trans "Supplier" %}</a>
+                        <a href="{% url 'finance:price_history' %}#new-price">{% icon "trending" %}{% trans "Price record" %}</a>
                     </div>
                 </details>
             </div>
@@ -126,7 +132,7 @@
             <div class="toast {{ message.tags }}">
                 {% if message.tags == 'success' %}{% icon "check" %}{% elif message.tags == 'error' or message.tags == 'warning' %}{% icon "alert" %}{% else %}{% icon "info" %}{% endif %}
                 <span>{{ message }}</span>
-                <button type="button" aria-label="Dismiss">{% icon "x" "icon-sm" %}</button>
+                <button type="button" aria-label="{% trans 'Dismiss' %}">{% icon "x" "icon-sm" %}</button>
             </div>
             {% endfor %}
         </div>

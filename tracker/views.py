@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.db import transaction
 from django.contrib import messages
+from django.utils.translation import gettext as _
 
 from core.utils import to_decimal, to_int, redirect_back
 
@@ -16,6 +17,7 @@ from .models import (
     PART_CATEGORIES, guess_category,
 )
 from finance.models import Invoice, PriceRecord, MasterPricelistItem
+from tracker.templatetags.ui import STATUS_LABELS
 
 ORDER_STATUSES = ['PENDING', 'PROCESSING', 'DELIVERED']
 INVOICE_STATUSES = ['UNPAID', 'OVERDUE', 'PAID']
@@ -126,7 +128,7 @@ def sync_all_historical_orders(request):
                 item.inventory_item = new_inv
                 item.save()
                 created += 1
-        messages.success(request, f"Linked {linked} order lines to existing parts and created {created} new warehouse parts.")
+        messages.success(request, _("Linked %(linked)s order lines to existing parts and created %(created)s new warehouse parts.") % {'linked': linked, 'created': created})
 
     return redirect('orders_dashboard')
 
@@ -262,9 +264,9 @@ def create_order(request):
                 )
                 _recalc_total(order)
 
-            messages.success(request, f"Order {order.invoice_number} created.")
+            messages.success(request, _("Order %(n)s created.") % {'n': order.invoice_number})
             return redirect('order_detail', order_id=order.id)
-        messages.error(request, "Please enter a client or vessel name.")
+        messages.error(request, _("Please enter a client or vessel name."))
 
     return render(request, 'tracker/order_form.html', {
         'parts': parts_json(),
@@ -300,7 +302,7 @@ def link_order_item_to_inventory(request, item_id):
             item.save()
             inv.quantity = max(0, inv.quantity - item.quantity)
             inv.save()
-            messages.success(request, f"Linked to {inv.part_name}; stock reduced by {item.quantity}.")
+            messages.success(request, _("Linked to %(part)s; stock reduced by %(qty)s.") % {'part': inv.part_name, 'qty': item.quantity})
 
     return redirect_back(request, 'order_detail', order_id=item.order_id)
 
@@ -325,7 +327,7 @@ def add_order_item(request, order_id):
             )
             _recalc_total(order)
         else:
-            messages.error(request, "Pick a warehouse part or type an item name.")
+            messages.error(request, _("Pick a warehouse part or type an item name."))
 
     return redirect('order_detail', order_id=order.id)
 
@@ -405,9 +407,9 @@ def change_order_status(request, order_id, new_status):
         if new_status in {code for code, _label in Invoice.STATUS_CHOICES}:
             order.status = new_status
             order.save()
-            messages.success(request, f"{order.invoice_number} marked {new_status.title()}.")
+            messages.success(request, _("%(n)s marked %(status)s.") % {'n': order.invoice_number, 'status': STATUS_LABELS.get(new_status, new_status)})
         else:
-            messages.error(request, f"'{new_status}' is not a valid status.")
+            messages.error(request, _("'%(status)s' is not a valid status.") % {'status': new_status})
 
     return redirect_back(request, 'orders_dashboard')
 
@@ -419,7 +421,7 @@ def convert_order_to_invoice(request, order_id):
 
         existing = related_document(original_order)
         if existing and existing.invoice_number.startswith('INV-'):
-            messages.info(request, f"This order was already invoiced as {existing.invoice_number}.")
+            messages.info(request, _("This order was already invoiced as %(n)s.") % {'n': existing.invoice_number})
             return redirect('finance:invoice_detail', invoice_id=existing.id)
 
         raw_num = original_order.invoice_number.replace('ORD-', '')
@@ -450,7 +452,7 @@ def convert_order_to_invoice(request, order_id):
                 is_packed=True
             )
 
-        messages.success(request, f"Invoice {inv_num} created from {original_order.invoice_number}.")
+        messages.success(request, _("Invoice %(inv)s created from %(order)s.") % {'inv': inv_num, 'order': original_order.invoice_number})
         return redirect('finance:invoice_detail', invoice_id=new_invoice.id)
 
     return redirect('order_detail', order_id=order_id)
@@ -467,7 +469,7 @@ def delete_order(request, order_id):
                 inv.save()
         number = order.invoice_number
         order.delete()
-        messages.success(request, f"Order {number} deleted and its stock returned to the warehouse.")
+        messages.success(request, _("Order %(n)s deleted and its stock returned to the warehouse.") % {'n': number})
     return redirect('orders_dashboard')
 
 
@@ -516,7 +518,7 @@ def inventory_list(request):
                 location=location,
                 unit_cost=unit_cost
             )
-            messages.success(request, f"{item.part_name} added to the warehouse ({item.get_category_display()}).")
+            messages.success(request, _("%(part)s added to the warehouse (%(category)s).") % {'part': item.part_name, 'category': item.get_category_display()})
         return redirect('inventory_list')
 
     all_items = InventoryItem.objects.all()
@@ -561,8 +563,8 @@ def auto_categorise(request):
                 changed += 1
         messages.success(
             request,
-            f"Sorted {changed} of {total} uncategorised parts. "
-            f"{total - changed} stay in General Hardware — you can change any part from its page."
+            _("Sorted %(changed)s of %(total)s uncategorised parts. %(rest)s stay in General Hardware — you can change any part from its page.")
+            % {'changed': changed, 'total': total, 'rest': total - changed}
         )
     return redirect('inventory_list')
 
@@ -660,7 +662,7 @@ def edit_inventory_item(request, item_id):
         if category in CATEGORY_CODES:
             item.category = category
         item.save()
-        messages.success(request, f"{item.part_name} saved.")
+        messages.success(request, _("%(part)s saved.") % {'part': item.part_name})
         return redirect('part_detail', item_id=item.id)
     return render(request, 'tracker/inventory_edit.html', {'item': item, 'categories': PART_CATEGORIES})
 
@@ -669,7 +671,7 @@ def edit_inventory_item(request, item_id):
 def delete_inventory_item(request, item_id):
     if request.method == 'POST':
         InventoryItem.objects.filter(id=item_id).delete()
-        messages.success(request, "Part deleted.")
+        messages.success(request, _("Part deleted."))
     return redirect('inventory_list')
 
 
@@ -791,7 +793,7 @@ def supplier_list(request):
                 email=request.POST.get('email', '').strip(),
                 phone=request.POST.get('phone', '').strip(),
             )
-            messages.success(request, f"Supplier {s.name} added.")
+            messages.success(request, _("Supplier %(name)s added.") % {'name': s.name})
             return redirect('supplier_detail', supplier_id=s.id)
         return redirect('supplier_list')
 
@@ -811,7 +813,7 @@ def supplier_detail(request, supplier_id):
         supplier.email = request.POST.get('email', '').strip()
         supplier.phone = request.POST.get('phone', '').strip()
         supplier.save()
-        messages.success(request, "Supplier details saved.")
+        messages.success(request, _("Supplier details saved."))
         return redirect('supplier_detail', supplier_id=supplier.id)
 
     pos = supplier.purchaseorder_set.annotate(line_count=Count('items')).order_by('-issue_date', '-id')
@@ -837,9 +839,9 @@ def po_list(request):
         if supplier_id:
             supplier = get_object_or_404(Supplier, id=supplier_id)
             po = PurchaseOrder.objects.create(po_number=po_number, supplier=supplier, status='DRAFT')
-            messages.success(request, f"{po.po_number} created — add the parts you need.")
+            messages.success(request, _("%(n)s created — add the parts you need.") % {'n': po.po_number})
             return redirect('po_detail', po_id=po.id)
-        messages.error(request, "Choose a supplier first.")
+        messages.error(request, _("Choose a supplier first."))
         return redirect('po_list')
 
     status = request.GET.get('status', 'ALL').upper()
@@ -875,7 +877,7 @@ def po_detail(request, po_id):
                 po.total_amount = sum(item.total_cost for item in po.items.all())
                 po.save()
             else:
-                messages.error(request, "Pick a part to add.")
+                messages.error(request, _("Pick a part to add."))
 
         elif 'receive_po' in request.POST:
             if po.status != 'RECEIVED':
@@ -887,7 +889,7 @@ def po_detail(request, po_id):
                         item.inventory_item.save()
                 po.status = 'RECEIVED'
                 po.save()
-                messages.success(request, f"{po.po_number} received — warehouse stock updated.")
+                messages.success(request, _("%(n)s received — warehouse stock updated.") % {'n': po.po_number})
         return redirect('po_detail', po_id=po.id)
 
     return render(request, 'tracker/po_detail.html', {
@@ -903,7 +905,7 @@ def delete_po(request, po_id):
         po = get_object_or_404(PurchaseOrder, id=po_id)
         number = po.po_number
         po.delete()
-        messages.success(request, f"{number} deleted.")
+        messages.success(request, _("%(n)s deleted.") % {'n': number})
     return redirect('po_list')
 
 

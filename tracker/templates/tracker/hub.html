@@ -1,43 +1,43 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Dashboard{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Dashboard" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Good to see you{% if user.get_username %}, {{ user.get_username|capfirst }}{% endif %}</h1>
-        <p class="lede">Here's where operations, stock and money stand today.</p>
+        <h1>{% trans "Good to see you" %}{% if user.get_username %}, {{ user.get_username|capfirst }}{% endif %}</h1>
+        <p class="lede">{% trans "Here's where operations, stock and money stand today." %}</p>
     </div>
     <div class="actions">
-        <a href="{% url 'active_board' %}" class="btn">{% icon "board" %}Live board</a>
-        <a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}New order</a>
+        <a href="{% url 'active_board' %}" class="btn">{% icon "board" %}{% trans "Live board" %}</a>
+        <a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}{% trans "New order" %}</a>
     </div>
 </div>
 
 <div class="stats">
     <a class="stat" href="{% url 'orders_dashboard' %}?status=PENDING">
-        <div class="stat-label">{% icon "orders" %}Active orders</div>
+        <div class="stat-label">{% icon "orders" %}{% trans "Active orders" %}</div>
         <div class="stat-value">{{ total_orders }}</div>
-        <div class="stat-meta">{{ total_deliveries }} delivered so far</div>
+        <div class="stat-meta">{{ total_deliveries }} {% trans "delivered so far" %}</div>
     </a>
     <a class="stat {% if overdue_count %}tone-danger{% endif %}" href="{% url 'finance:dashboard' %}?status={% if overdue_count %}OVERDUE{% else %}UNPAID{% endif %}">
-        <div class="stat-label">{% icon "receipt" %}Outstanding</div>
+        <div class="stat-label">{% icon "receipt" %}{% trans "Outstanding" %}</div>
         <div class="stat-value">{{ unpaid_total|money }}</div>
-        <div class="stat-meta">{{ unpaid_count }} unpaid{% if overdue_count %} · {{ overdue_count }} overdue{% endif %}</div>
+        <div class="stat-meta">{{ unpaid_count }} {% trans "unpaid" %}{% if overdue_count %} · {{ overdue_count }} {% trans "overdue" %}{% endif %}</div>
     </a>
     <a class="stat tone-success" href="{% url 'finance:dashboard' %}?status=PAID">
-        <div class="stat-label">{% icon "euro" %}Paid this month</div>
+        <div class="stat-label">{% icon "euro" %}{% trans "Paid this month" %}</div>
         <div class="stat-value">{{ paid_this_month|money }}</div>
-        <div class="stat-meta">Invoices issued this month</div>
+        <div class="stat-meta">{% trans "Invoices issued this month" %}</div>
     </a>
     <a class="stat" href="{% url 'inventory_list' %}">
-        <div class="stat-label">{% icon "box" %}Warehouse value</div>
+        <div class="stat-label">{% icon "box" %}{% trans "Warehouse value" %}</div>
         <div class="stat-value">{{ warehouse_value|money }}</div>
-        <div class="stat-meta">{{ total_inventory_items }} parts on record</div>
+        <div class="stat-meta">{{ total_inventory_items }} {% trans "parts on record" %}</div>
     </a>
     <a class="stat {% if low_stock_count %}tone-warning{% endif %}" href="{% url 'inventory_list' %}?filter=LOW_STOCK">
-        <div class="stat-label">{% icon "alert" %}Low stock</div>
+        <div class="stat-label">{% icon "alert" %}{% trans "Low stock" %}</div>
         <div class="stat-value">{{ low_stock_count }}</div>
-        <div class="stat-meta">At or below reorder level</div>
+        <div class="stat-meta">{% trans "At or below reorder level" %}</div>
     </a>
 </div>
 
@@ -45,22 +45,22 @@
     <div class="stack">
         <section class="card">
             <div class="card-header">
-                <div class="card-title">{% icon "orders" %}Active orders</div>
-                <a href="{% url 'orders_dashboard' %}" class="btn btn-ghost btn-sm">View all{% icon "arrow-right" %}</a>
+                <div class="card-title">{% icon "orders" %}{% trans "Active orders" %}</div>
+                <a href="{% url 'orders_dashboard' %}" class="btn btn-ghost btn-sm">{% trans "View all" %}{% icon "arrow-right" %}</a>
             </div>
             {% if active_orders %}
             <div class="table-wrap">
                 <table class="table">
-                    <thead><tr><th>Order</th><th>Client / vessel</th><th>Packing</th><th>Status</th><th class="num">Value</th></tr></thead>
+                    <thead><tr><th>{% trans "Order" %}</th><th>{% trans "Client / vessel" %}</th><th>{% trans "Packing" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Value" %}</th></tr></thead>
                     <tbody>
                     {% for order in active_orders %}
                         <tr data-href="{% url 'order_detail' order.id %}" class="row-link">
                             <td><a class="entity" href="{% url 'order_detail' order.id %}">{{ order.invoice_number }}</a><span class="secondary">{{ order.issue_date|date:"d M Y" }}</span></td>
-                            <td>{% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}<span class="subtle">No client</span>{% endif %}</td>
+                            <td>{% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}<span class="subtle">{% trans "No client" %}</span>{% endif %}</td>
                             <td style="min-width:120px">
                                 {% with pct=order.packed_count|percent_of:order.line_count %}
                                 <div class="progress {% if pct == 100 %}done{% endif %}"><span style="width:{{ pct }}%"></span></div>
-                                <span class="secondary">{{ order.packed_count }}/{{ order.line_count }} packed</span>
+                                <span class="secondary">{{ order.packed_count }}/{{ order.line_count }} {% trans "packed" %}</span>
                                 {% endwith %}
                             </td>
                             <td>{% status_badge order.status %}</td>
@@ -72,19 +72,19 @@
             </div>
             {% else %}
                 {% url 'create_order' as new_order_url %}
-                {% include 'partials/empty.html' with icon='orders' title='No active orders' text='Everything pending has been delivered. New orders will show up here.' action_url=new_order_url action_label='Create order' %}
+                {% include 'partials/empty.html' with icon='orders' title=_("No active orders") text=_("Everything pending has been delivered. New orders will show up here.") action_url=new_order_url action_label=_("Create order") %}
             {% endif %}
         </section>
 
         <section class="card">
             <div class="card-header">
-                <div class="card-title">{% icon "receipt" %}Recent invoices</div>
-                <a href="{% url 'finance:dashboard' %}" class="btn btn-ghost btn-sm">All invoices{% icon "arrow-right" %}</a>
+                <div class="card-title">{% icon "receipt" %}{% trans "Recent invoices" %}</div>
+                <a href="{% url 'finance:dashboard' %}" class="btn btn-ghost btn-sm">{% trans "All invoices" %}{% icon "arrow-right" %}</a>
             </div>
             {% if recent_invoices %}
             <div class="table-wrap">
                 <table class="table">
-                    <thead><tr><th>Invoice</th><th>Client</th><th>Due</th><th>Status</th><th class="num">Amount</th></tr></thead>
+                    <thead><tr><th>{% trans "Invoice" %}</th><th>{% trans "Client" %}</th><th>{% trans "Due" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Amount" %}</th></tr></thead>
                     <tbody>
                     {% for inv in recent_invoices %}
                         <tr data-href="{% url 'finance:invoice_detail' inv.id %}" class="row-link">
@@ -100,7 +100,7 @@
             </div>
             {% else %}
                 {% url 'finance:create_invoice' as new_inv_url %}
-                {% include 'partials/empty.html' with icon='receipt' title='No invoices yet' text='Convert a delivered order or create an invoice directly.' action_url=new_inv_url action_label='New invoice' %}
+                {% include 'partials/empty.html' with icon='receipt' title=_("No invoices yet") text=_("Convert a delivered order or create an invoice directly.") action_url=new_inv_url action_label=_("New invoice") %}
             {% endif %}
         </section>
     </div>
@@ -108,8 +108,8 @@
     <div class="stack">
         <section class="card">
             <div class="card-header">
-                <div class="card-title">{% icon "alert" %}Needs reordering</div>
-                <a href="{% url 'inventory_list' %}?filter=LOW_STOCK" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a>
+                <div class="card-title">{% icon "alert" %}{% trans "Needs reordering" %}</div>
+                <a href="{% url 'inventory_list' %}?filter=LOW_STOCK" class="btn btn-ghost btn-sm">{% trans "All" %}{% icon "arrow-right" %}</a>
             </div>
             {% if low_stock_items %}
             <div class="table-wrap">
@@ -118,22 +118,22 @@
                     {% for item in low_stock_items %}
                         <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
                             <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a><span class="secondary">{{ item.part_code|default:item.get_category_display }}</span></td>
-                            <td class="num"><span class="badge {% if item.quantity == 0 %}badge-danger{% else %}badge-warning{% endif %}">{{ item.quantity }} left</span></td>
+                            <td class="num"><span class="badge {% if item.quantity == 0 %}badge-danger{% else %}badge-warning{% endif %}">{{ item.quantity }} {% trans "left" %}</span></td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer"><a href="{% url 'po_list' %}#new-po" class="btn btn-sm">{% icon "cart" %}Start a purchase order</a></div>
+            <div class="card-footer"><a href="{% url 'po_list' %}#new-po" class="btn btn-sm">{% icon "cart" %}{% trans "Start a purchase order" %}</a></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='check' title='Stock levels are healthy' text='No part is at or below its reorder level.' %}
+                {% include 'partials/empty.html' with icon='check' title=_("Stock levels are healthy") text=_("No part is at or below its reorder level.") %}
             {% endif %}
         </section>
 
         <section class="card">
             <div class="card-header">
-                <div class="card-title">{% icon "cart" %}Open purchase orders</div>
-                <a href="{% url 'po_list' %}?status=OPEN" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a>
+                <div class="card-title">{% icon "cart" %}{% trans "Open purchase orders" %}</div>
+                <a href="{% url 'po_list' %}?status=OPEN" class="btn btn-ghost btn-sm">{% trans "All" %}{% icon "arrow-right" %}</a>
             </div>
             {% if open_pos %}
             <div class="table-wrap">
@@ -149,7 +149,7 @@
                 </table>
             </div>
             {% else %}
-                {% include 'partials/empty.html' with icon='cart' title='Nothing on order' text='Purchase orders waiting for delivery appear here.' %}
+                {% include 'partials/empty.html' with icon='cart' title=_("Nothing on order") text=_("Purchase orders waiting for delivery appear here.") %}
             {% endif %}
         </section>
     </div>

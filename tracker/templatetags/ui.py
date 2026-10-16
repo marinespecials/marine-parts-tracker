@@ -3,20 +3,21 @@ from decimal import Decimal, InvalidOperation
 
 from django import template
 from django.utils.html import format_html
+from django.utils.translation import get_language, gettext_lazy as _
 
 register = template.Library()
 
 STATUS_LABELS = {
-    'DRAFT': 'Draft',
-    'PENDING': 'Pending',
-    'PROCESSING': 'Processing',
-    'DELIVERED': 'Delivered',
-    'UNPAID': 'Unpaid',
-    'OVERDUE': 'Overdue',
-    'PAID': 'Paid',
-    'VOID': 'Void',
-    'RECEIVED': 'Received',
-    'SENT': 'Sent',
+    'DRAFT': _('Draft'),
+    'PENDING': _('Pending'),
+    'PROCESSING': _('Processing'),
+    'DELIVERED': _('Delivered'),
+    'UNPAID': _('Unpaid'),
+    'OVERDUE': _('Overdue'),
+    'PAID': _('Paid'),
+    'VOID': _('Void'),
+    'RECEIVED': _('Received'),
+    'SENT': _('Sent'),
 }
 
 
@@ -41,12 +42,15 @@ def status_badge(code):
 
 @register.filter
 def money(value):
-    """1234.5 -> '1,234.50 €'. Empty or bad values show as 0.00 € instead of a blank."""
+    """1234.5 -> '1.234,50 €' in Greek, '1,234.50 €' in English. Empty or bad values show as 0,00 €."""
     try:
         number = Decimal(str(value if value not in (None, '') else 0))
     except (InvalidOperation, ValueError):
         number = Decimal('0')
-    return f'{number:,.2f} €'
+    text = f'{number:,.2f}'
+    if (get_language() or '').startswith('el'):
+        text = text.replace(',', ' ').replace('.', ',').replace(' ', '.')
+    return f'{text} €'
 
 
 @register.filter

@@ -1,25 +1,25 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Purchase orders{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Purchase orders" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Purchase orders</h1>
-        <p class="lede">Parts you've ordered from suppliers. Receiving a PO adds its parts to warehouse stock.</p>
+        <h1>{% trans "Purchase orders" %}</h1>
+        <p class="lede">{% trans "Parts you've ordered from suppliers. Receiving a PO adds its parts to warehouse stock." %}</p>
     </div>
-    <div class="actions"><a href="#new-po" class="btn btn-primary">{% icon "plus" %}New purchase order</a></div>
+    <div class="actions"><a href="#new-po" class="btn btn-primary">{% icon "plus" %}{% trans "New purchase order" %}</a></div>
 </div>
 
 <div class="card">
     <nav class="tabs">
-        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">All <span class="count">{{ counts.ALL }}</span></a>
-        <a href="?status=OPEN" class="tab {% if status_filter == 'OPEN' %}active{% endif %}">{% icon "clock" "icon-sm" %}Open <span class="count">{{ counts.OPEN }}</span></a>
-        <a href="?status=RECEIVED" class="tab {% if status_filter == 'RECEIVED' %}active{% endif %}">{% icon "inbox" "icon-sm" %}Received <span class="count">{{ counts.RECEIVED }}</span></a>
+        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">{% trans "All" %} <span class="count">{{ counts.ALL }}</span></a>
+        <a href="?status=OPEN" class="tab {% if status_filter == 'OPEN' %}active{% endif %}">{% icon "clock" "icon-sm" %}{% trans "Open" %} <span class="count">{{ counts.OPEN }}</span></a>
+        <a href="?status=RECEIVED" class="tab {% if status_filter == 'RECEIVED' %}active{% endif %}">{% icon "inbox" "icon-sm" %}{% trans "Received" %} <span class="count">{{ counts.RECEIVED }}</span></a>
     </nav>
     {% if pos %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>PO</th><th>Supplier</th><th>Date</th><th>Status</th><th class="num">Lines</th><th class="num">Total</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "PO" %}</th><th>{% trans "Supplier" %}</th><th>{% trans "Date" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Lines" %}</th><th class="num">{% trans "Total" %}</th><th></th></tr></thead>
             <tbody>
             {% for po in pos %}
                 <tr data-href="{% url 'po_detail' po.id %}" class="row-link">
@@ -29,35 +29,35 @@
                     <td>{% status_badge po.status %}</td>
                     <td class="num">{{ po.line_count }}</td>
                     <td class="num">{{ po.total_amount|money }}</td>
-                    <td class="actions"><a href="{% url 'po_detail' po.id %}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a></td>
+                    <td class="actions"><a href="{% url 'po_detail' po.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Open" %}">{% icon "chevron-right" %}</a></td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
     {% else %}
-        {% include 'partials/empty.html' with icon='cart' title='No purchase orders here' text='Create one below to order parts from a supplier.' %}
+        {% include 'partials/empty.html' with icon='cart' title=_("No purchase orders here") text=_("Create one below to order parts from a supplier.") %}
     {% endif %}
 </div>
 
 <form method="POST" class="card" id="new-po">
     {% csrf_token %}
-    <div class="card-header"><div class="card-title">{% icon "plus" %}New purchase order</div></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "New purchase order" %}</div></div>
     <div class="card-body">
         {% if suppliers %}
         <div class="form-row">
             <div class="field grow">
-                <label for="supplier_id">Supplier *</label>
+                <label for="supplier_id">{% trans "Supplier *" %}</label>
                 <select id="supplier_id" name="supplier_id" required>
-                    <option value="">Choose a supplier…</option>
+                    <option value="">{% trans "Choose a supplier…" %}</option>
                     {% for s in suppliers %}<option value="{{ s.id }}" {% if preset_supplier == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="field grow"><label for="po_number">PO number</label><input type="text" id="po_number" name="po_number" placeholder="Auto: PO-1234"></div>
-            <button type="submit" class="btn btn-primary">Create &amp; add parts{% icon "arrow-right" %}</button>
+            <div class="field grow"><label for="po_number">{% trans "PO number" %}</label><input type="text" id="po_number" name="po_number" placeholder="{% trans "Auto: PO-1234" %}"></div>
+            <button type="submit" class="btn btn-primary">{% trans "Create &amp; add parts" %}{% icon "arrow-right" %}</button>
         </div>
         {% else %}
-        <div class="callout">{% icon "info" %}<div>Add a supplier first. <a href="{% url 'supplier_list' %}#new-supplier">Add supplier →</a></div></div>
+        <div class="callout">{% icon "info" %}<div>{% trans "Add a supplier first." %} <a href="{% url 'supplier_list' %}#new-supplier">{% trans "Add supplier →" %}</a></div></div>
         {% endif %}
     </div>
 </form>

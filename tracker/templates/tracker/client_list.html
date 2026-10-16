@@ -1,26 +1,26 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Clients{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Clients" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Clients &amp; vessels</h1>
-        <p class="lede">Open a client to see their orders, invoices, balance and what they buy.</p>
+        <h1>{% trans "Clients &amp; vessels" %}</h1>
+        <p class="lede">{% trans "Open a client to see their orders, invoices, balance and what they buy." %}</p>
     </div>
-    <div class="actions"><a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}New order</a></div>
+    <div class="actions"><a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}{% trans "New order" %}</a></div>
 </div>
 
 <div class="card">
     <form method="GET" class="toolbar">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Client or vessel name…" aria-label="Search clients"></div>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ clients|length }} client{{ clients|length|pluralize }}</span>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Client or vessel name…" %}" aria-label="{% trans "Search clients" %}"></div>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query %}<a href="?" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ clients|length }} {% if clients|length == 1 %}{% trans "client" %}{% else %}{% trans "clients" %}{% endif %}</span>
     </form>
     {% if clients %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Client</th><th class="num">Orders</th><th class="num">Invoices</th><th class="num">Paid</th><th class="num">Outstanding</th><th>Last activity</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Client" %}</th><th class="num">{% trans "Orders" %}</th><th class="num">{% trans "Invoices" %}</th><th class="num">{% trans "Paid" %}</th><th class="num">{% trans "Outstanding" %}</th><th>{% trans "Last activity" %}</th><th></th></tr></thead>
             <tbody>
             {% for client in clients %}
                 <tr data-href="{% url 'finance:client_ledger' client.id %}" class="row-link">
@@ -35,14 +35,14 @@
                     <td class="num">{{ client.paid_total|money }}</td>
                     <td class="num">{% if client.open_total %}<strong style="color:var(--warning)">{{ client.open_total|money }}</strong>{% else %}<span class="subtle">—</span>{% endif %}</td>
                     <td class="nowrap muted">{{ client.last_activity|date:"d M Y"|default:"—" }}</td>
-                    <td class="actions"><a href="{% url 'finance:client_ledger' client.id %}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a></td>
+                    <td class="actions"><a href="{% url 'finance:client_ledger' client.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Open" %}">{% icon "chevron-right" %}</a></td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
     {% else %}
-        {% include 'partials/empty.html' with icon='users' title='No clients found' text='Clients are created automatically when you make an order or invoice for a new name.' %}
+        {% include 'partials/empty.html' with icon='users' title=_("No clients found") text=_("Clients are created automatically when you make an order or invoice for a new name.") %}
     {% endif %}
 </div>
 {% endblock %}

@@ -1,42 +1,42 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Invoices{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Invoices" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Invoices</h1>
-        <p class="lede">Billing records, payment status and Drive PDFs. Delivered orders can be converted into invoices.</p>
+        <h1>{% trans "Invoices" %}</h1>
+        <p class="lede">{% trans "Billing records, payment status and Drive PDFs. Delivered orders can be converted into invoices." %}</p>
     </div>
     <div class="actions">
-        <a href="{% url 'finance:export_finances' %}" class="btn">{% icon "download" %}Export CSV</a>
-        <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">{% icon "plus" %}New invoice</a>
+        <a href="{% url 'finance:export_finances' %}" class="btn">{% icon "download" %}{% trans "Export CSV" %}</a>
+        <a href="{% url 'finance:create_invoice' %}" class="btn btn-primary">{% icon "plus" %}{% trans "New invoice" %}</a>
     </div>
 </div>
 
 <div class="stats">
-    <a class="stat tone-success" href="?status=PAID"><div class="stat-label">{% icon "check" %}Paid</div><div class="stat-value">{{ totals.paid|money }}</div><div class="stat-meta">{{ totals.n_paid }} invoice{{ totals.n_paid|pluralize }}</div></a>
-    <a class="stat" href="?status=UNPAID"><div class="stat-label">{% icon "clock" %}Awaiting payment</div><div class="stat-value">{{ totals.unpaid|money }}</div><div class="stat-meta">{{ totals.n_unpaid }} unpaid{% if totals.n_past_due %} · <span style="color:var(--danger)">{{ totals.n_past_due }} past due date</span>{% endif %}</div></a>
-    <a class="stat {% if totals.n_overdue %}tone-danger{% endif %}" href="?status=OVERDUE"><div class="stat-label">{% icon "alert" %}Overdue</div><div class="stat-value">{{ totals.overdue|money }}</div><div class="stat-meta">{{ totals.n_overdue }} invoice{{ totals.n_overdue|pluralize }}</div></a>
+    <a class="stat tone-success" href="?status=PAID"><div class="stat-label">{% icon "check" %}{% trans "Paid" %}</div><div class="stat-value">{{ totals.paid|money }}</div><div class="stat-meta">{{ totals.n_paid }} {% if totals.n_paid == 1 %}{% trans "invoice" %}{% else %}{% trans "invoices" %}{% endif %}</div></a>
+    <a class="stat" href="?status=UNPAID"><div class="stat-label">{% icon "clock" %}{% trans "Awaiting payment" %}</div><div class="stat-value">{{ totals.unpaid|money }}</div><div class="stat-meta">{{ totals.n_unpaid }} {% trans "unpaid" %}{% if totals.n_past_due %} · <span style="color:var(--danger)">{{ totals.n_past_due }} {% trans "past due date" %}</span>{% endif %}</div></a>
+    <a class="stat {% if totals.n_overdue %}tone-danger{% endif %}" href="?status=OVERDUE"><div class="stat-label">{% icon "alert" %}{% trans "Overdue" %}</div><div class="stat-value">{{ totals.overdue|money }}</div><div class="stat-meta">{{ totals.n_overdue }} {% if totals.n_overdue == 1 %}{% trans "invoice" %}{% else %}{% trans "invoices" %}{% endif %}</div></a>
 </div>
 
 <div class="card">
     <nav class="tabs">
-        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">All <span class="count">{{ totals.n_all }}</span></a>
-        <a href="?status=UNPAID" class="tab {% if status_filter == 'UNPAID' %}active{% endif %}">Unpaid <span class="count">{{ totals.n_unpaid }}</span></a>
-        <a href="?status=OVERDUE" class="tab {% if status_filter == 'OVERDUE' %}active{% endif %}">Overdue <span class="count">{{ totals.n_overdue }}</span></a>
-        <a href="?status=PAID" class="tab {% if status_filter == 'PAID' %}active{% endif %}">Paid <span class="count">{{ totals.n_paid }}</span></a>
+        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">{% trans "All" %} <span class="count">{{ totals.n_all }}</span></a>
+        <a href="?status=UNPAID" class="tab {% if status_filter == 'UNPAID' %}active{% endif %}">{% trans "Unpaid" %} <span class="count">{{ totals.n_unpaid }}</span></a>
+        <a href="?status=OVERDUE" class="tab {% if status_filter == 'OVERDUE' %}active{% endif %}">{% trans "Overdue" %} <span class="count">{{ totals.n_overdue }}</span></a>
+        <a href="?status=PAID" class="tab {% if status_filter == 'PAID' %}active{% endif %}">{% trans "Paid" %} <span class="count">{{ totals.n_paid }}</span></a>
     </nav>
     <form method="GET" class="toolbar">
         <input type="hidden" name="status" value="{{ status_filter }}">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Invoice number or client…" aria-label="Search invoices"></div>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query %}<a href="?status={{ status_filter }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ listing_count }} invoice{{ listing_count|pluralize }} · <strong>{{ shown_total|money }}</strong>{% if listing_count > 100 %} · newest 100 shown{% endif %}</span>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Invoice number or client…" %}" aria-label="{% trans "Search invoices" %}"></div>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query %}<a href="?status={{ status_filter }}" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ listing_count }} {% if listing_count == 1 %}{% trans "invoice" %}{% else %}{% trans "invoices" %}{% endif %} · <strong>{{ shown_total|money }}</strong>{% if listing_count > 100 %} {% trans "· newest 100 shown" %}{% endif %}</span>
     </form>
     {% if invoices %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Invoice</th><th>Client</th><th>Issued</th><th>Due</th><th>Status</th><th class="num">Amount</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Invoice" %}</th><th>{% trans "Client" %}</th><th>{% trans "Issued" %}</th><th>{% trans "Due" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Amount" %}</th><th></th></tr></thead>
             <tbody>
             {% for inv in invoices %}
                 <tr data-href="{% url 'finance:invoice_detail' inv.id %}" class="row-link">
@@ -45,13 +45,13 @@
                     <td class="nowrap">{{ inv.issue_date|date:"d M Y" }}</td>
                     <td class="nowrap">
                         {{ inv.due_date|date:"d M Y"|default:"—" }}
-                        {% if inv.status == 'UNPAID' and inv.due_date and inv.due_date < today %}<span class="secondary" style="color:var(--danger)">Past due</span>{% endif %}
+                        {% if inv.status == 'UNPAID' and inv.due_date and inv.due_date < today %}<span class="secondary" style="color:var(--danger)">{% trans "Past due" %}</span>{% endif %}
                     </td>
                     <td>{% status_badge inv.status %}</td>
                     <td class="num">{{ inv.total_amount|money }}</td>
                     <td class="actions">
-                        {% if inv.google_drive_url %}<a href="{{ inv.google_drive_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-icon btn-sm" title="PDF in Google Drive">{% icon "folder" %}</a>{% endif %}
-                        <a href="{% url 'finance:invoice_detail' inv.id %}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a>
+                        {% if inv.google_drive_url %}<a href="{{ inv.google_drive_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-icon btn-sm" title="{% trans "PDF in Google Drive" %}">{% icon "folder" %}</a>{% endif %}
+                        <a href="{% url 'finance:invoice_detail' inv.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Open" %}">{% icon "chevron-right" %}</a>
                     </td>
                 </tr>
             {% endfor %}
@@ -61,9 +61,9 @@
     {% else %}
         {% url 'finance:create_invoice' as new_inv_url %}
         {% if query %}
-            {% include 'partials/empty.html' with icon='search' title='No matching invoices' text='Try another number or client name.' %}
+            {% include 'partials/empty.html' with icon='search' title=_("No matching invoices") text=_("Try another number or client name.") %}
         {% else %}
-            {% include 'partials/empty.html' with icon='receipt' title='No invoices here' text='Create an invoice, or convert a delivered order from its page.' action_url=new_inv_url action_label='New invoice' %}
+            {% include 'partials/empty.html' with icon='receipt' title=_("No invoices here") text=_("Create an invoice, or convert a delivered order from its page.") action_url=new_inv_url action_label=_("New invoice") %}
         {% endif %}
     {% endif %}
 </div>

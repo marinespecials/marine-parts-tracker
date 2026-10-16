@@ -1,35 +1,35 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Client catalog{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Client catalog" %}{% endblock %}
 
 {% block content %}
 <div class="print-only" style="margin-bottom:18px">
     <h1 style="font-size:24px">MARINE SPECIALS</h1>
-    <p>Piraeus, Greece · Spare parts &amp; equipment catalog · {{ today|date:"d M Y" }}</p>
+    <p>{% trans "Piraeus, Greece · Spare parts &amp; equipment catalog ·" %} {{ today|date:"d M Y" }}</p>
 </div>
 
 <div class="page-header no-print">
     <div>
-        <h1>Client catalog</h1>
-        <p class="lede">A clean, printable parts list to share with clients. Prices shown are the warehouse unit prices.</p>
+        <h1>{% trans "Client catalog" %}</h1>
+        <p class="lede">{% trans "A clean, printable parts list to share with clients. Prices shown are the warehouse unit prices." %}</p>
     </div>
-    <div class="actions"><button type="button" class="btn" onclick="window.print()">{% icon "printer" %}Print / save PDF</button></div>
+    <div class="actions"><button type="button" class="btn" onclick="window.print()">{% icon "printer" %}{% trans "Print / save PDF" %}</button></div>
 </div>
 
 <div class="card">
     <form method="GET" class="toolbar no-print">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Search parts…" aria-label="Search catalog"></div>
-        <select name="category" data-autosubmit aria-label="Category">
-            <option value="ALL">All categories</option>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Search parts…" %}" aria-label="{% trans "Search catalog" %}"></div>
+        <select name="category" data-autosubmit aria-label="{% trans "Category" %}">
+            <option value="ALL">{% trans "All categories" %}</option>
             {% for code, label, n in categories %}<option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }} ({{ n }})</option>{% endfor %}
         </select>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query or category_filter != 'ALL' %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ items|length }} part{{ items|length|pluralize }}</span>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query or category_filter != 'ALL' %}<a href="?" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ items|length }} {% if items|length == 1 %}{% trans "part" %}{% else %}{% trans "parts" %}{% endif %}</span>
     </form>
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Part</th><th>Part number</th><th>Category</th><th>Availability</th><th class="num">Unit price</th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Part number" %}</th><th>{% trans "Category" %}</th><th>{% trans "Availability" %}</th><th class="num">{% trans "Unit price" %}</th></tr></thead>
             <tbody>
             {% regroup items by get_category_display as groups %}
             {% for group in groups %}
@@ -39,7 +39,7 @@
                     <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a></td>
                     <td class="mono">{{ item.part_code|default:"—" }}</td>
                     <td class="muted">{{ item.get_category_display }}</td>
-                    <td>{% if item.quantity > 0 %}<span class="badge badge-success">In stock</span>{% else %}<span class="badge badge-neutral">On request</span>{% endif %}</td>
+                    <td>{% if item.quantity > 0 %}<span class="badge badge-success">{% trans "In stock" %}</span>{% else %}<span class="badge badge-neutral">{% trans "On request" %}</span>{% endif %}</td>
                     <td class="num"><strong>{{ item.unit_cost|money }}</strong></td>
                 </tr>
                 {% endfor %}
@@ -49,7 +49,7 @@
     </div>
     {% else %}
         {% url 'inventory_list' as wh_url %}
-        {% include 'partials/empty.html' with icon='tag' title='No parts to show' text='Parts added to the warehouse appear here automatically.' action_url=wh_url action_label='Go to warehouse' %}
+        {% include 'partials/empty.html' with icon='tag' title=_("No parts to show") text=_("Parts added to the warehouse appear here automatically.") action_url=wh_url action_label=_("Go to warehouse") %}
     {% endif %}
 </div>
 {% endblock %}

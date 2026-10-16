@@ -1,47 +1,47 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Analytics{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Analytics" %}{% endblock %}
 {% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Analytics &amp; parts research</h1>
-        <p class="lede">What sells, who buys, where the stock value sits — plus a quick parts lookup.</p>
+        <h1>{% trans "Analytics &amp; parts research" %}</h1>
+        <p class="lede">{% trans "What sells, who buys, where the stock value sits — plus a quick parts lookup." %}</p>
     </div>
 </div>
 
 <div class="stats">
-    <a class="stat" href="{% url 'inventory_list' %}"><div class="stat-label">{% icon "box" %}Parts</div><div class="stat-value">{{ total_catalog_items }}</div></a>
-    <a class="stat" href="{% url 'client_list' %}"><div class="stat-label">{% icon "users" %}Clients</div><div class="stat-value">{{ total_clients }}</div></a>
-    <a class="stat" href="{% url 'supplier_list' %}"><div class="stat-label">{% icon "building" %}Suppliers</div><div class="stat-value">{{ total_suppliers }}</div></a>
-    <a class="stat" href="{% url 'orders_dashboard' %}?status=ALL"><div class="stat-label">{% icon "orders" %}Orders &amp; invoices</div><div class="stat-value">{{ total_orders_logged }}</div></a>
+    <a class="stat" href="{% url 'inventory_list' %}"><div class="stat-label">{% icon "box" %}{% trans "Parts" %}</div><div class="stat-value">{{ total_catalog_items }}</div></a>
+    <a class="stat" href="{% url 'client_list' %}"><div class="stat-label">{% icon "users" %}{% trans "Clients" %}</div><div class="stat-value">{{ total_clients }}</div></a>
+    <a class="stat" href="{% url 'supplier_list' %}"><div class="stat-label">{% icon "building" %}{% trans "Suppliers" %}</div><div class="stat-value">{{ total_suppliers }}</div></a>
+    <a class="stat" href="{% url 'orders_dashboard' %}?status=ALL"><div class="stat-label">{% icon "orders" %}{% trans "Orders &amp; invoices" %}</div><div class="stat-value">{{ total_orders_logged }}</div></a>
 </div>
 
 <div class="grid grid-3 mb-20">
     <section class="card">
-        <div class="card-header"><div class="card-title">Most ordered parts</div><span class="card-sub">units</span></div>
-        <div class="card-body">{% if chart_data.parts.values %}<div class="chart-box"><canvas id="partsChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='chart' title='No sales yet' text='Link order lines to warehouse parts to see this.' %}{% endif %}</div>
+        <div class="card-header"><div class="card-title">{% trans "Most ordered parts" %}</div><span class="card-sub">{% trans "units" %}</span></div>
+        <div class="card-body">{% if chart_data.parts.values %}<div class="chart-box"><canvas id="partsChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='chart' title=_("No sales yet") text=_("Link order lines to warehouse parts to see this.") %}{% endif %}</div>
     </section>
     <section class="card">
-        <div class="card-header"><div class="card-title">Top clients</div><span class="card-sub">revenue €</span></div>
-        <div class="card-body">{% if chart_data.clients.values %}<div class="chart-box"><canvas id="clientsChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='users' title='No revenue yet' %}{% endif %}</div>
+        <div class="card-header"><div class="card-title">{% trans "Top clients" %}</div><span class="card-sub">{% trans "revenue €" %}</span></div>
+        <div class="card-body">{% if chart_data.clients.values %}<div class="chart-box"><canvas id="clientsChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='users' title=_("No revenue yet") %}{% endif %}</div>
     </section>
     <section class="card">
-        <div class="card-header"><div class="card-title">Stock value by category</div><span class="card-sub">€</span></div>
-        <div class="card-body">{% if chart_data.categories.values %}<div class="chart-box"><canvas id="categoryChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='box' title='No stock yet' %}{% endif %}</div>
+        <div class="card-header"><div class="card-title">{% trans "Stock value by category" %}</div><span class="card-sub">€</span></div>
+        <div class="card-body">{% if chart_data.categories.values %}<div class="chart-box"><canvas id="categoryChart"></canvas></div>{% else %}{% include 'partials/empty.html' with icon='box' title=_("No stock yet") %}{% endif %}</div>
     </section>
 </div>
 
 <div class="grid grid-main-side">
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "search" %}Parts lookup</div><span class="card-sub">{{ parts_total }} result{{ parts_total|pluralize }}{% if parts_total > 100 %} · first 100 shown{% endif %}</span></div>
+        <div class="card-header"><div class="card-title">{% icon "search" %}{% trans "Parts lookup" %}</div><span class="card-sub">{{ parts_total }} {% if parts_total == 1 %}{% trans "result" %}{% else %}{% trans "results" %}{% endif %}{% if parts_total > 100 %} {% trans "· first 100 shown" %}{% endif %}</span></div>
         <form method="GET" class="toolbar">
-            <div class="search-box" style="max-width:none;flex:1">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Name, OEM code or category…" aria-label="Search parts"></div>
-            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+            <div class="search-box" style="max-width:none;flex:1">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Name, OEM code or category…" %}" aria-label="{% trans "Search parts" %}"></div>
+            <button type="submit" class="btn btn-sm btn-primary">{% trans "Search" %}</button>
         </form>
         {% if parts %}
         <div class="table-wrap"><table class="table">
-            <thead><tr><th>Part</th><th>Category</th><th>Location</th><th class="num">Stock</th><th class="num">Unit cost</th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Category" %}</th><th>{% trans "Location" %}</th><th class="num">{% trans "Stock" %}</th><th class="num">{% trans "Unit cost" %}</th></tr></thead>
             <tbody>{% for part in parts %}
                 <tr data-href="{% url 'part_detail' part.id %}" class="row-link">
                     <td><a class="entity" href="{% url 'part_detail' part.id %}">{{ part.part_name }}</a>{% if part.part_code %}<span class="secondary mono">{{ part.part_code }}</span>{% endif %}</td>
@@ -50,15 +50,15 @@
                 </tr>{% endfor %}</tbody>
         </table></div>
         {% else %}
-            {% include 'partials/empty.html' with icon='search' title='No parts match' text='Try another name or code.' %}
+            {% include 'partials/empty.html' with icon='search' title=_("No parts match") text=_("Try another name or code.") %}
         {% endif %}
     </section>
 
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "note" %}Notes</div><span class="card-sub" data-notes-status="research">Saved on this device</span></div>
+        <div class="card-header"><div class="card-title">{% icon "note" %}{% trans "Notes" %}</div><span class="card-sub" data-notes-status="research">{% trans "Saved on this device" %}</span></div>
         <div class="card-body">
-            <textarea data-local-notes="research" rows="14" placeholder="Supplier quotes, vessel specs, OEM cross-references…"></textarea>
-            <p class="subtle" style="font-size:12.5px;margin-top:8px">Notes are kept in this browser only. For notes about a client, use the client's page.</p>
+            <textarea data-local-notes="research" rows="14" placeholder="{% trans "Supplier quotes, vessel specs, OEM cross-references…" %}"></textarea>
+            <p class="subtle" style="font-size:12.5px;margin-top:8px">{% trans "Notes are kept in this browser only. For notes about a client, use the client's page." %}</p>
         </div>
     </section>
 </div>

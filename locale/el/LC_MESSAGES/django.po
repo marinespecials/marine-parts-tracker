@@ -1,0 +1,1684 @@
+# Greek translations for Marine Specials.
+# Edit a msgstr, then run: py compile_translations.py
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: el\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Drive links"
+msgstr "Σύνδεσμοι Drive"
+
+msgid "Attach Google Drive PDFs"
+msgstr "Σύνδεση PDF από Google Drive"
+
+msgid "Paste many Drive links at once and they're attached to the matching invoices and orders."
+msgstr "Επικολλήστε πολλούς συνδέσμους Drive μαζί και συνδέονται αυτόματα με τα αντίστοιχα τιμολόγια και παραγγελίες."
+
+msgid "Open Drive folder"
+msgstr "Άνοιγμα φακέλου Drive"
+
+msgid "Results"
+msgstr "Αποτελέσματα"
+
+msgid "Outcome"
+msgstr "Έκβαση"
+
+msgid "Document"
+msgstr "Παραστατικό"
+
+msgid "Note"
+msgstr "Σημείωση"
+
+msgid "Line"
+msgstr "Γραμμή"
+
+msgid "Attached"
+msgstr "Συνδέθηκε"
+
+msgid "Kept"
+msgstr "Διατηρήθηκε"
+
+msgid "No match"
+msgstr "Χωρίς αντιστοίχιση"
+
+msgid "Skipped"
+msgstr "Παραλείφθηκε"
+
+msgid "Paste links"
+msgstr "Επικόλληση συνδέσμων"
+
+msgid "One link per line, with the invoice or order number on the same line, for example:"
+msgstr "Ένας σύνδεσμος ανά γραμμή, με τον αριθμό τιμολογίου ή παραγγελίας στην ίδια γραμμή, για παράδειγμα:"
+
+msgid "Copying the file name from Drive (e.g."
+msgstr "Λειτουργεί και η αντιγραφή του ονόματος αρχείου από το Drive (π.χ."
+
+msgid ") together with its share link works too."
+msgstr ") μαζί με τον σύνδεσμο κοινοποίησης."
+
+msgid "Links"
+msgstr "Σύνδεσμοι"
+
+msgid "Replace links that are already attached"
+msgstr "Αντικατάσταση συνδέσμων που υπάρχουν ήδη"
+
+msgid "Attach links"
+msgstr "Σύνδεση συνδέσμων"
+
+msgid "Missing a PDF"
+msgstr "Χωρίς PDF"
+
+msgid "newest 12"
+msgstr "τα 12 πιο πρόσφατα"
+
+msgid "Everything has a PDF"
+msgstr "Όλα έχουν PDF"
+
+msgid "Clients"
+msgstr "Πελάτες"
+
+msgid "Client / vessel"
+msgstr "Πελάτης / σκάφος"
+
+msgid "Client since"
+msgstr "Πελάτης από"
+
+msgid "Last activity"
+msgstr "Τελευταία κίνηση"
+
+msgid "Net"
+msgstr "Πίστωση"
+
+msgid "days"
+msgstr "ημέρες"
+
+msgid "Rating"
+msgstr "Αξιολόγηση"
+
+msgid "New order"
+msgstr "Νέα παραγγελία"
+
+msgid "New invoice"
+msgstr "Νέο τιμολόγιο"
+
+msgid "Lifetime paid"
+msgstr "Σύνολο εξοφλήσεων"
+
+msgid "Outstanding"
+msgstr "Ανεξόφλητα"
+
+msgid "overdue"
+msgstr "ληξιπρόθεσμα"
+
+msgid "Orders"
+msgstr "Παραγγελίες"
+
+msgid "Invoices"
+msgstr "Τιμολόγια"
+
+msgid "Invoice"
+msgstr "Τιμολόγιο"
+
+msgid "Issued"
+msgstr "Έκδοση"
+
+msgid "Due"
+msgstr "Λήξη"
+
+msgid "Status"
+msgstr "Κατάσταση"
+
+msgid "Amount"
+msgstr "Ποσό"
+
+msgid "PDF in Drive"
+msgstr "PDF στο Drive"
+
+msgid "Order"
+msgstr "Παραγγελία"
+
+msgid "Date"
+msgstr "Ημερομηνία"
+
+msgid "Value"
+msgstr "Αξία"
+
+msgid "What they buy"
+msgstr "Τι αγοράζει"
+
+msgid "Part / item"
+msgstr "Ανταλλακτικό / είδος"
+
+msgid "Qty"
+msgstr "Ποσ."
+
+msgid "Lines"
+msgstr "Γραμμές"
+
+msgid "Avg price"
+msgstr "Μέση τιμή"
+
+msgid "Account settings"
+msgstr "Ρυθμίσεις λογαριασμού"
+
+msgid "Internal rating"
+msgstr "Εσωτερική αξιολόγηση"
+
+msgid "Payment terms (days)"
+msgstr "Όροι πληρωμής (ημέρες)"
+
+msgid "Notes"
+msgstr "Σημειώσεις"
+
+msgid "Discounts agreed, contacts, vessel details…"
+msgstr "Συμφωνημένες εκπτώσεις, επαφές, στοιχεία σκάφους…"
+
+msgid "Save"
+msgstr "Αποθήκευση"
+
+msgid "By year"
+msgstr "Ανά έτος"
+
+msgid "Year"
+msgstr "Έτος"
+
+msgid "Billed"
+msgstr "Τιμολογήθηκαν"
+
+msgid "Paid"
+msgstr "Εξοφλημένο"
+
+msgid "Logged prices"
+msgstr "Καταγεγραμμένες τιμές"
+
+msgid "All"
+msgstr "Όλα"
+
+msgid "No invoices yet"
+msgstr "Δεν υπάρχουν τιμολόγια ακόμα"
+
+msgid "Invoices for this client will be listed here."
+msgstr "Τα τιμολόγια αυτού του πελάτη θα εμφανίζονται εδώ."
+
+msgid "No orders yet"
+msgstr "Δεν υπάρχουν παραγγελίες ακόμα"
+
+msgid "No parts ordered yet"
+msgstr "Δεν έχουν παραγγελθεί ανταλλακτικά ακόμα"
+
+msgid "No yearly data yet"
+msgstr "Δεν υπάρχουν ετήσια στοιχεία ακόμα"
+
+msgid "No prices logged"
+msgstr "Δεν έχουν καταγραφεί τιμές"
+
+msgid "Price records under this client’s exact name appear here."
+msgstr "Εδώ εμφανίζονται οι τιμές που έχουν καταγραφεί με το ακριβές όνομα αυτού του πελάτη."
+
+msgid "Billing records, payment status and Drive PDFs. Delivered orders can be converted into invoices."
+msgstr "Παραστατικά χρέωσης, κατάσταση πληρωμής και PDF στο Drive. Οι παραδομένες παραγγελίες μετατρέπονται σε τιμολόγια."
+
+msgid "Export CSV"
+msgstr "Εξαγωγή CSV"
+
+msgid "invoice"
+msgstr "τιμολόγιο"
+
+msgid "invoices"
+msgstr "τιμολόγια"
+
+msgid "Awaiting payment"
+msgstr "Αναμονή πληρωμής"
+
+msgid "unpaid"
+msgstr "ανεξόφλητα"
+
+msgid "past due date"
+msgstr "μετά τη λήξη"
+
+msgid "Overdue"
+msgstr "Ληξιπρόθεσμο"
+
+msgid "Unpaid"
+msgstr "Ανεξόφλητο"
+
+msgid "Invoice number or client…"
+msgstr "Αριθμός τιμολογίου ή πελάτης…"
+
+msgid "Search invoices"
+msgstr "Αναζήτηση τιμολογίων"
+
+msgid "Search"
+msgstr "Αναζήτηση"
+
+msgid "Clear"
+msgstr "Καθαρισμός"
+
+msgid "· newest 100 shown"
+msgstr "· εμφανίζονται τα 100 πιο πρόσφατα"
+
+msgid "Client"
+msgstr "Πελάτης"
+
+msgid "Past due"
+msgstr "Έληξε"
+
+msgid "PDF in Google Drive"
+msgstr "PDF στο Google Drive"
+
+msgid "Open"
+msgstr "Άνοιγμα"
+
+msgid "No matching invoices"
+msgstr "Δεν βρέθηκαν τιμολόγια"
+
+msgid "Try another number or client name."
+msgstr "Δοκιμάστε άλλον αριθμό ή όνομα πελάτη."
+
+msgid "No invoices here"
+msgstr "Κανένα τιμολόγιο εδώ"
+
+msgid "Create an invoice, or convert a delivered order from its page."
+msgstr "Δημιουργήστε τιμολόγιο ή μετατρέψτε μια παραδομένη παραγγελία από τη σελίδα της."
+
+msgid "Piraeus, Greece"
+msgstr "Πειραιάς"
+
+msgid "No client"
+msgstr "Χωρίς πελάτη"
+
+msgid "From order"
+msgstr "Από παραγγελία"
+
+msgid "Payment status"
+msgstr "Κατάσταση πληρωμής"
+
+msgid "Print"
+msgstr "Εκτύπωση"
+
+msgid "More"
+msgstr "Περισσότερα"
+
+msgid "Delete invoice"
+msgstr "Διαγραφή τιμολογίου"
+
+msgid "Add a line"
+msgstr "Προσθήκη γραμμής"
+
+msgid "Warehouse part"
+msgstr "Ανταλλακτικό αποθήκης"
+
+msgid "Choose a part…"
+msgstr "Επιλέξτε ανταλλακτικό…"
+
+msgid "…or custom line / service"
+msgstr "…ή ελεύθερη γραμμή / υπηρεσία"
+
+msgid "Description"
+msgstr "Περιγραφή"
+
+msgid "Unit price €"
+msgstr "Τιμή μονάδας €"
+
+msgid "Add"
+msgstr "Προσθήκη"
+
+msgid "Unit price"
+msgstr "Τιμή μονάδας"
+
+msgid "Total"
+msgstr "Σύνολο"
+
+msgid "Remove this line?"
+msgstr "Αφαίρεση αυτής της γραμμής;"
+
+msgid "Remove"
+msgstr "Αφαίρεση"
+
+msgid "Details"
+msgstr "Στοιχεία"
+
+msgid "Due date"
+msgstr "Ημερομηνία λήξης"
+
+msgid "Google Drive PDF"
+msgstr "PDF στο Google Drive"
+
+msgid "Save details"
+msgstr "Αποθήκευση στοιχείων"
+
+msgid "No lines yet"
+msgstr "Δεν υπάρχουν γραμμές ακόμα"
+
+msgid "Add parts or services above — the total updates automatically."
+msgstr "Προσθέστε ανταλλακτικά ή υπηρεσίες παραπάνω — το σύνολο ενημερώνεται αυτόματα."
+
+msgid "Delete %(n)s? This cannot be undone."
+msgstr "Διαγραφή του %(n)s; Η ενέργεια δεν αναιρείται."
+
+msgid "A billing record (τιμολόγιο) with payment status and due date. Invoices don't change warehouse stock. Use an"
+msgstr "Παραστατικό χρέωσης με κατάσταση πληρωμής και ημερομηνία λήξης. Τα τιμολόγια δεν αλλάζουν το απόθεμα. Για αυτό χρησιμοποιήστε"
+
+msgid "order"
+msgstr "παραγγελία"
+
+msgid "for that."
+msgstr "."
+
+msgid "Invoice details"
+msgstr "Στοιχεία τιμολογίου"
+
+msgid "Client / vessel *"
+msgstr "Πελάτης / σκάφος *"
+
+msgid "e.g. Aegean Shipping, M/Y Atlantis"
+msgstr "π.χ. Aegean Shipping, M/Y Atlantis"
+
+msgid "Invoice number"
+msgstr "Αριθμός τιμολογίου"
+
+msgid "Auto: INV-1234"
+msgstr "Αυτόματα: INV-1234"
+
+msgid "Issue date"
+msgstr "Ημερομηνία έκδοσης"
+
+msgid "Defaults to 30 days."
+msgstr "Προεπιλογή: 30 ημέρες."
+
+msgid "Google Drive PDF link"
+msgstr "Σύνδεσμος PDF στο Google Drive"
+
+msgid "First line"
+msgstr "Πρώτη γραμμή"
+
+msgid "optional"
+msgstr "προαιρετικό"
+
+msgid "…or a custom line / service"
+msgstr "…ή ελεύθερη γραμμή / υπηρεσία"
+
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+msgid "Create invoice"
+msgstr "Δημιουργία τιμολογίου"
+
+msgid "Price history"
+msgstr "Ιστορικό τιμών"
+
+msgid "Supplier quotes and client prices over time — compare before you buy or quote."
+msgstr "Προσφορές προμηθευτών και τιμές πελατών στον χρόνο — συγκρίνετε πριν αγοράσετε ή δώσετε προσφορά."
+
+msgid "Log a price"
+msgstr "Καταγραφή τιμής"
+
+msgid "Parts tracked"
+msgstr "Ανταλλακτικά με τιμές"
+
+msgid "Price records"
+msgstr "Εγγραφές τιμών"
+
+msgid "Suppliers &amp; clients"
+msgstr "Προμηθευτές &amp; πελάτες"
+
+msgid "Unit price over time"
+msgstr "Τιμή μονάδας στον χρόνο"
+
+msgid "matching “"
+msgstr "για «"
+
+msgid "most-logged parts"
+msgstr "ανταλλακτικά με τις περισσότερες εγγραφές"
+
+msgid "Part, code, supplier or client…"
+msgstr "Ανταλλακτικό, κωδικός, προμηθευτής ή πελάτης…"
+
+msgid "Search prices"
+msgstr "Αναζήτηση τιμών"
+
+msgid "Part"
+msgstr "Ανταλλακτικό"
+
+msgid "Supplier / client"
+msgstr "Προμηθευτής / πελάτης"
+
+msgid "Delete this price record?"
+msgstr "Διαγραφή αυτής της εγγραφής τιμής;"
+
+msgid "Delete"
+msgstr "Διαγραφή"
+
+msgid "Part name *"
+msgstr "Όνομα ανταλλακτικού *"
+
+msgid "e.g. Oil filter, impeller, gasket"
+msgstr "π.χ. φίλτρο λαδιού, φτερωτή, φλάντζα"
+
+msgid "OEM / part code"
+msgstr "Κωδικός OEM / ανταλλακτικού"
+
+msgid "e.g. 35-802893Q01"
+msgstr "π.χ. 35-802893Q01"
+
+msgid "Supplier or client *"
+msgstr "Προμηθευτής ή πελάτης *"
+
+msgid "e.g. Idealakku, Offgridtec"
+msgstr "π.χ. Idealakku, Offgridtec"
+
+msgid "If it matches a client name, the price also shows on that client's page."
+msgstr "Αν ταιριάζει με όνομα πελάτη, η τιμή εμφανίζεται και στη σελίδα του πελάτη."
+
+msgid "Unit price *"
+msgstr "Τιμή μονάδας *"
+
+msgid "Currency"
+msgstr "Νόμισμα"
+
+msgid "EUR €"
+msgstr "EUR €"
+
+msgid "USD $"
+msgstr "USD $"
+
+msgid "GBP £"
+msgstr "GBP £"
+
+msgid "Date *"
+msgstr "Ημερομηνία *"
+
+msgid "Volume discount, urgent delivery rate…"
+msgstr "Έκπτωση ποσότητας, χρέωση επείγουσας παράδοσης…"
+
+msgid "Log price"
+msgstr "Καταγραφή τιμής"
+
+msgid "No prices to chart yet"
+msgstr "Δεν υπάρχουν τιμές για γράφημα ακόμα"
+
+msgid "Log a few prices for the same part to see how it moves."
+msgstr "Καταγράψτε μερικές τιμές για το ίδιο ανταλλακτικό για να δείτε πώς κινείται."
+
+msgid "No matching prices"
+msgstr "Δεν βρέθηκαν τιμές"
+
+msgid "Try another part, code or supplier."
+msgstr "Δοκιμάστε άλλο ανταλλακτικό, κωδικό ή προμηθευτή."
+
+msgid "No prices logged yet"
+msgstr "Δεν έχουν καταγραφεί τιμές ακόμα"
+
+msgid "Use the form to record your first quote."
+msgstr "Χρησιμοποιήστε τη φόρμα για να καταγράψετε την πρώτη σας προσφορά."
+
+msgid "Master price list"
+msgstr "Τιμοκατάλογος"
+
+msgid "Cost, markup and client selling price per part. Selling price is calculated automatically."
+msgstr "Κόστος, περιθώριο και τιμή πώλησης ανά ανταλλακτικό. Η τιμή πώλησης υπολογίζεται αυτόματα."
+
+msgid "Add item"
+msgstr "Προσθήκη είδους"
+
+msgid "Part, code or brand…"
+msgstr "Ανταλλακτικό, κωδικός ή μάρκα…"
+
+msgid "Search price list"
+msgstr "Αναζήτηση στον τιμοκατάλογο"
+
+msgid "Category"
+msgstr "Κατηγορία"
+
+msgid "All categories"
+msgstr "Όλες οι κατηγορίες"
+
+msgid "item"
+msgstr "είδος"
+
+msgid "items"
+msgstr "είδη"
+
+msgid "Brand"
+msgstr "Μάρκα"
+
+msgid "Availability"
+msgstr "Διαθεσιμότητα"
+
+msgid "Cost"
+msgstr "Κόστος"
+
+msgid "Markup"
+msgstr "Περιθώριο"
+
+msgid "Client price"
+msgstr "Τιμή πελάτη"
+
+msgid "Warehouse"
+msgstr "Αποθήκη"
+
+msgid "In stock"
+msgstr "Σε απόθεμα"
+
+msgid "2–3 days"
+msgstr "2–3 ημέρες"
+
+msgid "7–10 days"
+msgstr "7–10 ημέρες"
+
+msgid "in stock"
+msgstr "σε απόθεμα"
+
+msgid "Not stocked"
+msgstr "Δεν τηρείται απόθεμα"
+
+msgid "Add a price-list item"
+msgstr "Προσθήκη είδους στον τιμοκατάλογο"
+
+msgid "e.g. Yanmar, Victron, Jabsco"
+msgstr "π.χ. Yanmar, Victron, Jabsco"
+
+msgid "Detect from name"
+msgstr "Αυτόματα από το όνομα"
+
+msgid "Cost €"
+msgstr "Κόστος €"
+
+msgid "No items match"
+msgstr "Δεν βρέθηκαν είδη"
+
+msgid "Try another search or category."
+msgstr "Δοκιμάστε άλλη αναζήτηση ή κατηγορία."
+
+msgid "The price list is empty"
+msgstr "Ο τιμοκατάλογος είναι κενός"
+
+msgid "Add your first item below — client price = cost + markup."
+msgstr "Προσθέστε το πρώτο είδος παρακάτω — τιμή πελάτη = κόστος + περιθώριο."
+
+msgid "Sign in · Marine Specials"
+msgstr "Σύνδεση · Marine Specials"
+
+msgid "Operations Platform"
+msgstr "Πλατφόρμα Λειτουργιών"
+
+msgid "Orders, stock, invoices and suppliers in one place."
+msgstr "Παραγγελίες, απόθεμα, τιμολόγια και προμηθευτές σε ένα σημείο."
+
+msgid "Track every spare part from supplier to vessel, from the Piraeus warehouse to the final invoice."
+msgstr "Παρακολουθήστε κάθε ανταλλακτικό από τον προμηθευτή ως το σκάφος, από την αποθήκη του Πειραιά ως το τελικό τιμολόγιο."
+
+msgid "Switch light or dark theme"
+msgstr "Εναλλαγή φωτεινού / σκοτεινού θέματος"
+
+msgid "Sign in"
+msgstr "Σύνδεση"
+
+msgid "Welcome back. Enter your details to continue."
+msgstr "Καλώς ήρθατε. Συμπληρώστε τα στοιχεία σας για να συνεχίσετε."
+
+msgid "Wrong username or password."
+msgstr "Λάθος όνομα χρήστη ή κωδικός."
+
+msgid "Username"
+msgstr "Όνομα χρήστη"
+
+msgid "Password"
+msgstr "Κωδικός"
+
+msgid "Operations"
+msgstr "Λειτουργίες"
+
+msgid "Dashboard"
+msgstr "Πίνακας ελέγχου"
+
+msgid "Live board"
+msgstr "Ζωντανός πίνακας"
+
+msgid "Analytics"
+msgstr "Αναλύσεις"
+
+msgid "Inventory"
+msgstr "Απόθεμα"
+
+msgid "Client catalog"
+msgstr "Κατάλογος πελάτη"
+
+msgid "Finance"
+msgstr "Οικονομικά"
+
+msgid "Purchasing"
+msgstr "Αγορές"
+
+msgid "Purchase orders"
+msgstr "Παραγγελίες αγοράς"
+
+msgid "Suppliers"
+msgstr "Προμηθευτές"
+
+msgid "Shortcuts"
+msgstr "Συντομεύσεις"
+
+msgid "New"
+msgstr "Νέο"
+
+msgid "Purchase order"
+msgstr "Παραγγελία αγοράς"
+
+msgid "Supplier"
+msgstr "Προμηθευτής"
+
+msgid "Price record"
+msgstr "Εγγραφή τιμής"
+
+msgid "Copied"
+msgstr "Αντιγράφηκε"
+
+msgid "Saved on this device"
+msgstr "Αποθηκεύτηκε σε αυτή τη συσκευή"
+
+msgid "Main navigation"
+msgstr "Κύρια πλοήγηση"
+
+msgid "Low stock"
+msgstr "Χαμηλό απόθεμα"
+
+msgid "Switch light / dark"
+msgstr "Φωτεινό / σκοτεινό"
+
+msgid "Sign out"
+msgstr "Αποσύνδεση"
+
+msgid "Open menu"
+msgstr "Άνοιγμα μενού"
+
+msgid "Search orders, invoices, parts, clients…"
+msgstr "Αναζήτηση παραγγελιών, τιμολογίων, ανταλλακτικών, πελατών…"
+
+msgid "Search everything"
+msgstr "Αναζήτηση παντού"
+
+msgid "Dismiss"
+msgstr "Κλείσιμο"
+
+msgid "Language"
+msgstr "Γλώσσα"
+
+msgid "Live operations board"
+msgstr "Ζωντανός πίνακας λειτουργιών"
+
+msgid "Every open order with packing progress. Scan a QR code with a phone to open it. Refreshes every 2 minutes."
+msgstr "Κάθε ανοιχτή παραγγελία με την πρόοδο συσκευασίας. Σκανάρετε το QR με το κινητό για να την ανοίξετε. Ανανεώνεται κάθε 2 λεπτά."
+
+msgid "Orders list"
+msgstr "Λίστα παραγγελιών"
+
+msgid "line"
+msgstr "γραμμή"
+
+msgid "lines"
+msgstr "γραμμές"
+
+msgid "Packing"
+msgstr "Συσκευασία"
+
+msgid "Pack"
+msgstr "Συσκευασία"
+
+msgid "QR code"
+msgstr "Κωδικός QR"
+
+msgid "No open operations"
+msgstr "Δεν υπάρχουν ανοιχτές εργασίες"
+
+msgid "All orders are delivered. New pending orders appear here automatically."
+msgstr "Όλες οι παραγγελίες έχουν παραδοθεί. Οι νέες εκκρεμείς εμφανίζονται εδώ αυτόματα."
+
+msgid "Create order"
+msgstr "Δημιουργία παραγγελίας"
+
+msgid "Clients &amp; vessels"
+msgstr "Πελάτες &amp; σκάφη"
+
+msgid "Open a client to see their orders, invoices, balance and what they buy."
+msgstr "Ανοίξτε έναν πελάτη για να δείτε παραγγελίες, τιμολόγια, υπόλοιπο και τι αγοράζει."
+
+msgid "Client or vessel name…"
+msgstr "Όνομα πελάτη ή σκάφους…"
+
+msgid "Search clients"
+msgstr "Αναζήτηση πελατών"
+
+msgid "client"
+msgstr "πελάτης"
+
+msgid "clients"
+msgstr "πελάτες"
+
+msgid "No clients found"
+msgstr "Δεν βρέθηκαν πελάτες"
+
+msgid "Clients are created automatically when you make an order or invoice for a new name."
+msgstr "Οι πελάτες δημιουργούνται αυτόματα όταν κάνετε παραγγελία ή τιμολόγιο για νέο όνομα."
+
+msgid "Piraeus, Greece · Spare parts &amp; equipment catalog ·"
+msgstr "Πειραιάς · Κατάλογος ανταλλακτικών &amp; εξοπλισμού ·"
+
+msgid "A clean, printable parts list to share with clients. Prices shown are the warehouse unit prices."
+msgstr "Καθαρή, εκτυπώσιμη λίστα ανταλλακτικών για τους πελάτες. Οι τιμές είναι οι τιμές μονάδας της αποθήκης."
+
+msgid "Print / save PDF"
+msgstr "Εκτύπωση / αποθήκευση PDF"
+
+msgid "Search parts…"
+msgstr "Αναζήτηση ανταλλακτικών…"
+
+msgid "Search catalog"
+msgstr "Αναζήτηση στον κατάλογο"
+
+msgid "part"
+msgstr "ανταλλακτικό"
+
+msgid "parts"
+msgstr "ανταλλακτικά"
+
+msgid "Part number"
+msgstr "Κωδικός"
+
+msgid "On request"
+msgstr "Κατόπιν παραγγελίας"
+
+msgid "No parts to show"
+msgstr "Δεν υπάρχουν ανταλλακτικά"
+
+msgid "Parts added to the warehouse appear here automatically."
+msgstr "Τα ανταλλακτικά της αποθήκης εμφανίζονται εδώ αυτόματα."
+
+msgid "Go to warehouse"
+msgstr "Μετάβαση στην αποθήκη"
+
+msgid "Good to see you"
+msgstr "Καλώς ήρθατε"
+
+msgid "Here's where operations, stock and money stand today."
+msgstr "Η σημερινή εικόνα για εργασίες, απόθεμα και οικονομικά."
+
+msgid "Active orders"
+msgstr "Ενεργές παραγγελίες"
+
+msgid "delivered so far"
+msgstr "παραδόθηκαν έως τώρα"
+
+msgid "Paid this month"
+msgstr "Εισπράξεις μήνα"
+
+msgid "Invoices issued this month"
+msgstr "Τιμολόγια που εκδόθηκαν αυτόν τον μήνα"
+
+msgid "Warehouse value"
+msgstr "Αξία αποθήκης"
+
+msgid "parts on record"
+msgstr "καταχωρημένα ανταλλακτικά"
+
+msgid "At or below reorder level"
+msgstr "Στο όριο αναπαραγγελίας ή κάτω"
+
+msgid "View all"
+msgstr "Προβολή όλων"
+
+msgid "packed"
+msgstr "συσκευασμένα"
+
+msgid "Recent invoices"
+msgstr "Πρόσφατα τιμολόγια"
+
+msgid "All invoices"
+msgstr "Όλα τα τιμολόγια"
+
+msgid "Needs reordering"
+msgstr "Για αναπαραγγελία"
+
+msgid "left"
+msgstr "απομένουν"
+
+msgid "Start a purchase order"
+msgstr "Νέα παραγγελία αγοράς"
+
+msgid "Open purchase orders"
+msgstr "Ανοιχτές παραγγελίες αγοράς"
+
+msgid "No active orders"
+msgstr "Δεν υπάρχουν ενεργές παραγγελίες"
+
+msgid "Everything pending has been delivered. New orders will show up here."
+msgstr "Όλες οι εκκρεμότητες παραδόθηκαν. Οι νέες παραγγελίες θα εμφανίζονται εδώ."
+
+msgid "Convert a delivered order or create an invoice directly."
+msgstr "Μετατρέψτε μια παραδομένη παραγγελία ή δημιουργήστε τιμολόγιο απευθείας."
+
+msgid "Stock levels are healthy"
+msgstr "Τα αποθέματα είναι σε καλό επίπεδο"
+
+msgid "No part is at or below its reorder level."
+msgstr "Κανένα ανταλλακτικό δεν είναι στο όριο αναπαραγγελίας."
+
+msgid "Nothing on order"
+msgstr "Τίποτα σε παραγγελία"
+
+msgid "Purchase orders waiting for delivery appear here."
+msgstr "Εδώ εμφανίζονται οι παραγγελίες αγοράς που περιμένουν παράδοση."
+
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+msgid "Edit part"
+msgstr "Επεξεργασία ανταλλακτικού"
+
+msgid "Location / bin"
+msgstr "Θέση / ράφι"
+
+msgid "Reorder at"
+msgstr "Αναπαραγγελία στα"
+
+msgid "Shows as low stock at or below this number."
+msgstr "Εμφανίζεται ως χαμηλό απόθεμα σε αυτόν τον αριθμό ή κάτω."
+
+msgid "Unit cost €"
+msgstr "Κόστος μονάδας €"
+
+msgid "Save changes"
+msgstr "Αποθήκευση αλλαγών"
+
+msgid "Warehouse stock"
+msgstr "Απόθεμα αποθήκης"
+
+msgid "Every part on record — click a part to see its orders, suppliers and price history."
+msgstr "Όλα τα ανταλλακτικά — πατήστε ένα για να δείτε παραγγελίες, προμηθευτές και ιστορικό τιμών."
+
+msgid "Sort parts in General Hardware into categories"
+msgstr "Ταξινόμηση των ανταλλακτικών της κατηγορίας Γενικά σε κατηγορίες"
+
+msgid "Auto-sort"
+msgstr "Αυτόματη ταξινόμηση"
+
+msgid "uncategorised"
+msgstr "χωρίς κατηγορία"
+
+msgid "Add part"
+msgstr "Προσθήκη ανταλλακτικού"
+
+msgid "Stock filter"
+msgstr "Φίλτρο αποθέματος"
+
+msgid "All parts"
+msgstr "Όλα τα ανταλλακτικά"
+
+msgid "Name, code or bin…"
+msgstr "Όνομα, κωδικός ή ράφι…"
+
+msgid "Search parts"
+msgstr "Αναζήτηση ανταλλακτικών"
+
+msgid "Location"
+msgstr "Θέση"
+
+msgid "Unit cost"
+msgstr "Κόστος μονάδας"
+
+msgid "One less"
+msgstr "Ένα λιγότερο"
+
+msgid "One more"
+msgstr "Ένα περισσότερο"
+
+msgid "Add a part"
+msgstr "Προσθήκη ανταλλακτικού"
+
+msgid "e.g. Raw water impeller"
+msgstr "π.χ. φτερωτή αντλίας θαλασσινού νερού"
+
+msgid "e.g. 128990-42200"
+msgstr "π.χ. 128990-42200"
+
+msgid "Quantity"
+msgstr "Ποσότητα"
+
+msgid "Save part"
+msgstr "Αποθήκευση ανταλλακτικού"
+
+msgid "No parts match"
+msgstr "Δεν βρέθηκαν ανταλλακτικά"
+
+msgid "Try a different search, category or filter."
+msgstr "Δοκιμάστε άλλη αναζήτηση, κατηγορία ή φίλτρο."
+
+msgid "The warehouse is empty"
+msgstr "Η αποθήκη είναι άδεια"
+
+msgid "Add your first part below, or receive a purchase order."
+msgstr "Προσθέστε το πρώτο ανταλλακτικό παρακάτω ή παραλάβετε μια παραγγελία αγοράς."
+
+msgid "Suggest a category for the %(n)s parts still in General Hardware, based on their names? You can change any of them afterwards."
+msgstr "Να προταθεί κατηγορία για τα %(n)s ανταλλακτικά που είναι ακόμα στα Γενικά, βάσει του ονόματός τους; Μπορείτε να αλλάξετε οποιοδήποτε μετά."
+
+msgid "Delete %(name)s from the warehouse?"
+msgstr "Διαγραφή του %(name)s από την αποθήκη;"
+
+msgid "Back to"
+msgstr "Πίσω στο"
+
+msgid "Packing ·"
+msgstr "Συσκευασία ·"
+
+msgid "All packed."
+msgstr "Όλα συσκευάστηκαν."
+
+msgid "Mark the order delivered when it leaves the warehouse."
+msgstr "Σημειώστε την παραγγελία ως παραδομένη όταν φύγει από την αποθήκη."
+
+msgid "Mark delivered"
+msgstr "Σήμανση ως παραδομένη"
+
+msgid "Save &amp; exit"
+msgstr "Αποθήκευση &amp; έξοδος"
+
+msgid "Mark not packed"
+msgstr "Σήμανση ως μη συσκευασμένο"
+
+msgid "Mark packed"
+msgstr "Σήμανση ως συσκευασμένο"
+
+msgid "Nothing to pack"
+msgstr "Τίποτα για συσκευασία"
+
+msgid "Add items to this order first."
+msgstr "Προσθέστε πρώτα είδη σε αυτή την παραγγελία."
+
+msgid "MARINE SPECIALS — Delivery note"
+msgstr "MARINE SPECIALS — Δελτίο αποστολής"
+
+msgid "Ordered"
+msgstr "Παραγγελία"
+
+msgid "Deliver by"
+msgstr "Παράδοση έως"
+
+msgid "Invoiced as"
+msgstr "Τιμολογήθηκε ως"
+
+msgid "Order value"
+msgstr "Αξία παραγγελίας"
+
+msgid "Order status"
+msgstr "Κατάσταση παραγγελίας"
+
+msgid "Packing mode"
+msgstr "Λειτουργία συσκευασίας"
+
+msgid "Open invoice"
+msgstr "Άνοιγμα τιμολογίου"
+
+msgid "Create an unpaid invoice from this order?"
+msgstr "Δημιουργία ανεξόφλητου τιμολογίου από αυτή την παραγγελία;"
+
+msgid "Convert to invoice"
+msgstr "Μετατροπή σε τιμολόγιο"
+
+msgid "Delete order"
+msgstr "Διαγραφή παραγγελίας"
+
+msgid "Stock is deducted automatically"
+msgstr "Το απόθεμα αφαιρείται αυτόματα"
+
+msgid "…or an item not in stock"
+msgstr "…ή είδος εκτός αποθέματος"
+
+msgid "Item name"
+msgstr "Όνομα είδους"
+
+msgid "Items"
+msgstr "Είδη"
+
+msgid "Packed"
+msgstr "Συσκ."
+
+msgid "Item"
+msgstr "Είδος"
+
+msgid "left ·"
+msgstr "απομένουν ·"
+
+msgid "Not linked to stock — pick part…"
+msgstr "Δεν συνδέεται με απόθεμα — επιλέξτε ανταλλακτικό…"
+
+msgid "Link &amp; deduct"
+msgstr "Σύνδεση &amp; αφαίρεση"
+
+msgid "Decrease"
+msgstr "Μείωση"
+
+msgid "Increase"
+msgstr "Αύξηση"
+
+msgid "Remove this item? Its stock goes back to the warehouse."
+msgstr "Αφαίρεση του είδους; Το απόθεμά του επιστρέφει στην αποθήκη."
+
+msgid "No items yet"
+msgstr "Δεν υπάρχουν είδη ακόμα"
+
+msgid "Add parts from the warehouse above — stock updates as you go."
+msgstr "Προσθέστε ανταλλακτικά από την αποθήκη παραπάνω — το απόθεμα ενημερώνεται αυτόματα."
+
+msgid "Delete %(n)s? Linked parts go back into stock."
+msgstr "Διαγραφή του %(n)s; Τα συνδεδεμένα ανταλλακτικά επιστρέφουν στο απόθεμα."
+
+msgid "Log a job or packing list (παραγγελία). You can add more parts on the next screen."
+msgstr "Καταχωρήστε μια εργασία ή λίστα συσκευασίας. Μπορείτε να προσθέσετε ανταλλακτικά στην επόμενη οθόνη."
+
+msgid "Order details"
+msgstr "Στοιχεία παραγγελίας"
+
+msgid "e.g. Blue Star 1, Aegean Shipping"
+msgstr "π.χ. Blue Star 1, Aegean Shipping"
+
+msgid "Pick an existing client or type a new name — it will be created."
+msgstr "Επιλέξτε υπάρχοντα πελάτη ή γράψτε νέο όνομα — θα δημιουργηθεί."
+
+msgid "Order number"
+msgstr "Αριθμός παραγγελίας"
+
+msgid "Auto: ORD-1234"
+msgstr "Αυτόματα: ORD-1234"
+
+msgid "Pending"
+msgstr "Σε αναμονή"
+
+msgid "Processing"
+msgstr "Σε επεξεργασία"
+
+msgid "Delivered"
+msgstr "Παραδόθηκε"
+
+msgid "Order date"
+msgstr "Ημερομηνία παραγγελίας"
+
+msgid "Target delivery"
+msgstr "Στόχος παράδοσης"
+
+msgid "First item"
+msgstr "Πρώτο είδος"
+
+msgid "…or a part not in stock"
+msgstr "…ή ανταλλακτικό εκτός αποθέματος"
+
+msgid "Part name"
+msgstr "Όνομα ανταλλακτικού"
+
+msgid "Orders &amp; delivery notes"
+msgstr "Παραγγελίες &amp; δελτία αποστολής"
+
+msgid "Jobs and packing lists for vessels and clients. Stock is deducted as parts are added."
+msgstr "Εργασίες και λίστες συσκευασίας για σκάφη και πελάτες. Το απόθεμα αφαιρείται καθώς προστίθενται ανταλλακτικά."
+
+msgid "Link every unlinked order line to a warehouse part (creating parts where none match) and deduct stock?"
+msgstr "Σύνδεση κάθε ασύνδετης γραμμής παραγγελίας με ανταλλακτικό αποθήκης (με δημιουργία όπου δεν υπάρχει) και αφαίρεση αποθέματος;"
+
+msgid "Link old order lines to warehouse parts"
+msgstr "Σύνδεση παλιών γραμμών παραγγελιών με την αποθήκη"
+
+msgid "Sync old orders to stock"
+msgstr "Συγχρονισμός παλιών παραγγελιών"
+
+msgid "Filter by status"
+msgstr "Φίλτρο κατάστασης"
+
+msgid "All documents"
+msgstr "Όλα τα παραστατικά"
+
+msgid "Order number or client…"
+msgstr "Αριθμός παραγγελίας ή πελάτης…"
+
+msgid "Search orders"
+msgstr "Αναζήτηση παραγγελιών"
+
+msgid "shown"
+msgstr "εμφανίζονται"
+
+msgid "No matching orders"
+msgstr "Δεν βρέθηκαν παραγγελίες"
+
+msgid "Try another order number or client name, or switch to “All documents”."
+msgstr "Δοκιμάστε άλλον αριθμό ή πελάτη, ή επιλέξτε «Όλα τα παραστατικά»."
+
+msgid "Nothing here yet"
+msgstr "Τίποτα εδώ ακόμα"
+
+msgid "No orders have this status right now."
+msgstr "Καμία παραγγελία δεν έχει αυτή την κατάσταση αυτή τη στιγμή."
+
+msgid "unit cost"
+msgstr "κόστος μονάδας"
+
+msgid "List price"
+msgstr "Τιμή καταλόγου"
+
+msgid "· value"
+msgstr "· αξία"
+
+msgid "Reorder"
+msgstr "Αναπαραγγελία"
+
+msgid "Low stock."
+msgstr "Χαμηλό απόθεμα."
+
+msgid "left, reorder level is"
+msgstr "απομένουν, όριο αναπαραγγελίας"
+
+msgid "Last bought from"
+msgstr "Τελευταία αγορά από"
+
+msgid "Units sold"
+msgstr "Πωλήσεις (τεμ.)"
+
+msgid "Across"
+msgstr "Σε"
+
+msgid "recent line"
+msgstr "πρόσφατη γραμμή"
+
+msgid "recent lines"
+msgstr "πρόσφατες γραμμές"
+
+msgid "Who ordered this part"
+msgstr "Όσοι παρήγγειλαν αυτό το ανταλλακτικό"
+
+msgid "From purchase orders"
+msgstr "Από παραγγελίες αγοράς"
+
+msgid "Logged quotes &amp; prices"
+msgstr "Καταγεγραμμένες προσφορές &amp; τιμές"
+
+msgid "Orders &amp; invoices using this part"
+msgstr "Παραγγελίες &amp; τιμολόγια με αυτό το ανταλλακτικό"
+
+msgid "Price"
+msgstr "Τιμή"
+
+msgid "Purchase history"
+msgstr "Ιστορικό αγορών"
+
+msgid "PO"
+msgstr "ΠΑ"
+
+msgid "Top clients"
+msgstr "Κορυφαίοι πελάτες"
+
+msgid "orders"
+msgstr "παραγγελίες"
+
+msgid "pcs"
+msgstr "τεμ."
+
+msgid "Last"
+msgstr "Τελευταία"
+
+msgid "at"
+msgstr "προς"
+
+msgid "Log"
+msgstr "Καταγραφή"
+
+msgid "Not ordered yet"
+msgstr "Δεν έχει παραγγελθεί ακόμα"
+
+msgid "When this part is added to an order or invoice it will be listed here."
+msgstr "Όταν το ανταλλακτικό μπει σε παραγγελία ή τιμολόγιο θα εμφανιστεί εδώ."
+
+msgid "Never purchased through a PO"
+msgstr "Δεν έχει αγοραστεί μέσω παραγγελίας αγοράς"
+
+msgid "Add this part to a purchase order to track where it comes from."
+msgstr "Προσθέστε το σε παραγγελία αγοράς για να φαίνεται από πού προέρχεται."
+
+msgid "No clients yet"
+msgstr "Δεν υπάρχουν πελάτες ακόμα"
+
+msgid "No supplier linked"
+msgstr "Δεν έχει συνδεθεί προμηθευτής"
+
+msgid "Suppliers appear once this part is on a purchase order."
+msgstr "Οι προμηθευτές εμφανίζονται όταν το ανταλλακτικό μπει σε παραγγελία αγοράς."
+
+msgid "Log supplier quotes to compare prices over time."
+msgstr "Καταγράψτε προσφορές προμηθευτών για να συγκρίνετε τιμές στον χρόνο."
+
+msgid "Mark received &amp; add to stock"
+msgstr "Παραλαβή &amp; προσθήκη στο απόθεμα"
+
+msgid "Goods received — stock updated"
+msgstr "Τα είδη παραλήφθηκαν — το απόθεμα ενημερώθηκε"
+
+msgid "Warehouse part *"
+msgstr "Ανταλλακτικό αποθήκης *"
+
+msgid "Part not listed?"
+msgstr "Δεν υπάρχει το ανταλλακτικό;"
+
+msgid "Add it to the warehouse"
+msgstr "Προσθέστε το στην αποθήκη"
+
+msgid "first (with quantity 0)."
+msgstr "πρώτα (με ποσότητα 0)."
+
+msgid "Deleted part"
+msgstr "Διαγραμμένο ανταλλακτικό"
+
+msgid "Email to supplier"
+msgstr "Email στον προμηθευτή"
+
+msgid "Copy text"
+msgstr "Αντιγραφή κειμένου"
+
+msgid "Open in email app"
+msgstr "Άνοιγμα στο email"
+
+msgid "Add the parts you want to order from this supplier."
+msgstr "Προσθέστε τα ανταλλακτικά που θέλετε να παραγγείλετε από αυτόν τον προμηθευτή."
+
+msgid "Delete purchase order %(n)s?"
+msgstr "Διαγραφή της παραγγελίας αγοράς %(n)s;"
+
+msgid "Mark %(n)s received and add all its parts to warehouse stock?"
+msgstr "Παραλαβή της %(n)s και προσθήκη όλων των ειδών στο απόθεμα;"
+
+msgid "Parts you've ordered from suppliers. Receiving a PO adds its parts to warehouse stock."
+msgstr "Ανταλλακτικά που έχετε παραγγείλει από προμηθευτές. Με την παραλαβή προστίθενται στο απόθεμα."
+
+msgid "New purchase order"
+msgstr "Νέα παραγγελία αγοράς"
+
+msgid "Received"
+msgstr "Παραλήφθηκε"
+
+msgid "Supplier *"
+msgstr "Προμηθευτής *"
+
+msgid "Choose a supplier…"
+msgstr "Επιλέξτε προμηθευτή…"
+
+msgid "PO number"
+msgstr "Αριθμός παραγγελίας αγοράς"
+
+msgid "Auto: PO-1234"
+msgstr "Αυτόματα: PO-1234"
+
+msgid "Create &amp; add parts"
+msgstr "Δημιουργία &amp; προσθήκη ειδών"
+
+msgid "Add a supplier first."
+msgstr "Προσθέστε πρώτα έναν προμηθευτή."
+
+msgid "Add supplier →"
+msgstr "Προσθήκη προμηθευτή →"
+
+msgid "No purchase orders here"
+msgstr "Καμία παραγγελία αγοράς εδώ"
+
+msgid "Create one below to order parts from a supplier."
+msgstr "Δημιουργήστε μία παρακάτω για να παραγγείλετε από προμηθευτή."
+
+msgid "Analytics &amp; parts research"
+msgstr "Αναλύσεις &amp; έρευνα ανταλλακτικών"
+
+msgid "What sells, who buys, where the stock value sits — plus a quick parts lookup."
+msgstr "Τι πουλάει, ποιος αγοράζει, πού βρίσκεται η αξία του αποθέματος — και γρήγορη αναζήτηση ανταλλακτικών."
+
+msgid "Parts"
+msgstr "Ανταλλακτικά"
+
+msgid "Orders &amp; invoices"
+msgstr "Παραγγελίες &amp; τιμολόγια"
+
+msgid "Most ordered parts"
+msgstr "Ανταλλακτικά με τις περισσότερες παραγγελίες"
+
+msgid "units"
+msgstr "τεμάχια"
+
+msgid "revenue €"
+msgstr "έσοδα €"
+
+msgid "Stock value by category"
+msgstr "Αξία αποθέματος ανά κατηγορία"
+
+msgid "Parts lookup"
+msgstr "Αναζήτηση ανταλλακτικών"
+
+msgid "result"
+msgstr "αποτέλεσμα"
+
+msgid "results"
+msgstr "αποτελέσματα"
+
+msgid "· first 100 shown"
+msgstr "· εμφανίζονται τα πρώτα 100"
+
+msgid "Name, OEM code or category…"
+msgstr "Όνομα, κωδικός OEM ή κατηγορία…"
+
+msgid "Stock"
+msgstr "Απόθεμα"
+
+msgid "Supplier quotes, vessel specs, OEM cross-references…"
+msgstr "Προσφορές προμηθευτών, προδιαγραφές σκαφών, αντιστοιχίσεις κωδικών OEM…"
+
+msgid "Notes are kept in this browser only. For notes about a client, use the client's page."
+msgstr "Οι σημειώσεις μένουν μόνο σε αυτόν τον browser. Για σημειώσεις πελάτη χρησιμοποιήστε τη σελίδα του πελάτη."
+
+msgid "No sales yet"
+msgstr "Δεν υπάρχουν πωλήσεις ακόμα"
+
+msgid "Link order lines to warehouse parts to see this."
+msgstr "Συνδέστε γραμμές παραγγελιών με ανταλλακτικά για να εμφανιστεί."
+
+msgid "No revenue yet"
+msgstr "Δεν υπάρχουν έσοδα ακόμα"
+
+msgid "No stock yet"
+msgstr "Δεν υπάρχει απόθεμα ακόμα"
+
+msgid "Try another name or code."
+msgstr "Δοκιμάστε άλλο όνομα ή κωδικό."
+
+msgid "Results for “"
+msgstr "Αποτελέσματα για «"
+
+msgid "match"
+msgstr "αποτέλεσμα"
+
+msgid "matches"
+msgstr "αποτελέσματα"
+
+msgid "across orders, invoices, parts, clients and suppliers."
+msgstr "σε παραγγελίες, τιμολόγια, ανταλλακτικά, πελάτες και προμηθευτές."
+
+msgid "Type in the search bar above (shortcut:"
+msgstr "Γράψτε στη γραμμή αναζήτησης παραπάνω (συντόμευση:"
+
+msgid "Warehouse parts"
+msgstr "Ανταλλακτικά αποθήκης"
+
+msgid "Nothing found"
+msgstr "Δεν βρέθηκε τίποτα"
+
+msgid "Check the spelling, or search by a part code, order number or client name."
+msgstr "Ελέγξτε την ορθογραφία ή αναζητήστε με κωδικό ανταλλακτικού, αριθμό παραγγελίας ή όνομα πελάτη."
+
+msgid "Total ordered"
+msgstr "Σύνολο παραγγελιών"
+
+msgid "POs"
+msgstr "ΠΑ"
+
+msgid "open"
+msgstr "ανοιχτές"
+
+msgid "Parts supplied"
+msgstr "Ανταλλακτικά που προμηθεύει"
+
+msgid "In stock now"
+msgstr "Σε απόθεμα τώρα"
+
+msgid "Highest unit cost"
+msgstr "Υψηλότερο κόστος μονάδας"
+
+msgid "Last ordered"
+msgstr "Τελευταία παραγγελία"
+
+msgid "Contact details"
+msgstr "Στοιχεία επικοινωνίας"
+
+msgid "Company name"
+msgstr "Επωνυμία"
+
+msgid "Contact person"
+msgstr "Υπεύθυνος επικοινωνίας"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Phone"
+msgstr "Τηλέφωνο"
+
+msgid "No purchase orders yet"
+msgstr "Δεν υπάρχουν παραγγελίες αγοράς ακόμα"
+
+msgid "Raise a PO to order parts from this supplier."
+msgstr "Κάντε παραγγελία αγοράς για να παραγγείλετε από αυτόν τον προμηθευτή."
+
+msgid "No parts yet"
+msgstr "Δεν υπάρχουν ανταλλακτικά ακόμα"
+
+msgid "Parts appear here once they are on a purchase order from this supplier."
+msgstr "Τα ανταλλακτικά εμφανίζονται εδώ όταν μπουν σε παραγγελία αγοράς από αυτόν τον προμηθευτή."
+
+msgid "Price records with this supplier’s exact name show up here."
+msgstr "Εδώ εμφανίζονται οι τιμές που έχουν καταγραφεί με το ακριβές όνομα αυτού του προμηθευτή."
+
+msgid "Vendors you buy from. Open one to see its purchase orders, the parts it supplies and logged prices."
+msgstr "Οι προμηθευτές σας. Ανοίξτε έναν για να δείτε παραγγελίες αγοράς, ανταλλακτικά και τιμές."
+
+msgid "Add supplier"
+msgstr "Προσθήκη προμηθευτή"
+
+msgid "Contact"
+msgstr "Επικοινωνία"
+
+msgid "Last PO"
+msgstr "Τελευταία ΠΑ"
+
+msgid "New PO"
+msgstr "Νέα ΠΑ"
+
+msgid "Add a supplier"
+msgstr "Προσθήκη προμηθευτή"
+
+msgid "Company name *"
+msgstr "Επωνυμία *"
+
+msgid "e.g. Jabsco Hellas"
+msgstr "π.χ. Jabsco Hellas"
+
+msgid "No suppliers yet"
+msgstr "Δεν υπάρχουν προμηθευτές ακόμα"
+
+msgid "Add the vendors you buy from below, then raise purchase orders against them."
+msgstr "Προσθέστε παρακάτω τους προμηθευτές σας και μετά κάντε παραγγελίες αγοράς."
+
+msgid "Client Sale Invoice"
+msgstr "Τιμολόγιο πώλησης"
+
+msgid "Supplier Vendor Bill"
+msgstr "Τιμολόγιο προμηθευτή"
+
+msgid "Draft"
+msgstr "Πρόχειρο"
+
+msgid "Order - Pending"
+msgstr "Παραγγελία - Σε αναμονή"
+
+msgid "Order - Processing"
+msgstr "Παραγγελία - Σε επεξεργασία"
+
+msgid "Order - Delivered"
+msgstr "Παραγγελία - Παραδόθηκε"
+
+msgid "Invoice - Unpaid"
+msgstr "Τιμολόγιο - Ανεξόφλητο"
+
+msgid "Invoice - Overdue"
+msgstr "Τιμολόγιο - Ληξιπρόθεσμο"
+
+msgid "Invoice - Paid"
+msgstr "Τιμολόγιο - Εξοφλημένο"
+
+msgid "Void"
+msgstr "Ακυρωμένο"
+
+msgid "A · Excellent"
+msgstr "A · Εξαιρετικός"
+
+msgid "B · Good"
+msgstr "B · Καλός"
+
+msgid "C · Risky"
+msgstr "C · Ριψοκίνδυνος"
+
+msgid "In Stock (Piraeus Warehouse)"
+msgstr "Σε απόθεμα (αποθήκη Πειραιά)"
+
+msgid "Available (2-3 Business Days)"
+msgstr "Διαθέσιμο (2-3 εργάσιμες)"
+
+msgid "Special Order (7-10 Days)"
+msgstr "Ειδική παραγγελία (7-10 ημέρες)"
+
+msgid "Client settings saved."
+msgstr "Οι ρυθμίσεις πελάτη αποθηκεύτηκαν."
+
+msgid "Invoice %(n)s created."
+msgstr "Το τιμολόγιο %(n)s δημιουργήθηκε."
+
+msgid "Please enter a client or vessel name."
+msgstr "Συμπληρώστε όνομα πελάτη ή σκάφους."
+
+msgid "%(n)s deleted."
+msgstr "Το %(n)s διαγράφηκε."
+
+msgid "%(n)s updated."
+msgstr "Το %(n)s ενημερώθηκε."
+
+msgid "No invoice or order numbered %(n)s"
+msgstr "Δεν υπάρχει τιμολόγιο ή παραγγελία με αριθμό %(n)s"
+
+msgid "No INV-/ORD- number on this line"
+msgstr "Δεν υπάρχει αριθμός INV-/ORD- σε αυτή τη γραμμή"
+
+msgid "Attached %(done)s of %(total)s links."
+msgstr "Συνδέθηκαν %(done)s από %(total)s συνδέσμους."
+
+msgid "%(part)s added at %(price)s €."
+msgstr "Το %(part)s προστέθηκε με τιμή %(price)s €."
+
+msgid "Price for %(part)s logged."
+msgstr "Η τιμή για το %(part)s καταγράφηκε."
+
+msgid "Part name and supplier / client are required."
+msgstr "Απαιτούνται όνομα ανταλλακτικού και προμηθευτής / πελάτης."
+
+msgid "Price record deleted."
+msgstr "Η εγγραφή τιμής διαγράφηκε."
+
+msgid "No Google Drive link on this line"
+msgstr "Δεν υπάρχει σύνδεσμος Google Drive σε αυτή τη γραμμή"
+
+msgid "Already has a different link (kept)"
+msgstr "Έχει ήδη άλλον σύνδεσμο (διατηρήθηκε)"
+
+msgid "Link attached"
+msgstr "Ο σύνδεσμος συνδέθηκε"
+
+msgid "General Hardware"
+msgstr "Γενικά"
+
+msgid "Engine Spares"
+msgstr "Ανταλλακτικά μηχανής"
+
+msgid "Filters & Separators"
+msgstr "Φίλτρα & διαχωριστές"
+
+msgid "Pumps & Impellers"
+msgstr "Αντλίες & φτερωτές"
+
+msgid "Valves & Plumbing"
+msgstr "Βάνες & υδραυλικά"
+
+msgid "Hoses & Fittings"
+msgstr "Σωλήνες & εξαρτήματα"
+
+msgid "Seals & Bearings"
+msgstr "Τσιμούχες & ρουλεμάν"
+
+msgid "Electrical & Batteries"
+msgstr "Ηλεκτρολογικά & μπαταρίες"
+
+msgid "Anodes & Corrosion"
+msgstr "Ανόδια & διάβρωση"
+
+msgid "Oils & Lubricants"
+msgstr "Λάδια & λιπαντικά"
+
+msgid "Safety Equipment"
+msgstr "Εξοπλισμός ασφαλείας"
+
+msgid "Sent"
+msgstr "Απεστάλη"
+
+msgid "Linked %(linked)s order lines to existing parts and created %(created)s new warehouse parts."
+msgstr "Συνδέθηκαν %(linked)s γραμμές με υπάρχοντα ανταλλακτικά και δημιουργήθηκαν %(created)s νέα."
+
+msgid "Order %(n)s created."
+msgstr "Η παραγγελία %(n)s δημιουργήθηκε."
+
+msgid "Linked to %(part)s; stock reduced by %(qty)s."
+msgstr "Συνδέθηκε με %(part)s· το απόθεμα μειώθηκε κατά %(qty)s."
+
+msgid "Pick a warehouse part or type an item name."
+msgstr "Επιλέξτε ανταλλακτικό ή γράψτε όνομα είδους."
+
+msgid "%(n)s marked %(status)s."
+msgstr "%(n)s: %(status)s."
+
+msgid "'%(status)s' is not a valid status."
+msgstr "Η κατάσταση «%(status)s» δεν είναι έγκυρη."
+
+msgid "This order was already invoiced as %(n)s."
+msgstr "Η παραγγελία έχει ήδη τιμολογηθεί ως %(n)s."
+
+msgid "Invoice %(inv)s created from %(order)s."
+msgstr "Το τιμολόγιο %(inv)s δημιουργήθηκε από την %(order)s."
+
+msgid "Order %(n)s deleted and its stock returned to the warehouse."
+msgstr "Η παραγγελία %(n)s διαγράφηκε και το απόθεμα επέστρεψε στην αποθήκη."
+
+msgid "%(part)s added to the warehouse (%(category)s)."
+msgstr "Το %(part)s προστέθηκε στην αποθήκη (%(category)s)."
+
+msgid "Sorted %(changed)s of %(total)s uncategorised parts. %(rest)s stay in General Hardware — you can change any part from its page."
+msgstr "Ταξινομήθηκαν %(changed)s από %(total)s ανταλλακτικά. %(rest)s παραμένουν στα Γενικά — μπορείτε να αλλάξετε οποιοδήποτε από τη σελίδα του."
+
+msgid "%(part)s saved."
+msgstr "Το %(part)s αποθηκεύτηκε."
+
+msgid "Part deleted."
+msgstr "Το ανταλλακτικό διαγράφηκε."
+
+msgid "Supplier %(name)s added."
+msgstr "Ο προμηθευτής %(name)s προστέθηκε."
+
+msgid "Supplier details saved."
+msgstr "Τα στοιχεία προμηθευτή αποθηκεύτηκαν."
+
+msgid "%(n)s created — add the parts you need."
+msgstr "Η %(n)s δημιουργήθηκε — προσθέστε τα ανταλλακτικά που χρειάζεστε."
+
+msgid "Choose a supplier first."
+msgstr "Επιλέξτε πρώτα προμηθευτή."
+
+msgid "Pick a part to add."
+msgstr "Επιλέξτε ανταλλακτικό."
+
+msgid "%(n)s received — warehouse stock updated."
+msgstr "Η %(n)s παραλήφθηκε — το απόθεμα ενημερώθηκε."

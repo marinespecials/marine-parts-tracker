@@ -1,9 +1,9 @@
-{% load static ui %}<!DOCTYPE html>
-<html lang="en">
+{% load static ui i18n %}<!DOCTYPE html>
+{% get_current_language as LANG %}<html lang="{{ LANG }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in · Marine Specials</title>
+    <title>{% trans "Sign in · Marine Specials" %}</title>
     <script>
         (function () {
             var t = null;
@@ -24,11 +24,11 @@
     <div class="auth-art">
         <div class="brand" style="padding:0;color:#fff">
             <span class="brand-mark" style="background:rgba(255,255,255,.12)">{% icon "anchor" %}</span>
-            <span class="brand-name" style="color:#fff">MARINE SPECIALS<small style="color:#A5B0C2">Operations Platform</small></span>
+            <span class="brand-name" style="color:#fff">MARINE SPECIALS<small style="color:#A5B0C2">{% trans "Operations Platform" %}</small></span>
         </div>
         <div>
-            <h2>Orders, stock, invoices and suppliers in one place.</h2>
-            <p>Track every spare part from supplier to vessel, from the Piraeus warehouse to the final invoice.</p>
+            <h2>{% trans "Orders, stock, invoices and suppliers in one place." %}</h2>
+            <p>{% trans "Track every spare part from supplier to vessel, from the Piraeus warehouse to the final invoice." %}</p>
         </div>
         <svg class="waves" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0 60 Q 75 20 150 60 T 300 60 T 450 60 T 600 60 V120 H0Z" fill="#4C7DFF"/>
@@ -37,24 +37,25 @@
     </div>
 
     <div class="auth-panel" style="position:relative">
-        <button type="button" class="btn btn-ghost btn-icon theme-toggle" data-theme-toggle aria-label="Switch light or dark theme">{% icon "moon" "when-light" %}{% icon "sun" "when-dark" %}</button>
+        <div style="position:absolute;top:18px;left:18px">{% include 'partials/language_switch.html' %}</div>
+        <button type="button" class="btn btn-ghost btn-icon theme-toggle" data-theme-toggle aria-label="{% trans "Switch light or dark theme" %}">{% icon "moon" "when-light" %}{% icon "sun" "when-dark" %}</button>
         <form class="auth-form" method="post" autocomplete="on">
             {% csrf_token %}
             <div>
-                <h1>Sign in</h1>
-                <p class="muted" style="margin-top:4px">Welcome back. Enter your details to continue.</p>
+                <h1>{% trans "Sign in" %}</h1>
+                <p class="muted" style="margin-top:4px">{% trans "Welcome back. Enter your details to continue." %}</p>
             </div>
-            {% if form.errors %}<div class="callout warning" style="margin:0">{% icon "alert" %}<div>Wrong username or password.</div></div>{% endif %}
+            {% if form.errors %}<div class="callout warning" style="margin:0">{% icon "alert" %}<div>{% trans "Wrong username or password." %}</div></div>{% endif %}
             <div class="field">
-                <label for="id_username">Username</label>
+                <label for="id_username">{% trans "Username" %}</label>
                 <input id="id_username" name="username" type="text" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}">
             </div>
             <div class="field">
-                <label for="id_password">Password</label>
+                <label for="id_password">{% trans "Password" %}</label>
                 <input id="id_password" name="password" type="password" autocomplete="current-password" required>
             </div>
             <input type="hidden" name="next" value="{{ next }}">
-            <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+            <button type="submit" class="btn btn-primary btn-block">{% trans "Sign in" %}</button>
         </form>
     </div>
 </div>

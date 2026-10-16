@@ -1,14 +1,14 @@
-{% extends 'base.html' %}{% load ui %}
+{% extends 'base.html' %}{% load ui i18n %}
 {% block title %}{{ invoice.invoice_number }}{% endblock %}
 
 {% block content %}
 <div class="crumbs no-print">
-    <a href="{% url 'finance:dashboard' %}">Invoices</a>{% icon "chevron-right" %}
+    <a href="{% url 'finance:dashboard' %}">{% trans "Invoices" %}</a>{% icon "chevron-right" %}
     {% if invoice.customer %}<a href="{% url 'finance:client_ledger' invoice.customer.id %}">{{ invoice.customer.name }}</a>{% icon "chevron-right" %}{% endif %}
     <span>{{ invoice.invoice_number }}</span>
 </div>
 
-<div class="print-only" style="margin-bottom:16px"><h2>MARINE SPECIALS</h2><p>Piraeus, Greece</p></div>
+<div class="print-only" style="margin-bottom:16px"><h2>MARINE SPECIALS</h2><p>{% trans "Piraeus, Greece" %}</p></div>
 
 <section class="card">
     <div class="summary">
@@ -17,37 +17,37 @@
             <h1 style="font-size:22px;margin-top:2px">
                 {% if invoice.customer %}<a class="entity" href="{% url 'finance:client_ledger' invoice.customer.id %}">{{ invoice.customer.name }}</a>
                 {% elif invoice.supplier %}<a class="entity" href="{% url 'supplier_detail' invoice.supplier.id %}">{{ invoice.supplier.name }}</a>
-                {% else %}No client{% endif %}
+                {% else %}{% trans "No client" %}{% endif %}
             </h1>
             <div class="meta-line">
-                <span>{% icon "calendar" %}Issued {{ invoice.issue_date|date:"d M Y" }}</span>
-                <span {% if invoice.status == 'UNPAID' and invoice.due_date and invoice.due_date < today %}style="color:var(--danger)"{% endif %}>{% icon "clock" %}Due {{ invoice.due_date|date:"d M Y"|default:"—" }}</span>
-                {% if invoice.google_drive_url %}<span>{% icon "folder" %}<a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener">PDF in Drive</a></span>{% endif %}
-                {% if related %}<span>{% icon "link" %}From order <a href="{% url 'order_detail' related.id %}">{{ related.invoice_number }}</a></span>{% endif %}
+                <span>{% icon "calendar" %}{% trans "Issued" %} {{ invoice.issue_date|date:"d M Y" }}</span>
+                <span {% if invoice.status == 'UNPAID' and invoice.due_date and invoice.due_date < today %}style="color:var(--danger)"{% endif %}>{% icon "clock" %}{% trans "Due" %} {{ invoice.due_date|date:"d M Y"|default:"—" }}</span>
+                {% if invoice.google_drive_url %}<span>{% icon "folder" %}<a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener">{% trans "PDF in Drive" %}</a></span>{% endif %}
+                {% if related %}<span>{% icon "link" %}{% trans "From order" %} <a href="{% url 'order_detail' related.id %}">{{ related.invoice_number }}</a></span>{% endif %}
             </div>
         </div>
         <div class="summary-right">
-            <div class="eyebrow">Amount</div>
+            <div class="eyebrow">{% trans "Amount" %}</div>
             <div class="big">{{ invoice.total_amount|money }}</div>
             <div style="margin-top:8px">{% status_badge invoice.status %}</div>
         </div>
     </div>
     <div class="card-footer no-print" style="justify-content:space-between;flex-wrap:wrap">
-        <div class="segmented" role="group" aria-label="Payment status">
+        <div class="segmented" role="group" aria-label="{% trans "Payment status" %}">
             {% for code in payment_statuses %}
             <form method="POST" action="{% url 'finance:update_invoice_details' invoice.id %}">{% csrf_token %}<input type="hidden" name="status" value="{{ code }}"><button type="submit" class="{% if invoice.status == code %}on{% endif %}">{{ code|status_label }}</button></form>
             {% endfor %}
         </div>
         <div class="button-row">
-            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}Print</button>
+            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}{% trans "Print" %}</button>
             <details class="dropdown">
-                <summary class="btn btn-sm btn-icon" title="More">{% icon "more" %}</summary>
+                <summary class="btn btn-sm btn-icon" title="{% trans "More" %}">{% icon "more" %}</summary>
                 <div class="dropdown-menu">
-                    <a href="{% url 'finance:export_finances' %}?status={{ invoice.status }}">{% icon "download" %}Export {{ invoice.status|status_label|lower }} invoices</a>
+                    <a href="{% url 'finance:export_finances' %}?status={{ invoice.status }}">{% icon "download" %}{% trans "Export CSV" %} ({{ invoice.status|status_label }})</a>
                     <hr>
-                    <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" data-confirm="Delete {{ invoice.invoice_number }}? This cannot be undone.">
+                    <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" data-confirm="{% blocktrans with n=invoice.invoice_number %}Delete {{ n }}? This cannot be undone.{% endblocktrans %}">
                         {% csrf_token %}
-                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}Delete invoice</button>
+                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}{% trans "Delete invoice" %}</button>
                     </form>
                 </div>
             </details>
@@ -58,25 +58,25 @@
 <div class="grid grid-main-side">
     <div class="stack">
         <section class="card no-print">
-            <div class="card-header"><div class="card-title">{% icon "plus" %}Add a line</div></div>
+            <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a line" %}</div></div>
             <form method="POST" action="{% url 'finance:add_invoice_item' invoice.id %}" class="card-body">
                 {% csrf_token %}
                 <div class="form-row">
-                    <div class="field grow"><label for="li-part">Warehouse part</label><select id="li-part" name="inventory_id" data-parts="price"><option value="">Choose a part…</option></select></div>
-                    <div class="field grow"><label for="li-desc">…or custom line / service</label><input id="li-desc" type="text" name="description" placeholder="Description"></div>
-                    <div class="field w-qty"><label for="li-qty">Qty</label><input id="li-qty" type="number" name="quantity" value="1" min="1" required></div>
-                    <div class="field w-price"><label for="li-price">Unit price €</label><input id="li-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
-                    <button type="submit" class="btn btn-primary">{% icon "plus" %}Add</button>
+                    <div class="field grow"><label for="li-part">{% trans "Warehouse part" %}</label><select id="li-part" name="inventory_id" data-parts="price"><option value="">{% trans "Choose a part…" %}</option></select></div>
+                    <div class="field grow"><label for="li-desc">{% trans "…or custom line / service" %}</label><input id="li-desc" type="text" name="description" placeholder="{% trans "Description" %}"></div>
+                    <div class="field w-qty"><label for="li-qty">{% trans "Qty" %}</label><input id="li-qty" type="number" name="quantity" value="1" min="1" required></div>
+                    <div class="field w-price"><label for="li-price">{% trans "Unit price €" %}</label><input id="li-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
+                    <button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add" %}</button>
                 </div>
             </form>
         </section>
 
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "list" %}Lines</div></div>
+            <div class="card-header"><div class="card-title">{% icon "list" %}{% trans "Lines" %}</div></div>
             {% if items %}
             <div class="table-wrap">
                 <table class="table">
-                    <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
+                    <thead><tr><th>{% trans "Description" %}</th><th class="num">{% trans "Qty" %}</th><th class="num">{% trans "Unit price" %}</th><th class="num">{% trans "Total" %}</th><th class="no-print"></th></tr></thead>
                     <tbody>
                     {% for item in items %}
                         <tr>
@@ -85,36 +85,36 @@
                             <td class="num">{{ item.unit_price|money }}</td>
                             <td class="num"><strong>{{ item.total_price|money }}</strong></td>
                             <td class="actions no-print">
-                                <form method="POST" action="{% url 'finance:delete_invoice_item' item.id %}" class="inline-form" data-confirm="Remove this line?">
-                                    {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">{% icon "trash" %}</button>
+                                <form method="POST" action="{% url 'finance:delete_invoice_item' item.id %}" class="inline-form" data-confirm="{% trans "Remove this line?" %}">
+                                    {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Remove" %}">{% icon "trash" %}</button>
                                 </form>
                             </td>
                         </tr>
                     {% endfor %}
                     </tbody>
-                    <tfoot><tr><td colspan="3">Total</td><td class="num">{{ invoice.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
+                    <tfoot><tr><td colspan="3">{% trans "Total" %}</td><td class="num">{{ invoice.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
                 </table>
             </div>
             {% else %}
-                {% include 'partials/empty.html' with icon='list' title='No lines yet' text='Add parts or services above — the total updates automatically.' %}
+                {% include 'partials/empty.html' with icon='list' title=_("No lines yet") text=_("Add parts or services above — the total updates automatically.") %}
             {% endif %}
         </section>
     </div>
 
     <form method="POST" action="{% url 'finance:update_invoice_details' invoice.id %}" class="card no-print">
         {% csrf_token %}
-        <div class="card-header"><div class="card-title">{% icon "edit" %}Details</div></div>
+        <div class="card-header"><div class="card-title">{% icon "edit" %}{% trans "Details" %}</div></div>
         <div class="card-body" style="display:grid;gap:14px">
             <div class="field">
-                <label for="status">Status</label>
+                <label for="status">{% trans "Status" %}</label>
                 <select id="status" name="status">
                     {% for code, label in status_choices %}<option value="{{ code }}" {% if invoice.status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="field"><label for="due_date">Due date</label><input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}"></div>
-            <div class="field"><label for="google_drive_url">Google Drive PDF</label><input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/…"></div>
+            <div class="field"><label for="due_date">{% trans "Due date" %}</label><input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}"></div>
+            <div class="field"><label for="google_drive_url">{% trans "Google Drive PDF" %}</label><input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="{% trans "https://drive.google.com/…" %}"></div>
         </div>
-        <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "check" %}Save details</button></div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "check" %}{% trans "Save details" %}</button></div>
     </form>
 </div>
 {{ parts|json_script:"parts-data" }}

@@ -175,3 +175,23 @@ class PagesAndLinksTests(TestCase):
         response = self.client.get('/healthz/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, b'ok')
+
+
+class LanguageTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        User.objects.create_user('tester', password='pw-for-tests-123')
+        self.client.login(username='tester', password='pw-for-tests-123')
+
+    def test_greek_is_default_and_english_switch_works(self):
+        self.assertContains(self.client.get(reverse('hub')), 'Πίνακας ελέγχου')
+        self.client.post(reverse('set_language'), {'language': 'en', 'next': '/'})
+        self.assertContains(self.client.get(reverse('hub')), 'Dashboard')
+
+    def test_greek_money_format(self):
+        from tracker.templatetags.ui import money
+        from django.utils import translation
+        with translation.override('el'):
+            self.assertEqual(money(Decimal('1234.5')), '1.234,50 €')
+        with translation.override('en'):
+            self.assertEqual(money(Decimal('1234.5')), '1,234.50 €')

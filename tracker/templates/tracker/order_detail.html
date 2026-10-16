@@ -1,61 +1,61 @@
-{% extends 'base.html' %}{% load ui %}
+{% extends 'base.html' %}{% load ui i18n %}
 {% block title %}{{ order.invoice_number }}{% endblock %}
 
 {% block content %}
 <div class="crumbs no-print">
-    <a href="{% url 'orders_dashboard' %}">Orders</a>{% icon "chevron-right" %}
+    <a href="{% url 'orders_dashboard' %}">{% trans "Orders" %}</a>{% icon "chevron-right" %}
     {% if order.customer %}<a href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% icon "chevron-right" %}{% endif %}
     <span>{{ order.invoice_number }}</span>
 </div>
 
 <div class="print-only" style="margin-bottom:16px">
-    <h2>MARINE SPECIALS — Delivery note</h2>
-    <p>Piraeus, Greece</p>
+    <h2>{% trans "MARINE SPECIALS — Delivery note" %}</h2>
+    <p>{% trans "Piraeus, Greece" %}</p>
 </div>
 
 <section class="card">
     <div class="summary">
         <div>
-            <div class="eyebrow">Order {{ order.invoice_number }}</div>
+            <div class="eyebrow">{% trans "Order" %} {{ order.invoice_number }}</div>
             <h1 style="font-size:22px;margin-top:2px">
-                {% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}No client{% endif %}
+                {% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}{% trans "No client" %}{% endif %}
             </h1>
             <div class="meta-line">
-                <span>{% icon "calendar" %}Ordered {{ order.issue_date|date:"d M Y" }}</span>
-                {% if order.due_date %}<span>{% icon "truck" %}Deliver by {{ order.due_date|date:"d M Y" }}</span>{% endif %}
-                <span>{% icon "box" %}{{ packed_count }}/{{ items|length }} packed</span>
-                {% if related %}<span>{% icon "link" %}Invoiced as <a href="{% url 'finance:invoice_detail' related.id %}">{{ related.invoice_number }}</a> {% status_badge related.status %}</span>{% endif %}
+                <span>{% icon "calendar" %}{% trans "Ordered" %} {{ order.issue_date|date:"d M Y" }}</span>
+                {% if order.due_date %}<span>{% icon "truck" %}{% trans "Deliver by" %} {{ order.due_date|date:"d M Y" }}</span>{% endif %}
+                <span>{% icon "box" %}{{ packed_count }}/{{ items|length }} {% trans "packed" %}</span>
+                {% if related %}<span>{% icon "link" %}{% trans "Invoiced as" %} <a href="{% url 'finance:invoice_detail' related.id %}">{{ related.invoice_number }}</a> {% status_badge related.status %}</span>{% endif %}
             </div>
         </div>
         <div class="summary-right">
-            <div class="eyebrow">Order value</div>
+            <div class="eyebrow">{% trans "Order value" %}</div>
             <div class="big">{{ order.total_amount|money }}</div>
             <div style="margin-top:8px">{% status_badge order.status %}</div>
         </div>
     </div>
     <div class="card-footer no-print" style="justify-content:space-between;flex-wrap:wrap">
-        <div class="segmented" role="group" aria-label="Order status">
+        <div class="segmented" role="group" aria-label="{% trans "Order status" %}">
             {% for code in order_statuses %}
             <form method="POST" action="{% url 'change_order_status' order.id code %}">{% csrf_token %}<button type="submit" class="{% if order.status == code %}on{% endif %}">{{ code|status_label }}</button></form>
             {% endfor %}
         </div>
         <div class="button-row">
-            <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-sm">{% icon "smartphone" %}Packing mode</a>
-            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}Print</button>
+            <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-sm">{% icon "smartphone" %}{% trans "Packing mode" %}</a>
+            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}{% trans "Print" %}</button>
             {% if related and related.invoice_number|slice:":4" == "INV-" %}
-                <a href="{% url 'finance:invoice_detail' related.id %}" class="btn btn-sm btn-primary">{% icon "receipt" %}Open invoice</a>
+                <a href="{% url 'finance:invoice_detail' related.id %}" class="btn btn-sm btn-primary">{% icon "receipt" %}{% trans "Open invoice" %}</a>
             {% else %}
-            <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" class="inline-form" data-confirm="Create an unpaid invoice from this order?">
+            <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" class="inline-form" data-confirm="{% trans "Create an unpaid invoice from this order?" %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-primary">{% icon "receipt" %}Convert to invoice</button>
+                <button type="submit" class="btn btn-sm btn-primary">{% icon "receipt" %}{% trans "Convert to invoice" %}</button>
             </form>
             {% endif %}
             <details class="dropdown">
-                <summary class="btn btn-sm btn-icon" title="More">{% icon "more" %}</summary>
+                <summary class="btn btn-sm btn-icon" title="{% trans "More" %}">{% icon "more" %}</summary>
                 <div class="dropdown-menu">
-                    <form method="POST" action="{% url 'delete_order' order.id %}" data-confirm="Delete {{ order.invoice_number }}? Linked parts go back into stock.">
+                    <form method="POST" action="{% url 'delete_order' order.id %}" data-confirm="{% blocktrans with n=order.invoice_number %}Delete {{ n }}? Linked parts go back into stock.{% endblocktrans %}">
                         {% csrf_token %}
-                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}Delete order</button>
+                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}{% trans "Delete order" %}</button>
                     </form>
                 </div>
             </details>
@@ -64,35 +64,35 @@
 </section>
 
 <section class="card no-print">
-    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a part</div><span class="card-sub">Stock is deducted automatically</span></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a part" %}</div><span class="card-sub">{% trans "Stock is deducted automatically" %}</span></div>
     <form method="POST" action="{% url 'add_order_item' order.id %}" class="card-body">
         {% csrf_token %}
         <div class="form-row">
-            <div class="field grow"><label for="add-part">Warehouse part</label><select id="add-part" name="inventory_id" data-parts="price"><option value="">Choose a part…</option></select></div>
-            <div class="field grow"><label for="add-desc">…or an item not in stock</label><input id="add-desc" type="text" name="description" placeholder="Item name"></div>
-            <div class="field w-qty"><label for="add-qty">Qty</label><input id="add-qty" type="number" name="quantity" value="1" min="1" required></div>
-            <div class="field w-price"><label for="add-price">Unit price €</label><input id="add-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
-            <button type="submit" class="btn btn-primary">{% icon "plus" %}Add</button>
+            <div class="field grow"><label for="add-part">{% trans "Warehouse part" %}</label><select id="add-part" name="inventory_id" data-parts="price"><option value="">{% trans "Choose a part…" %}</option></select></div>
+            <div class="field grow"><label for="add-desc">{% trans "…or an item not in stock" %}</label><input id="add-desc" type="text" name="description" placeholder="{% trans "Item name" %}"></div>
+            <div class="field w-qty"><label for="add-qty">{% trans "Qty" %}</label><input id="add-qty" type="number" name="quantity" value="1" min="1" required></div>
+            <div class="field w-price"><label for="add-price">{% trans "Unit price €" %}</label><input id="add-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
+            <button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add" %}</button>
         </div>
     </form>
 </section>
 
 <section class="card">
     <div class="card-header">
-        <div class="card-title">{% icon "list" %}Items</div>
+        <div class="card-title">{% icon "list" %}{% trans "Items" %}</div>
         <div style="min-width:160px"><div class="progress {% if progress == 100 %}done{% endif %}"><span style="width:{{ progress }}%"></span></div></div>
     </div>
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th style="width:44px" class="no-print">Packed</th><th>Item</th><th>Qty</th><th class="num">Unit price</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
+            <thead><tr><th style="width:44px" class="no-print">{% trans "Packed" %}</th><th>{% trans "Item" %}</th><th>{% trans "Qty" %}</th><th class="num">{% trans "Unit price" %}</th><th class="num">{% trans "Total" %}</th><th class="no-print"></th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr class="{% if item.is_packed %}is-done{% endif %}">
                     <td class="no-print">
                         <form method="POST" action="{% url 'toggle_item_packed' item.id %}" class="inline-form">
                             {% csrf_token %}
-                            <button type="submit" class="check {% if item.is_packed %}on{% endif %}" aria-label="{% if item.is_packed %}Mark not packed{% else %}Mark packed{% endif %}">{% icon "check" %}</button>
+                            <button type="submit" class="check {% if item.is_packed %}on{% endif %}" aria-label="{% if item.is_packed %}{% trans 'Mark not packed' %}{% else %}{% trans 'Mark packed' %}{% endif %}">{% icon "check" %}</button>
                         </form>
                     </td>
                     <td>
@@ -100,40 +100,40 @@
                         {% if item.inventory_item %}
                             <span class="secondary">
                                 {% icon "box" "icon-sm" %} <a href="{% url 'part_detail' item.inventory_item.id %}">{{ item.inventory_item.part_name }}</a>
-                                · {{ item.inventory_item.quantity }} left · {% icon "pin" "icon-sm" %} {{ item.inventory_item.location }}
+                                · {{ item.inventory_item.quantity }} {% trans "left ·" %} {% icon "pin" "icon-sm" %} {{ item.inventory_item.location }}
                             </span>
                         {% else %}
                             <form method="POST" action="{% url 'link_order_item_to_inventory' item.id %}" class="form-row no-print" style="margin-top:6px">
                                 {% csrf_token %}
-                                <select name="inventory_id" required data-parts="stock" style="height:30px;font-size:12.5px;max-width:320px"><option value="">Not linked to stock — pick part…</option></select>
-                                <button type="submit" class="btn btn-sm">{% icon "link" %}Link &amp; deduct</button>
+                                <select name="inventory_id" required data-parts="stock" style="height:30px;font-size:12.5px;max-width:320px"><option value="">{% trans "Not linked to stock — pick part…" %}</option></select>
+                                <button type="submit" class="btn btn-sm">{% icon "link" %}{% trans "Link &amp; deduct" %}</button>
                             </form>
                         {% endif %}
                     </td>
                     <td>
                         <div class="stepper no-print">
-                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="Decrease">−</button></form>
+                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="{% trans "Decrease" %}">−</button></form>
                             <span class="val">{{ item.quantity }}</span>
-                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="Increase">+</button></form>
+                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="{% trans "Increase" %}">+</button></form>
                         </div>
                         <span class="print-only">{{ item.quantity }}</span>
                     </td>
                     <td class="num">{{ item.unit_price|money }}</td>
                     <td class="num"><strong>{{ item.total_price|money }}</strong></td>
                     <td class="actions no-print">
-                        <form method="POST" action="{% url 'delete_order_item' item.id %}" class="inline-form" data-confirm="Remove this item? Its stock goes back to the warehouse.">
+                        <form method="POST" action="{% url 'delete_order_item' item.id %}" class="inline-form" data-confirm="{% trans "Remove this item? Its stock goes back to the warehouse." %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">{% icon "trash" %}</button>
+                            <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Remove" %}">{% icon "trash" %}</button>
                         </form>
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
-            <tfoot><tr><td class="no-print"></td><td colspan="3">Total</td><td class="num">{{ order.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
+            <tfoot><tr><td class="no-print"></td><td colspan="3">{% trans "Total" %}</td><td class="num">{{ order.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
         </table>
     </div>
     {% else %}
-        {% include 'partials/empty.html' with icon='box' title='No items yet' text='Add parts from the warehouse above — stock updates as you go.' %}
+        {% include 'partials/empty.html' with icon='box' title=_("No items yet") text=_("Add parts from the warehouse above — stock updates as you go.") %}
     {% endif %}
 </section>
 {{ parts|json_script:"parts-data" }}

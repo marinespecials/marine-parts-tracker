@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import date, timedelta
 from decimal import Decimal
 from django.contrib import messages
+from django.utils.translation import gettext as _
 from django.db import transaction
 from core.utils import to_decimal, to_int, redirect_back
 from django.shortcuts import render, redirect, get_object_or_404
@@ -67,7 +68,7 @@ def client_ledger(request, client_id):
         profile.payment_terms_days = to_int(request.POST.get('payment_terms_days'), 30, 0)
         profile.negotiation_notes = request.POST.get('negotiation_notes', '')
         profile.save()
-        messages.success(request, "Client settings saved.")
+        messages.success(request, _("Client settings saved."))
         return redirect('finance:client_ledger', client_id=client.id)
 
     docs = Invoice.objects.filter(customer=client).order_by('-issue_date', '-id')
@@ -174,9 +175,9 @@ def create_invoice(request):
                 invoice.total_amount = sum(item.total_price for item in invoice.order_items.all())
                 invoice.save()
 
-            messages.success(request, f"Invoice {invoice.invoice_number} created.")
+            messages.success(request, _("Invoice %(n)s created.") % {'n': invoice.invoice_number})
             return redirect('finance:invoice_detail', invoice_id=invoice.id)
-        messages.error(request, "Please enter a client or vessel name.")
+        messages.error(request, _("Please enter a client or vessel name."))
 
     today = timezone.localdate()
     return render(request, 'finance/invoice_form.html', {
@@ -249,7 +250,7 @@ def delete_invoice(request, invoice_id):
         client_id = invoice.customer.id if invoice.customer else None
         number = invoice.invoice_number
         invoice.delete()
-        messages.success(request, f"{number} deleted.")
+        messages.success(request, _("%(n)s deleted.") % {'n': number})
         if client_id and request.POST.get('next') == 'client':
             return redirect('finance:client_ledger', client_id=client_id)
     return redirect('finance:dashboard')
@@ -269,7 +270,7 @@ def update_invoice_details(request, invoice_id):
             except ValueError:
                 pass
         invoice.save()
-        messages.success(request, f"{invoice.invoice_number} updated.")
+        messages.success(request, _("%(n)s updated.") % {'n': invoice.invoice_number})
     return redirect('finance:invoice_detail', invoice_id=invoice.id)
 
 
@@ -295,22 +296,22 @@ def bulk_import(request):
                 continue
             url_match = DRIVE_URL.search(line)
             if not url_match:
-                results.append({'line': line, 'outcome': 'skipped', 'note': 'No Google Drive link on this line'})
+                results.append({'line': line, 'outcome': 'skipped', 'note': _('No Google Drive link on this line')})
                 continue
             url = url_match.group(0)
             number_match = DOC_NUMBER.search(line.replace(url, ' '))
             doc = Invoice.objects.filter(invoice_number__iexact=number_match.group(0)).first() if number_match else None
             if not doc:
-                note = f"No invoice or order numbered {number_match.group(0)}" if number_match else "No INV-/ORD- number on this line"
+                note = (_("No invoice or order numbered %(n)s") % {'n': number_match.group(0)}) if number_match else _("No INV-/ORD- number on this line")
                 results.append({'line': line, 'outcome': 'unmatched', 'note': note})
             elif doc.google_drive_url and doc.google_drive_url != url and not overwrite:
-                results.append({'line': line, 'outcome': 'kept', 'doc': doc, 'note': 'Already has a different link (kept)'})
+                results.append({'line': line, 'outcome': 'kept', 'doc': doc, 'note': _('Already has a different link (kept)')})
             else:
                 doc.google_drive_url = url
                 doc.save(update_fields=['google_drive_url'])
-                results.append({'line': line, 'outcome': 'attached', 'doc': doc, 'note': 'Link attached'})
+                results.append({'line': line, 'outcome': 'attached', 'doc': doc, 'note': _('Link attached')})
         attached = sum(1 for r in results if r['outcome'] == 'attached')
-        messages.success(request, f"Attached {attached} of {len(results)} links.")
+        messages.success(request, _("Attached %(done)s of %(total)s links.") % {'done': attached, 'total': len(results)})
 
     return render(request, 'finance/bulk_import.html', {
         'results': results,
@@ -334,7 +335,7 @@ def pricelist_dashboard(request):
                 markup_percent=to_decimal(request.POST.get('markup_percent'), default='30', minimum=0),
                 availability=availability if availability in dict(MasterPricelistItem.AVAILABILITY_CHOICES) else 'In Stock',
             )
-            messages.success(request, f"{item.part_name} added at {item.client_price} €.")
+            messages.success(request, _("%(part)s added at %(price)s €.") % {'part': item.part_name, 'price': item.client_price})
         return redirect('finance:pricelist_dashboard')
 
     query = request.GET.get('q', '').strip()
@@ -388,9 +389,9 @@ def price_history(request):
                 date_recorded=recorded,
                 notes=request.POST.get('notes', '').strip(),
             )
-            messages.success(request, f"Price for {part_name} logged.")
+            messages.success(request, _("Price for %(part)s logged.") % {'part': part_name})
         else:
-            messages.error(request, "Part name and supplier / client are required.")
+            messages.error(request, _("Part name and supplier / client are required."))
         return redirect('finance:price_history')
 
     query = request.GET.get('q', '').strip()
@@ -433,7 +434,7 @@ def price_history(request):
 def delete_price_record(request, record_id):
     if request.method == 'POST':
         get_object_or_404(PriceRecord, id=record_id).delete()
-        messages.success(request, "Price record deleted.")
+        messages.success(request, _("Price record deleted."))
     return redirect('finance:price_history')
 
 

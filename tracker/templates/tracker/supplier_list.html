@@ -1,20 +1,20 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Suppliers{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Suppliers" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Suppliers</h1>
-        <p class="lede">Vendors you buy from. Open one to see its purchase orders, the parts it supplies and logged prices.</p>
+        <h1>{% trans "Suppliers" %}</h1>
+        <p class="lede">{% trans "Vendors you buy from. Open one to see its purchase orders, the parts it supplies and logged prices." %}</p>
     </div>
-    <div class="actions"><a href="#new-supplier" class="btn btn-primary" onclick="document.getElementById('s-name').focus()">{% icon "plus" %}Add supplier</a></div>
+    <div class="actions"><a href="#new-supplier" class="btn btn-primary" onclick="document.getElementById('s-name').focus()">{% icon "plus" %}{% trans "Add supplier" %}</a></div>
 </div>
 
 <div class="card">
     {% if suppliers %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Supplier</th><th>Contact</th><th class="num">POs</th><th class="num">Total ordered</th><th>Last PO</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Supplier" %}</th><th>{% trans "Contact" %}</th><th class="num">{% trans "POs" %}</th><th class="num">{% trans "Total ordered" %}</th><th>{% trans "Last PO" %}</th><th></th></tr></thead>
             <tbody>
             {% for s in suppliers %}
                 <tr data-href="{% url 'supplier_detail' s.id %}" class="row-link">
@@ -26,28 +26,28 @@
                     <td class="num">{{ s.po_count }}</td>
                     <td class="num">{{ s.po_total|money }}</td>
                     <td class="nowrap muted">{{ s.last_po|date:"d M Y"|default:"—" }}</td>
-                    <td class="actions"><a href="{% url 'po_list' %}?supplier={{ s.id }}#new-po" class="btn btn-ghost btn-sm" title="New purchase order">{% icon "cart" %}New PO</a></td>
+                    <td class="actions"><a href="{% url 'po_list' %}?supplier={{ s.id }}#new-po" class="btn btn-ghost btn-sm" title="{% trans "New purchase order" %}">{% icon "cart" %}{% trans "New PO" %}</a></td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
     {% else %}
-        {% include 'partials/empty.html' with icon='building' title='No suppliers yet' text='Add the vendors you buy from below, then raise purchase orders against them.' %}
+        {% include 'partials/empty.html' with icon='building' title=_("No suppliers yet") text=_("Add the vendors you buy from below, then raise purchase orders against them.") %}
     {% endif %}
 </div>
 
 <form method="POST" class="card" id="new-supplier">
     {% csrf_token %}
-    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a supplier</div></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a supplier" %}</div></div>
     <div class="card-body">
         <div class="form-grid">
-            <div class="field"><label for="s-name">Company name *</label><input type="text" id="s-name" name="name" required placeholder="e.g. Jabsco Hellas"></div>
-            <div class="field"><label for="s-contact">Contact person</label><input type="text" id="s-contact" name="contact_person"></div>
-            <div class="field"><label for="s-email">Email</label><input type="email" id="s-email" name="email"></div>
-            <div class="field"><label for="s-phone">Phone</label><input type="tel" id="s-phone" name="phone"></div>
+            <div class="field"><label for="s-name">{% trans "Company name *" %}</label><input type="text" id="s-name" name="name" required placeholder="{% trans "e.g. Jabsco Hellas" %}"></div>
+            <div class="field"><label for="s-contact">{% trans "Contact person" %}</label><input type="text" id="s-contact" name="contact_person"></div>
+            <div class="field"><label for="s-email">{% trans "Email" %}</label><input type="email" id="s-email" name="email"></div>
+            <div class="field"><label for="s-phone">{% trans "Phone" %}</label><input type="tel" id="s-phone" name="phone"></div>
         </div>
     </div>
-    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}Add supplier</button></div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add supplier" %}</button></div>
 </form>
 {% endblock %}

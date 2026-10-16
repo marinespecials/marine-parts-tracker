@@ -2,6 +2,7 @@
 (function () {
     'use strict';
     var root = document.documentElement;
+    var TEXT = window.MS_TEXT || { inStock: 'in stock', copied: 'Copied', savedHere: 'Saved on this device' };
 
     // ---- Theme (initial value is set inline in <head> to avoid a flash) ----
     function setTheme(theme) {
@@ -78,8 +79,8 @@
                 var o = document.createElement('option');
                 o.value = p.id;
                 var label = p.name + (p.code ? ' (' + p.code + ')' : '');
-                if (mode === 'price') label += ' · €' + p.cost + ' · ' + p.qty + ' in stock';
-                else if (mode === 'stock') label += ' · ' + p.qty + ' in stock';
+                if (mode === 'price') label += ' · ' + (root.lang === 'el' ? p.cost.replace('.', ',') : p.cost) + ' € · ' + p.qty + ' ' + TEXT.inStock;
+                else if (mode === 'stock') label += ' · ' + p.qty + ' ' + TEXT.inStock;
                 o.textContent = label;
                 o.dataset.cost = p.cost;
                 frag.appendChild(o);
@@ -104,7 +105,7 @@
         ta.addEventListener('input', function () {
             clearTimeout(timer);
             timer = setTimeout(function () {
-                try { localStorage.setItem(key, ta.value); if (status) status.textContent = 'Saved on this device'; } catch (e) { }
+                try { localStorage.setItem(key, ta.value); if (status) status.textContent = TEXT.savedHere; } catch (e) { }
             }, 400);
         });
     });
@@ -116,7 +117,7 @@
         var el = document.querySelector(b.getAttribute('data-copy'));
         if (!el) return;
         var text = el.value !== undefined ? el.value : el.textContent;
-        var done = function () { var old = b.innerHTML; b.textContent = 'Copied'; setTimeout(function () { b.innerHTML = old; }, 1800); };
+        var done = function () { var old = b.innerHTML; b.textContent = TEXT.copied; setTimeout(function () { b.innerHTML = old; }, 1800); };
         if (navigator.clipboard) navigator.clipboard.writeText(text).then(done);
         else { el.select(); document.execCommand('copy'); done(); }
     });

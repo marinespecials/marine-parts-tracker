@@ -1,45 +1,45 @@
-{% extends 'base.html' %}{% load ui %}
+{% extends 'base.html' %}{% load ui i18n %}
 {% block title %}{{ client.name }}{% endblock %}
 
 {% block content %}
-<div class="crumbs"><a href="{% url 'client_list' %}">Clients</a>{% icon "chevron-right" %}<span>{{ client.name }}</span></div>
+<div class="crumbs"><a href="{% url 'client_list' %}">{% trans "Clients" %}</a>{% icon "chevron-right" %}<span>{{ client.name }}</span></div>
 
 <section class="card">
     <div class="summary">
         <div style="display:flex;gap:14px;align-items:center">
             <span class="avatar" style="width:44px;height:44px;font-size:15px">{{ client.name|initials }}</span>
             <div>
-                <div class="eyebrow">Client / vessel</div>
+                <div class="eyebrow">{% trans "Client / vessel" %}</div>
                 <h1 style="font-size:22px;margin-top:2px">{{ client.name }}</h1>
                 <div class="meta-line">
-                    <span>{% icon "calendar" %}Client since {{ client.created_at|date:"M Y" }}</span>
-                    {% if money.last %}<span>{% icon "clock" %}Last activity {{ money.last|date:"d M Y" }}</span>{% endif %}
-                    <span>{% icon "receipt" %}Net {{ profile.payment_terms_days }} days</span>
-                    <span class="badge {% if profile.internal_rating == 'A' %}badge-success{% elif profile.internal_rating == 'C' %}badge-danger{% else %}badge-info{% endif %}">Rating {{ rating_label }}</span>
+                    <span>{% icon "calendar" %}{% trans "Client since" %} {{ client.created_at|date:"M Y" }}</span>
+                    {% if money.last %}<span>{% icon "clock" %}{% trans "Last activity" %} {{ money.last|date:"d M Y" }}</span>{% endif %}
+                    <span>{% icon "receipt" %}{% trans "Net" %} {{ profile.payment_terms_days }} {% trans "days" %}</span>
+                    <span class="badge {% if profile.internal_rating == 'A' %}badge-success{% elif profile.internal_rating == 'C' %}badge-danger{% else %}badge-info{% endif %}">{% trans "Rating" %} {{ rating_label }}</span>
                 </div>
             </div>
         </div>
         <div class="button-row">
-            <a href="{% url 'create_order' %}?client={{ client.name|urlencode }}" class="btn btn-sm">{% icon "orders" %}New order</a>
-            <a href="{% url 'finance:create_invoice' %}?client={{ client.name|urlencode }}" class="btn btn-sm btn-primary">{% icon "receipt" %}New invoice</a>
+            <a href="{% url 'create_order' %}?client={{ client.name|urlencode }}" class="btn btn-sm">{% icon "orders" %}{% trans "New order" %}</a>
+            <a href="{% url 'finance:create_invoice' %}?client={{ client.name|urlencode }}" class="btn btn-sm btn-primary">{% icon "receipt" %}{% trans "New invoice" %}</a>
         </div>
     </div>
 </section>
 
 <div class="stats">
-    <div class="stat tone-success"><div class="stat-label">{% icon "check" %}Lifetime paid</div><div class="stat-value">{{ money.paid|money }}</div></div>
-    <div class="stat {% if money.outstanding %}tone-warning{% endif %}"><div class="stat-label">{% icon "clock" %}Outstanding</div><div class="stat-value">{{ money.outstanding|money }}</div>{% if money.overdue %}<div class="stat-meta" style="color:var(--danger)">{{ money.overdue|money }} overdue</div>{% endif %}</div>
-    <div class="stat"><div class="stat-label">{% icon "orders" %}Orders</div><div class="stat-value">{{ orders|length }}</div></div>
-    <div class="stat"><div class="stat-label">{% icon "receipt" %}Invoices</div><div class="stat-value">{{ invoices|length }}</div></div>
+    <div class="stat tone-success"><div class="stat-label">{% icon "check" %}{% trans "Lifetime paid" %}</div><div class="stat-value">{{ money.paid|money }}</div></div>
+    <div class="stat {% if money.outstanding %}tone-warning{% endif %}"><div class="stat-label">{% icon "clock" %}{% trans "Outstanding" %}</div><div class="stat-value">{{ money.outstanding|money }}</div>{% if money.overdue %}<div class="stat-meta" style="color:var(--danger)">{{ money.overdue|money }} {% trans "overdue" %}</div>{% endif %}</div>
+    <div class="stat"><div class="stat-label">{% icon "orders" %}{% trans "Orders" %}</div><div class="stat-value">{{ orders|length }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "receipt" %}{% trans "Invoices" %}</div><div class="stat-value">{{ invoices|length }}</div></div>
 </div>
 
 <div class="grid grid-main-side">
     <div class="stack">
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "receipt" %}Invoices</div></div>
+            <div class="card-header"><div class="card-title">{% icon "receipt" %}{% trans "Invoices" %}</div></div>
             {% if invoices %}
             <div class="table-wrap"><table class="table">
-                <thead><tr><th>Invoice</th><th>Issued</th><th>Due</th><th>Status</th><th class="num">Amount</th><th></th></tr></thead>
+                <thead><tr><th>{% trans "Invoice" %}</th><th>{% trans "Issued" %}</th><th>{% trans "Due" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Amount" %}</th><th></th></tr></thead>
                 <tbody>{% for inv in invoices %}
                     <tr data-href="{% url 'finance:invoice_detail' inv.id %}" class="row-link">
                         <td><a class="entity" href="{% url 'finance:invoice_detail' inv.id %}">{{ inv.invoice_number }}</a></td>
@@ -47,19 +47,19 @@
                         <td class="nowrap">{{ inv.due_date|date:"d M Y"|default:"—" }}</td>
                         <td>{% status_badge inv.status %}</td>
                         <td class="num">{{ inv.total_amount|money }}</td>
-                        <td class="actions">{% if inv.google_drive_url %}<a href="{{ inv.google_drive_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-icon btn-sm" title="PDF in Drive">{% icon "folder" %}</a>{% endif %}</td>
+                        <td class="actions">{% if inv.google_drive_url %}<a href="{{ inv.google_drive_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-icon btn-sm" title="{% trans "PDF in Drive" %}">{% icon "folder" %}</a>{% endif %}</td>
                     </tr>{% endfor %}</tbody>
             </table></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='receipt' title='No invoices yet' text='Invoices for this client will be listed here.' %}
+                {% include 'partials/empty.html' with icon='receipt' title=_("No invoices yet") text=_("Invoices for this client will be listed here.") %}
             {% endif %}
         </section>
 
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "orders" %}Orders</div></div>
+            <div class="card-header"><div class="card-title">{% icon "orders" %}{% trans "Orders" %}</div></div>
             {% if orders %}
             <div class="table-wrap"><table class="table">
-                <thead><tr><th>Order</th><th>Date</th><th>Status</th><th class="num">Value</th></tr></thead>
+                <thead><tr><th>{% trans "Order" %}</th><th>{% trans "Date" %}</th><th>{% trans "Status" %}</th><th class="num">{% trans "Value" %}</th></tr></thead>
                 <tbody>{% for o in orders %}
                     <tr data-href="{% url 'order_detail' o.id %}" class="row-link">
                         <td><a class="entity" href="{% url 'order_detail' o.id %}">{{ o.invoice_number }}</a></td>
@@ -69,15 +69,15 @@
                     </tr>{% endfor %}</tbody>
             </table></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='orders' title='No orders yet' %}
+                {% include 'partials/empty.html' with icon='orders' title=_("No orders yet") %}
             {% endif %}
         </section>
 
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "box" %}What they buy</div></div>
+            <div class="card-header"><div class="card-title">{% icon "box" %}{% trans "What they buy" %}</div></div>
             {% if top_parts %}
             <div class="table-wrap"><table class="table">
-                <thead><tr><th>Part / item</th><th class="num">Qty</th><th class="num">Lines</th><th class="num">Avg price</th></tr></thead>
+                <thead><tr><th>{% trans "Part / item" %}</th><th class="num">{% trans "Qty" %}</th><th class="num">{% trans "Lines" %}</th><th class="num">{% trans "Avg price" %}</th></tr></thead>
                 <tbody>{% for part in top_parts %}
                     <tr>
                         <td>{% if part.inventory_item_id %}<a class="entity" href="{% url 'part_detail' part.inventory_item_id %}">{{ part.description }}</a>{% else %}<span class="primary">{{ part.description }}</span>{% endif %}</td>
@@ -85,7 +85,7 @@
                     </tr>{% endfor %}</tbody>
             </table></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='box' title='No parts ordered yet' %}
+                {% include 'partials/empty.html' with icon='box' title=_("No parts ordered yet") %}
             {% endif %}
         </section>
     </div>
@@ -93,42 +93,42 @@
     <div class="stack">
         <form method="POST" class="card">
             {% csrf_token %}
-            <div class="card-header"><div class="card-title">{% icon "edit" %}Account settings</div></div>
+            <div class="card-header"><div class="card-title">{% icon "edit" %}{% trans "Account settings" %}</div></div>
             <div class="card-body" style="display:grid;gap:14px">
                 <div class="field">
-                    <label for="internal_rating">Internal rating</label>
+                    <label for="internal_rating">{% trans "Internal rating" %}</label>
                     <select id="internal_rating" name="internal_rating">
                         {% for code, label in rating_choices %}<option value="{{ code }}" {% if profile.internal_rating == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
                     </select>
                 </div>
-                <div class="field"><label for="payment_terms_days">Payment terms (days)</label><input type="number" min="0" id="payment_terms_days" name="payment_terms_days" value="{{ profile.payment_terms_days }}"></div>
-                <div class="field"><label for="negotiation_notes">Notes</label><textarea id="negotiation_notes" name="negotiation_notes" rows="4" placeholder="Discounts agreed, contacts, vessel details…">{{ profile.negotiation_notes|default:'' }}</textarea></div>
+                <div class="field"><label for="payment_terms_days">{% trans "Payment terms (days)" %}</label><input type="number" min="0" id="payment_terms_days" name="payment_terms_days" value="{{ profile.payment_terms_days }}"></div>
+                <div class="field"><label for="negotiation_notes">{% trans "Notes" %}</label><textarea id="negotiation_notes" name="negotiation_notes" rows="4" placeholder="{% trans "Discounts agreed, contacts, vessel details…" %}">{{ profile.negotiation_notes|default:'' }}</textarea></div>
             </div>
-            <div class="card-footer"><button type="submit" name="update_profile" value="1" class="btn btn-primary btn-sm">{% icon "check" %}Save</button></div>
+            <div class="card-footer"><button type="submit" name="update_profile" value="1" class="btn btn-primary btn-sm">{% icon "check" %}{% trans "Save" %}</button></div>
         </form>
 
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "chart" %}By year</div></div>
+            <div class="card-header"><div class="card-title">{% icon "chart" %}{% trans "By year" %}</div></div>
             {% if yearly_data %}
             <div class="table-wrap"><table class="table">
-                <thead><tr><th>Year</th><th class="num">Invoices</th><th class="num">Billed</th><th class="num">Paid</th></tr></thead>
+                <thead><tr><th>{% trans "Year" %}</th><th class="num">{% trans "Invoices" %}</th><th class="num">{% trans "Billed" %}</th><th class="num">{% trans "Paid" %}</th></tr></thead>
                 <tbody>{% for y in yearly_data %}
                     <tr><td><strong>{{ y.issue_date__year }}</strong></td><td class="num">{{ y.count }}</td><td class="num">{{ y.total|money }}</td><td class="num">{{ y.paid|money }}</td></tr>
                 {% endfor %}</tbody>
             </table></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='chart' title='No yearly data yet' %}
+                {% include 'partials/empty.html' with icon='chart' title=_("No yearly data yet") %}
             {% endif %}
         </section>
 
         <section class="card">
-            <div class="card-header"><div class="card-title">{% icon "trending" %}Logged prices</div><a href="{% url 'finance:price_history' %}?q={{ client.name|urlencode }}" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a></div>
+            <div class="card-header"><div class="card-title">{% icon "trending" %}{% trans "Logged prices" %}</div><a href="{% url 'finance:price_history' %}?q={{ client.name|urlencode }}" class="btn btn-ghost btn-sm">{% trans "All" %}{% icon "arrow-right" %}</a></div>
             {% if price_history %}
             <div class="table-wrap"><table class="table"><tbody>{% for r in price_history %}
                 <tr><td><span class="primary">{{ r.part_name }}</span><span class="secondary">{{ r.date_recorded|date:"d M Y" }}{% if r.notes %} · {{ r.notes|truncatechars:40 }}{% endif %}</span></td><td class="num">{{ r.unit_price }} {{ r.currency }}</td></tr>
             {% endfor %}</tbody></table></div>
             {% else %}
-                {% include 'partials/empty.html' with icon='trending' title='No prices logged' text='Price records under this client’s exact name appear here.' %}
+                {% include 'partials/empty.html' with icon='trending' title=_("No prices logged") text=_("Price records under this client’s exact name appear here.") %}
             {% endif %}
         </section>
     </div>

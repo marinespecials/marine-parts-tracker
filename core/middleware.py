@@ -11,7 +11,7 @@ class LoginRequiredMiddleware:
     Set REQUIRE_LOGIN=False in the environment to disable (not recommended).
     """
 
-    EXEMPT_PREFIXES = ('/admin/', '/static/', '/login/', '/logout/', '/healthz/')
+    EXEMPT_PREFIXES = ('/admin/', '/static/', '/login/', '/logout/', '/healthz/', '/i18n/')
 
     def __init__(self, get_response):
         self.get_response = get_response

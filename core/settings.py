@@ -34,6 +34,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # Greek / English switch
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -91,7 +92,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-LANGUAGE_CODE = 'en-us'
+# Greek by default; each person can switch to English from the sidebar (remembered in a cookie).
+LANGUAGE_CODE = 'el'
+LANGUAGES = [('el', 'Ελληνικά'), ('en', 'English')]
+LOCALE_PATHS = [BASE_DIR / 'locale']
+LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365
 TIME_ZONE = 'Europe/Athens'
 USE_I18N = True
 USE_TZ = True

@@ -1,14 +1,14 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Live board{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Live board" %}{% endblock %}
 {% block extra_head %}<meta http-equiv="refresh" content="120">{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Live operations board</h1>
-        <p class="lede">Every open order with packing progress. Scan a QR code with a phone to open it. Refreshes every 2 minutes.</p>
+        <h1>{% trans "Live operations board" %}</h1>
+        <p class="lede">{% trans "Every open order with packing progress. Scan a QR code with a phone to open it. Refreshes every 2 minutes." %}</p>
     </div>
-    <div class="actions"><a href="{% url 'orders_dashboard' %}" class="btn">{% icon "orders" %}Orders list</a></div>
+    <div class="actions"><a href="{% url 'orders_dashboard' %}" class="btn">{% icon "orders" %}{% trans "Orders list" %}</a></div>
 </div>
 
 {% if orders %}
@@ -19,18 +19,18 @@
             <div>
                 {% status_badge order.status %}
                 <h3><a class="entity" href="{% url 'order_detail' order.id %}">{{ order.invoice_number }}</a></h3>
-                <div class="muted">{% if order.customer %}<a href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}No client{% endif %}</div>
-                <div class="subtle" style="font-size:12.5px;margin-top:2px">{{ order.issue_date|date:"d M Y" }} · {{ order.line_count }} line{{ order.line_count|pluralize }}</div>
+                <div class="muted">{% if order.customer %}<a href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}{% trans "No client" %}{% endif %}</div>
+                <div class="subtle" style="font-size:12.5px;margin-top:2px">{{ order.issue_date|date:"d M Y" }} · {{ order.line_count }} {% if order.line_count == 1 %}{% trans "line" %}{% else %}{% trans "lines" %}{% endif %}</div>
             </div>
-            <img class="qr" src="{{ order.qr_code_url }}" alt="QR code for {{ order.invoice_number }}" loading="lazy" width="84" height="84">
+            <img class="qr" src="{{ order.qr_code_url }}" alt="{% trans 'QR code' %} {{ order.invoice_number }}" loading="lazy" width="84" height="84">
         </div>
         <div>
-            <div class="progress-label"><span>Packing</span><span class="num">{{ order.progress }}%</span></div>
+            <div class="progress-label"><span>{% trans "Packing" %}</span><span class="num">{{ order.progress }}%</span></div>
             <div class="progress {% if order.progress == 100 %}done{% endif %}"><span style="width:{{ order.progress }}%"></span></div>
         </div>
         <div class="button-row">
-            <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-sm">{% icon "smartphone" %}Pack</a>
-            <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">Open{% icon "arrow-right" %}</a>
+            <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-sm">{% icon "smartphone" %}{% trans "Pack" %}</a>
+            <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">{% trans "Open" %}{% icon "arrow-right" %}</a>
         </div>
     </article>
     {% endfor %}
@@ -38,7 +38,7 @@
 {% else %}
 <div class="card">
     {% url 'create_order' as new_order_url %}
-    {% include 'partials/empty.html' with icon='check' title='No open operations' text='All orders are delivered. New pending orders appear here automatically.' action_url=new_order_url action_label='Create order' %}
+    {% include 'partials/empty.html' with icon='check' title=_("No open operations") text=_("All orders are delivered. New pending orders appear here automatically.") action_url=new_order_url action_label=_("Create order") %}
 </div>
 {% endif %}
 {% endblock %}

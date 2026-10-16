@@ -1,51 +1,51 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}New invoice{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "New invoice" %}{% endblock %}
 
 {% block content %}
-<div class="crumbs"><a href="{% url 'finance:dashboard' %}">Invoices</a>{% icon "chevron-right" %}<span>New invoice</span></div>
+<div class="crumbs"><a href="{% url 'finance:dashboard' %}">{% trans "Invoices" %}</a>{% icon "chevron-right" %}<span>{% trans "New invoice" %}</span></div>
 <div class="page-header">
     <div>
-        <h1>New invoice</h1>
-        <p class="lede">A billing record (τιμολόγιο) with payment status and due date. Invoices don't change warehouse stock. Use an <a href="{% url 'create_order' %}">order</a> for that.</p>
+        <h1>{% trans "New invoice" %}</h1>
+        <p class="lede">{% trans "A billing record (τιμολόγιο) with payment status and due date. Invoices don't change warehouse stock. Use an" %} <a href="{% url 'create_order' %}">{% trans "order" %}</a> {% trans "for that." %}</p>
     </div>
 </div>
 
 <form method="POST" class="card">
     {% csrf_token %}
-    <div class="card-header"><div class="card-title">Invoice details</div></div>
+    <div class="card-header"><div class="card-title">{% trans "Invoice details" %}</div></div>
     <div class="card-body">
         <div class="form-grid">
             <div class="field span-all">
-                <label for="customer_name">Client / vessel *</label>
-                <input type="text" id="customer_name" name="customer_name" value="{{ preset_client }}" placeholder="e.g. Aegean Shipping, M/Y Atlantis" required list="client-list" autocomplete="off">
+                <label for="customer_name">{% trans "Client / vessel *" %}</label>
+                <input type="text" id="customer_name" name="customer_name" value="{{ preset_client }}" placeholder="{% trans "e.g. Aegean Shipping, M/Y Atlantis" %}" required list="client-list" autocomplete="off">
                 <datalist id="client-list">{% for name in customers %}<option value="{{ name }}"></option>{% endfor %}</datalist>
             </div>
-            <div class="field"><label for="invoice_number">Invoice number</label><input type="text" id="invoice_number" name="invoice_number" placeholder="Auto: INV-1234"></div>
+            <div class="field"><label for="invoice_number">{% trans "Invoice number" %}</label><input type="text" id="invoice_number" name="invoice_number" placeholder="{% trans "Auto: INV-1234" %}"></div>
             <div class="field">
-                <label for="status">Payment status</label>
+                <label for="status">{% trans "Payment status" %}</label>
                 <select id="status" name="status">
-                    <option value="UNPAID" selected>Unpaid</option>
-                    <option value="PAID">Paid</option>
-                    <option value="OVERDUE">Overdue</option>
+                    <option value="UNPAID" selected>{% trans "Unpaid" %}</option>
+                    <option value="PAID">{% trans "Paid" %}</option>
+                    <option value="OVERDUE">{% trans "Overdue" %}</option>
                 </select>
             </div>
-            <div class="field"><label for="issue_date">Issue date</label><input type="date" id="issue_date" name="issue_date" value="{{ today|date:'Y-m-d' }}"></div>
-            <div class="field"><label for="due_date">Due date</label><input type="date" id="due_date" name="due_date" value="{{ default_due|date:'Y-m-d' }}"><span class="hint">Defaults to 30 days.</span></div>
-            <div class="field span-all"><label for="google_drive_url">Google Drive PDF link</label><input type="url" id="google_drive_url" name="google_drive_url" placeholder="https://drive.google.com/file/d/…"></div>
+            <div class="field"><label for="issue_date">{% trans "Issue date" %}</label><input type="date" id="issue_date" name="issue_date" value="{{ today|date:'Y-m-d' }}"></div>
+            <div class="field"><label for="due_date">{% trans "Due date" %}</label><input type="date" id="due_date" name="due_date" value="{{ default_due|date:'Y-m-d' }}"><span class="hint">{% trans "Defaults to 30 days." %}</span></div>
+            <div class="field span-all"><label for="google_drive_url">{% trans "Google Drive PDF link" %}</label><input type="url" id="google_drive_url" name="google_drive_url" placeholder="{% trans "https://drive.google.com/file/d/…" %}"></div>
         </div>
     </div>
-    <div class="card-header" style="border-top:1px solid var(--border)"><div class="card-title">First line <span class="card-sub">optional</span></div></div>
+    <div class="card-header" style="border-top:1px solid var(--border)"><div class="card-title">{% trans "First line" %} <span class="card-sub">{% trans "optional" %}</span></div></div>
     <div class="card-body">
         <div class="form-row">
-            <div class="field grow"><label for="inventory_id">Warehouse part</label><select id="inventory_id" name="inventory_id" data-parts="price"><option value="">Choose a part…</option></select></div>
-            <div class="field grow"><label for="custom_description">…or a custom line / service</label><input type="text" id="custom_description" name="custom_description" placeholder="Description"></div>
-            <div class="field w-qty"><label for="quantity">Qty</label><input type="number" id="quantity" name="quantity" value="1" min="1"></div>
-            <div class="field w-price"><label for="unit_price">Unit price €</label><input type="number" step="0.01" min="0" id="unit_price" name="unit_price" placeholder="0.00" data-price-target></div>
+            <div class="field grow"><label for="inventory_id">{% trans "Warehouse part" %}</label><select id="inventory_id" name="inventory_id" data-parts="price"><option value="">{% trans "Choose a part…" %}</option></select></div>
+            <div class="field grow"><label for="custom_description">{% trans "…or a custom line / service" %}</label><input type="text" id="custom_description" name="custom_description" placeholder="{% trans "Description" %}"></div>
+            <div class="field w-qty"><label for="quantity">{% trans "Qty" %}</label><input type="number" id="quantity" name="quantity" value="1" min="1"></div>
+            <div class="field w-price"><label for="unit_price">{% trans "Unit price €" %}</label><input type="number" step="0.01" min="0" id="unit_price" name="unit_price" placeholder="0.00" data-price-target></div>
         </div>
     </div>
     <div class="card-footer">
-        <a href="{% url 'finance:dashboard' %}" class="btn btn-ghost">Cancel</a>
-        <button type="submit" class="btn btn-primary">Create invoice{% icon "arrow-right" %}</button>
+        <a href="{% url 'finance:dashboard' %}" class="btn btn-ghost">{% trans "Cancel" %}</a>
+        <button type="submit" class="btn btn-primary">{% trans "Create invoice" %}{% icon "arrow-right" %}</button>
     </div>
 </form>
 {{ parts|json_script:"parts-data" }}

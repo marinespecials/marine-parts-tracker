@@ -3,21 +3,22 @@ from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 # One category list shared by the warehouse, the client catalog and the master price list.
 PART_CATEGORIES = [
-    ('General', 'General Hardware'),
-    ('Engine Spares', 'Engine Spares'),
-    ('Filters', 'Filters & Separators'),
-    ('Pumps', 'Pumps & Impellers'),
-    ('Valves', 'Valves & Plumbing'),
-    ('Hoses & Fittings', 'Hoses & Fittings'),
-    ('Seals & Bearings', 'Seals & Bearings'),
-    ('Electrical', 'Electrical & Batteries'),
-    ('Anodes', 'Anodes & Corrosion'),
-    ('Lubricants', 'Oils & Lubricants'),
-    ('Safety', 'Safety Equipment'),
+    ('General', _('General Hardware')),
+    ('Engine Spares', _('Engine Spares')),
+    ('Filters', _('Filters & Separators')),
+    ('Pumps', _('Pumps & Impellers')),
+    ('Valves', _('Valves & Plumbing')),
+    ('Hoses & Fittings', _('Hoses & Fittings')),
+    ('Seals & Bearings', _('Seals & Bearings')),
+    ('Electrical', _('Electrical & Batteries')),
+    ('Anodes', _('Anodes & Corrosion')),
+    ('Lubricants', _('Oils & Lubricants')),
+    ('Safety', _('Safety Equipment')),
 ]
 
 # Keyword rules used to suggest a category from a part's name/code (English + Greek).

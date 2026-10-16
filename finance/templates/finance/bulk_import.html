@@ -1,23 +1,23 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Drive links{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Drive links" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Attach Google Drive PDFs</h1>
-        <p class="lede">Paste many Drive links at once and they're attached to the matching invoices and orders.</p>
+        <h1>{% trans "Attach Google Drive PDFs" %}</h1>
+        <p class="lede">{% trans "Paste many Drive links at once and they're attached to the matching invoices and orders." %}</p>
     </div>
-    <div class="actions"><a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener" class="btn">{% icon "folder" %}Open Drive folder{% icon "external" "icon-sm" %}</a></div>
+    <div class="actions"><a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener" class="btn">{% icon "folder" %}{% trans "Open Drive folder" %}{% icon "external" "icon-sm" %}</a></div>
 </div>
 
 {% if results %}
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "check" %}Results</div></div>
+    <div class="card-header"><div class="card-title">{% icon "check" %}{% trans "Results" %}</div></div>
     <div class="table-wrap"><table class="table">
-        <thead><tr><th>Outcome</th><th>Document</th><th>Note</th><th>Line</th></tr></thead>
+        <thead><tr><th>{% trans "Outcome" %}</th><th>{% trans "Document" %}</th><th>{% trans "Note" %}</th><th>{% trans "Line" %}</th></tr></thead>
         <tbody>{% for r in results %}
             <tr>
-                <td>{% if r.outcome == 'attached' %}<span class="badge badge-success">Attached</span>{% elif r.outcome == 'kept' %}<span class="badge badge-info">Kept</span>{% elif r.outcome == 'unmatched' %}<span class="badge badge-warning">No match</span>{% else %}<span class="badge badge-neutral">Skipped</span>{% endif %}</td>
+                <td>{% if r.outcome == 'attached' %}<span class="badge badge-success">{% trans "Attached" %}</span>{% elif r.outcome == 'kept' %}<span class="badge badge-info">{% trans "Kept" %}</span>{% elif r.outcome == 'unmatched' %}<span class="badge badge-warning">{% trans "No match" %}</span>{% else %}<span class="badge badge-neutral">{% trans "Skipped" %}</span>{% endif %}</td>
                 <td>{% if r.doc %}<a class="entity" href="{% url 'finance:invoice_detail' r.doc.id %}">{{ r.doc.invoice_number }}</a>{% else %}—{% endif %}</td>
                 <td class="muted">{{ r.note }}</td>
                 <td class="mono subtle" style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.line }}</td>
@@ -29,26 +29,26 @@
 <div class="grid grid-main-side">
     <form method="POST" class="card">
         {% csrf_token %}
-        <div class="card-header"><div class="card-title">{% icon "upload" %}Paste links</div></div>
+        <div class="card-header"><div class="card-title">{% icon "upload" %}{% trans "Paste links" %}</div></div>
         <div class="card-body" style="display:grid;gap:14px">
-            <div class="callout" style="margin:0">{% icon "info" %}<div>One link per line, with the invoice or order number on the same line, for example:<br><code>INV-1042 https://drive.google.com/file/d/…</code><br>Copying the file name from Drive (e.g. <code>INV-1042.pdf</code>) together with its share link works too.</div></div>
+            <div class="callout" style="margin:0">{% icon "info" %}<div>{% trans "One link per line, with the invoice or order number on the same line, for example:" %}<br><code>INV-1042 https://drive.google.com/file/d/…</code><br>{% trans "Copying the file name from Drive (e.g." %} <code>INV-1042.pdf</code>{% trans ") together with its share link works too." %}</div></div>
             <div class="field">
-                <label for="raw_data">Links</label>
-                <textarea id="raw_data" name="raw_data" rows="10" class="mono" placeholder="INV-1042 https://drive.google.com/file/d/...&#10;ORD-2210 https://drive.google.com/file/d/..." required></textarea>
+                <label for="raw_data">{% trans "Links" %}</label>
+                <textarea id="raw_data" name="raw_data" rows="10" class="mono" placeholder="{% trans "INV-1042 https://drive.google.com/file/d/...&#10;ORD-2210 https://drive.google.com/file/d/..." %}" required></textarea>
             </div>
-            <label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" name="overwrite" value="1"> Replace links that are already attached</label>
+            <label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" name="overwrite" value="1"> {% trans "Replace links that are already attached" %}</label>
         </div>
-        <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "link" %}Attach links</button></div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "link" %}{% trans "Attach links" %}</button></div>
     </form>
 
     <section class="card">
-        <div class="card-header"><div class="card-title">{% icon "alert" %}Missing a PDF</div><span class="card-sub">newest 12</span></div>
+        <div class="card-header"><div class="card-title">{% icon "alert" %}{% trans "Missing a PDF" %}</div><span class="card-sub">{% trans "newest 12" %}</span></div>
         {% if missing_links %}
         <div class="table-wrap"><table class="table"><tbody>{% for doc in missing_links %}
             <tr data-href="{% url 'finance:invoice_detail' doc.id %}" class="row-link"><td><a class="entity" href="{% url 'finance:invoice_detail' doc.id %}">{{ doc.invoice_number }}</a><span class="secondary">{{ doc.customer.name|default:"—" }}</span></td><td>{% status_badge doc.status %}</td></tr>
         {% endfor %}</tbody></table></div>
         {% else %}
-            {% include 'partials/empty.html' with icon='check' title='Everything has a PDF' %}
+            {% include 'partials/empty.html' with icon='check' title=_("Everything has a PDF") %}
         {% endif %}
     </section>
 </div>

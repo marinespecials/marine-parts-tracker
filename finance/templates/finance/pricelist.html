@@ -1,41 +1,41 @@
-{% extends 'base.html' %}{% load ui %}
-{% block title %}Master price list{% endblock %}
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Master price list" %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Master price list</h1>
-        <p class="lede">Cost, markup and client selling price per part. Selling price is calculated automatically.</p>
+        <h1>{% trans "Master price list" %}</h1>
+        <p class="lede">{% trans "Cost, markup and client selling price per part. Selling price is calculated automatically." %}</p>
     </div>
-    <div class="actions"><a href="#new-price-item" class="btn btn-primary" onclick="document.getElementById('pl-name').focus()">{% icon "plus" %}Add item</a></div>
+    <div class="actions"><a href="#new-price-item" class="btn btn-primary" onclick="document.getElementById('pl-name').focus()">{% icon "plus" %}{% trans "Add item" %}</a></div>
 </div>
 
 <div class="card">
     <form method="GET" class="toolbar">
-        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Part, code or brand…" aria-label="Search price list"></div>
-        <select name="category" data-autosubmit aria-label="Category">
-            <option value="ALL">All categories</option>
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="{% trans "Part, code or brand…" %}" aria-label="{% trans "Search price list" %}"></div>
+        <select name="category" data-autosubmit aria-label="{% trans "Category" %}">
+            <option value="ALL">{% trans "All categories" %}</option>
             {% for code, label, n in categories %}<option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }} ({{ n }})</option>{% endfor %}
         </select>
-        <button type="submit" class="btn btn-sm">Search</button>
-        {% if query or category_filter != 'ALL' %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
-        <span class="meta">{{ items|length }} item{{ items|length|pluralize }}</span>
+        <button type="submit" class="btn btn-sm">{% trans "Search" %}</button>
+        {% if query or category_filter != 'ALL' %}<a href="?" class="btn btn-ghost btn-sm">{% trans "Clear" %}</a>{% endif %}
+        <span class="meta">{{ items|length }} {% if items|length == 1 %}{% trans "item" %}{% else %}{% trans "items" %}{% endif %}</span>
     </form>
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Part</th><th>Brand</th><th>Category</th><th>Availability</th><th class="num">Cost</th><th class="num">Markup</th><th class="num">Client price</th><th>Warehouse</th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Brand" %}</th><th>{% trans "Category" %}</th><th>{% trans "Availability" %}</th><th class="num">{% trans "Cost" %}</th><th class="num">{% trans "Markup" %}</th><th class="num">{% trans "Client price" %}</th><th>{% trans "Warehouse" %}</th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr>
                     <td><span class="primary">{{ item.part_name }}</span>{% if item.part_code %}<span class="secondary mono">{{ item.part_code }}</span>{% endif %}</td>
                     <td class="muted">{{ item.brand|default:"—" }}</td>
                     <td class="muted">{{ item.get_category_display }}</td>
-                    <td>{% if item.availability == 'In Stock' %}<span class="badge badge-success">In stock</span>{% elif item.availability == '2-3 Days' %}<span class="badge badge-info">2–3 days</span>{% else %}<span class="badge badge-warning">7–10 days</span>{% endif %}</td>
+                    <td>{% if item.availability == 'In Stock' %}<span class="badge badge-success">{% trans "In stock" %}</span>{% elif item.availability == '2-3 Days' %}<span class="badge badge-info">{% trans "2–3 days" %}</span>{% else %}<span class="badge badge-warning">{% trans "7–10 days" %}</span>{% endif %}</td>
                     <td class="num">{{ item.cost_price|money }}</td>
                     <td class="num">{{ item.markup_percent|floatformat:0 }}%</td>
                     <td class="num"><strong>{{ item.client_price|money }}</strong></td>
-                    <td>{% if item.stock_part %}<a class="chip" href="{% url 'part_detail' item.stock_part.id %}">{% icon "box" "icon-sm" %}{{ item.stock_part.quantity }} in stock</a>{% else %}<span class="subtle">Not stocked</span>{% endif %}</td>
+                    <td>{% if item.stock_part %}<a class="chip" href="{% url 'part_detail' item.stock_part.id %}">{% icon "box" "icon-sm" %}{{ item.stock_part.quantity }} {% trans "in stock" %}</a>{% else %}<span class="subtle">{% trans "Not stocked" %}</span>{% endif %}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -43,33 +43,33 @@
     </div>
     {% else %}
         {% if query or category_filter != 'ALL' %}
-            {% include 'partials/empty.html' with icon='search' title='No items match' text='Try another search or category.' %}
+            {% include 'partials/empty.html' with icon='search' title=_("No items match") text=_("Try another search or category.") %}
         {% else %}
-            {% include 'partials/empty.html' with icon='list' title='The price list is empty' text='Add your first item below — client price = cost + markup.' %}
+            {% include 'partials/empty.html' with icon='list' title=_("The price list is empty") text=_("Add your first item below — client price = cost + markup.") %}
         {% endif %}
     {% endif %}
 </div>
 
 <form method="POST" class="card" id="new-price-item">
     {% csrf_token %}
-    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a price-list item</div></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a price-list item" %}</div></div>
     <div class="card-body">
         <div class="form-grid">
-            <div class="field"><label for="pl-name">Part name *</label><input type="text" id="pl-name" name="part_name" required></div>
-            <div class="field"><label for="pl-code">OEM / part code</label><input type="text" id="pl-code" name="part_code"></div>
-            <div class="field"><label for="pl-brand">Brand</label><input type="text" id="pl-brand" name="brand" placeholder="e.g. Yanmar, Victron, Jabsco"></div>
+            <div class="field"><label for="pl-name">{% trans "Part name *" %}</label><input type="text" id="pl-name" name="part_name" required></div>
+            <div class="field"><label for="pl-code">{% trans "OEM / part code" %}</label><input type="text" id="pl-code" name="part_code"></div>
+            <div class="field"><label for="pl-brand">{% trans "Brand" %}</label><input type="text" id="pl-brand" name="brand" placeholder="{% trans "e.g. Yanmar, Victron, Jabsco" %}"></div>
             <div class="field">
-                <label for="pl-cat">Category</label>
-                <select id="pl-cat" name="category"><option value="">Detect from name</option>{% for code, label, n in categories %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select>
+                <label for="pl-cat">{% trans "Category" %}</label>
+                <select id="pl-cat" name="category"><option value="">{% trans "Detect from name" %}</option>{% for code, label, n in categories %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select>
             </div>
-            <div class="field"><label for="pl-cost">Cost €</label><input type="number" step="0.01" min="0" id="pl-cost" name="cost_price" placeholder="0.00"></div>
-            <div class="field"><label for="pl-markup">Markup %</label><input type="number" step="0.01" min="0" id="pl-markup" name="markup_percent" value="30"></div>
+            <div class="field"><label for="pl-cost">{% trans "Cost €" %}</label><input type="number" step="0.01" min="0" id="pl-cost" name="cost_price" placeholder="0.00"></div>
+            <div class="field"><label for="pl-markup">{% trans "Markup" %} %</label><input type="number" step="0.01" min="0" id="pl-markup" name="markup_percent" value="30"></div>
             <div class="field">
-                <label for="pl-avail">Availability</label>
+                <label for="pl-avail">{% trans "Availability" %}</label>
                 <select id="pl-avail" name="availability">{% for code, label in availability_choices %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select>
             </div>
         </div>
     </div>
-    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}Add item</button></div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add item" %}</button></div>
 </form>
 {% endblock %}

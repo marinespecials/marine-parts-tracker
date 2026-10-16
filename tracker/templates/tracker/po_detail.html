@@ -1,101 +1,101 @@
-{% extends 'base.html' %}{% load ui %}
+{% extends 'base.html' %}{% load ui i18n %}
 {% block title %}{{ po.po_number }}{% endblock %}
 
 {% block content %}
 <div class="crumbs">
-    <a href="{% url 'po_list' %}">Purchase orders</a>{% icon "chevron-right" %}
+    <a href="{% url 'po_list' %}">{% trans "Purchase orders" %}</a>{% icon "chevron-right" %}
     <a href="{% url 'supplier_detail' po.supplier.id %}">{{ po.supplier.name }}</a>{% icon "chevron-right" %}<span>{{ po.po_number }}</span>
 </div>
 
 <section class="card">
     <div class="summary">
         <div>
-            <div class="eyebrow">Purchase order {{ po.po_number }}</div>
+            <div class="eyebrow">{% trans "Purchase order" %} {{ po.po_number }}</div>
             <h1 style="font-size:22px;margin-top:2px"><a class="entity" href="{% url 'supplier_detail' po.supplier.id %}">{{ po.supplier.name }}</a></h1>
             <div class="meta-line">
                 <span>{% icon "calendar" %}{{ po.issue_date|date:"d M Y" }}</span>
-                <span>{% icon "list" %}{{ items|length }} line{{ items|length|pluralize }}</span>
+                <span>{% icon "list" %}{{ items|length }} {% if items|length == 1 %}{% trans "line" %}{% else %}{% trans "lines" %}{% endif %}</span>
                 {% if po.supplier.email %}<span>{% icon "mail" %}{{ po.supplier.email }}</span>{% endif %}
             </div>
         </div>
         <div class="summary-right">
-            <div class="eyebrow">Total</div>
+            <div class="eyebrow">{% trans "Total" %}</div>
             <div class="big">{{ po.total_amount|money }}</div>
             <div style="margin-top:8px">{% status_badge po.status %}</div>
         </div>
     </div>
     <div class="card-footer" style="justify-content:space-between">
-        <form method="POST" action="{% url 'delete_po' po.id %}" class="inline-form" data-confirm="Delete purchase order {{ po.po_number }}?">
-            {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">{% icon "trash" %}Delete</button>
+        <form method="POST" action="{% url 'delete_po' po.id %}" class="inline-form" data-confirm="{% blocktrans with n=po.po_number %}Delete purchase order {{ n }}?{% endblocktrans %}">
+            {% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">{% icon "trash" %}{% trans "Delete" %}</button>
         </form>
         {% if po.status != 'RECEIVED' %}
-        <form method="POST" class="inline-form" data-confirm="Mark {{ po.po_number }} received and add all its parts to warehouse stock?">
+        <form method="POST" class="inline-form" data-confirm="{% blocktrans with n=po.po_number %}Mark {{ n }} received and add all its parts to warehouse stock?{% endblocktrans %}">
             {% csrf_token %}
-            <button type="submit" name="receive_po" value="1" class="btn btn-sm btn-success" {% if not items %}disabled{% endif %}>{% icon "inbox" %}Mark received &amp; add to stock</button>
+            <button type="submit" name="receive_po" value="1" class="btn btn-sm btn-success" {% if not items %}disabled{% endif %}>{% icon "inbox" %}{% trans "Mark received &amp; add to stock" %}</button>
         </form>
         {% else %}
-        <span class="badge badge-success">Goods received — stock updated</span>
+        <span class="badge badge-success">{% trans "Goods received — stock updated" %}</span>
         {% endif %}
     </div>
 </section>
 
 {% if po.status != 'RECEIVED' %}
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a part</div></div>
+    <div class="card-header"><div class="card-title">{% icon "plus" %}{% trans "Add a part" %}</div></div>
     <form method="POST" class="card-body">
         {% csrf_token %}
         <input type="hidden" name="add_item" value="1">
         <div class="form-row">
-            <div class="field grow"><label for="po-part">Warehouse part *</label><select id="po-part" name="inventory_id" required data-parts="stock"><option value="">Choose a part…</option></select></div>
-            <div class="field w-qty"><label for="po-qty">Qty</label><input id="po-qty" type="number" name="quantity" value="1" min="1"></div>
-            <div class="field w-price"><label for="po-cost">Unit cost €</label><input id="po-cost" type="number" step="0.01" min="0" name="unit_cost" placeholder="0.00" data-price-target></div>
-            <button type="submit" class="btn btn-primary">{% icon "plus" %}Add</button>
+            <div class="field grow"><label for="po-part">{% trans "Warehouse part *" %}</label><select id="po-part" name="inventory_id" required data-parts="stock"><option value="">{% trans "Choose a part…" %}</option></select></div>
+            <div class="field w-qty"><label for="po-qty">{% trans "Qty" %}</label><input id="po-qty" type="number" name="quantity" value="1" min="1"></div>
+            <div class="field w-price"><label for="po-cost">{% trans "Unit cost €" %}</label><input id="po-cost" type="number" step="0.01" min="0" name="unit_cost" placeholder="0.00" data-price-target></div>
+            <button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add" %}</button>
         </div>
-        <p class="hint subtle" style="margin-top:8px;font-size:12.5px">Part not listed? <a href="{% url 'inventory_list' %}#new-part">Add it to the warehouse</a> first (with quantity 0).</p>
+        <p class="hint subtle" style="margin-top:8px;font-size:12.5px">{% trans "Part not listed?" %} <a href="{% url 'inventory_list' %}#new-part">{% trans "Add it to the warehouse" %}</a> {% trans "first (with quantity 0)." %}</p>
     </form>
 </section>
 {% endif %}
 
 <section class="card">
-    <div class="card-header"><div class="card-title">{% icon "list" %}Lines</div></div>
+    <div class="card-header"><div class="card-title">{% icon "list" %}{% trans "Lines" %}</div></div>
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Part</th><th class="num">Qty</th><th class="num">Unit cost</th><th class="num">Total</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th class="num">{% trans "Qty" %}</th><th class="num">{% trans "Unit cost" %}</th><th class="num">{% trans "Total" %}</th><th></th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr>
                     <td>
                         {% if item.inventory_item %}<a class="entity" href="{% url 'part_detail' item.inventory_item.id %}">{{ item.inventory_item.part_name }}</a>{% if item.inventory_item.part_code %}<span class="secondary mono">{{ item.inventory_item.part_code }}</span>{% endif %}
-                        {% else %}<span class="subtle">Deleted part</span>{% endif %}
+                        {% else %}<span class="subtle">{% trans "Deleted part" %}</span>{% endif %}
                     </td>
                     <td class="num">{{ item.quantity }}</td>
                     <td class="num">{{ item.unit_cost|money }}</td>
                     <td class="num"><strong>{{ item.total_cost|money }}</strong></td>
                     <td class="actions">
                         {% if po.status != 'RECEIVED' %}
-                        <form method="POST" action="{% url 'delete_po_item' item.id %}" class="inline-form" data-confirm="Remove this line?">
-                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">{% icon "trash" %}</button>
+                        <form method="POST" action="{% url 'delete_po_item' item.id %}" class="inline-form" data-confirm="{% trans "Remove this line?" %}">
+                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Remove" %}">{% icon "trash" %}</button>
                         </form>
                         {% endif %}
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
-            <tfoot><tr><td colspan="3">Total</td><td class="num">{{ po.total_amount|money }}</td><td></td></tr></tfoot>
+            <tfoot><tr><td colspan="3">{% trans "Total" %}</td><td class="num">{{ po.total_amount|money }}</td><td></td></tr></tfoot>
         </table>
     </div>
     {% else %}
-        {% include 'partials/empty.html' with icon='box' title='No lines yet' text='Add the parts you want to order from this supplier.' %}
+        {% include 'partials/empty.html' with icon='box' title=_("No lines yet") text=_("Add the parts you want to order from this supplier.") %}
     {% endif %}
 </section>
 
 <section class="card">
     <div class="card-header">
-        <div class="card-title">{% icon "mail" %}Email to supplier</div>
+        <div class="card-title">{% icon "mail" %}{% trans "Email to supplier" %}</div>
         <div class="button-row">
-            <button type="button" class="btn btn-sm" data-copy="#emailBodyText">{% icon "copy" %}Copy text</button>
-            <a id="mailtoLink" href="#" class="btn btn-sm btn-primary">{% icon "mail" %}Open in email app</a>
+            <button type="button" class="btn btn-sm" data-copy="#emailBodyText">{% icon "copy" %}{% trans "Copy text" %}</button>
+            <a id="mailtoLink" href="#" class="btn btn-sm btn-primary">{% icon "mail" %}{% trans "Open in email app" %}</a>
         </div>
     </div>
     <div class="card-body">
