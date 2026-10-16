@@ -105,13 +105,12 @@ STATICFILES_DIRS = [BASE_DIR / 'static']  # app.css / app.js (the design system)
 # Locally (and in tests) plain storage is used so no collectstatic step is needed.
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': (
-        'whitenoise.storage.CompressedManifestStaticFilesStorage' if os.environ.get('RENDER')
-        else 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    )},
+    # Plain storage + WhiteNoise finders: app.css / app.js are served straight from static/,
+    # so the site keeps its styling even if the Render build skips `collectstatic`.
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
 }
-WHITENOISE_USE_FINDERS = not os.environ.get('RENDER')  # serve /static/ locally without collectstatic
-WHITENOISE_MAX_AGE = 60 * 60 * 24 * 365 if os.environ.get('RENDER') else 0
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MAX_AGE = 300  # browsers re-check design files every 5 min, so updates show up quickly
 
 # Media files (QR Codes, PDF Invoices)
 MEDIA_URL = '/media/'
