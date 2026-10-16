@@ -9,6 +9,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('tracker', '0006_item_current_piraeus_bin_and_more'),
+        # Offer is deleted below, so finance must drop Invoice.offer first —
+        # without this a fresh database (and the test suite) fails to migrate.
+        ('finance', '0003_remove_invoice_offer_remove_invoice_subtotal_and_more'),
     ]
 
     operations = [

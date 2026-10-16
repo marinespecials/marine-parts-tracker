@@ -1,0 +1,104 @@
+{% extends 'base.html' %}{% load ui %}
+{% block title %}{{ supplier.name }}{% endblock %}
+
+{% block content %}
+<div class="crumbs"><a href="{% url 'supplier_list' %}">Suppliers</a>{% icon "chevron-right" %}<span>{{ supplier.name }}</span></div>
+
+<section class="card">
+    <div class="summary">
+        <div style="display:flex;gap:14px;align-items:center">
+            <span class="avatar" style="width:44px;height:44px;font-size:15px">{{ supplier.name|initials }}</span>
+            <div>
+                <div class="eyebrow">Supplier</div>
+                <h1 style="font-size:22px;margin-top:2px">{{ supplier.name }}</h1>
+                <div class="meta-line">
+                    {% if supplier.contact_person %}<span>{% icon "users" %}{{ supplier.contact_person }}</span>{% endif %}
+                    {% if supplier.email %}<span>{% icon "mail" %}<a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a></span>{% endif %}
+                    {% if supplier.phone %}<span>{% icon "phone" %}<a href="tel:{{ supplier.phone }}">{{ supplier.phone }}</a></span>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="summary-right">
+            <div class="eyebrow">Total ordered</div>
+            <div class="big">{{ po_total|money }}</div>
+            <div class="subtle" style="font-size:12.5px">{{ pos|length }} PO{{ pos|length|pluralize }} · {{ open_count }} open</div>
+        </div>
+    </div>
+    <div class="card-footer"><a href="{% url 'po_list' %}?supplier={{ supplier.id }}#new-po" class="btn btn-sm btn-primary">{% icon "cart" %}New purchase order</a></div>
+</section>
+
+<div class="grid grid-main-side">
+    <div class="stack">
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "cart" %}Purchase orders</div></div>
+            {% if pos %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>PO</th><th>Date</th><th>Status</th><th class="num">Lines</th><th class="num">Total</th></tr></thead>
+                <tbody>
+                {% for po in pos %}
+                <tr data-href="{% url 'po_detail' po.id %}" class="row-link">
+                    <td><a class="entity" href="{% url 'po_detail' po.id %}">{{ po.po_number }}</a></td>
+                    <td class="nowrap">{{ po.issue_date|date:"d M Y" }}</td>
+                    <td>{% status_badge po.status %}</td>
+                    <td class="num">{{ po.line_count }}</td>
+                    <td class="num">{{ po.total_amount|money }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='cart' title='No purchase orders yet' text='Raise a PO to order parts from this supplier.' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "box" %}Parts supplied</div></div>
+            {% if parts %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>Part</th><th class="num">Ordered</th><th class="num">In stock now</th><th class="num">Highest unit cost</th><th>Last ordered</th></tr></thead>
+                <tbody>
+                {% for p in parts %}
+                <tr data-href="{% url 'part_detail' p.inventory_item__id %}" class="row-link">
+                    <td><a class="entity" href="{% url 'part_detail' p.inventory_item__id %}">{{ p.inventory_item__part_name }}</a>{% if p.inventory_item__part_code %}<span class="secondary mono">{{ p.inventory_item__part_code }}</span>{% endif %}</td>
+                    <td class="num">{{ p.qty }}</td>
+                    <td class="num">{{ p.inventory_item__quantity }}</td>
+                    <td class="num">{{ p.last_cost|money }}</td>
+                    <td class="nowrap muted">{{ p.last_date|date:"d M Y" }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='box' title='No parts yet' text='Parts appear here once they are on a purchase order from this supplier.' %}
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="stack">
+        <form method="POST" class="card">
+            {% csrf_token %}
+            <div class="card-header"><div class="card-title">{% icon "edit" %}Contact details</div></div>
+            <div class="card-body" style="display:grid;gap:14px">
+                <div class="field"><label for="name">Company name</label><input type="text" id="name" name="name" value="{{ supplier.name }}" required></div>
+                <div class="field"><label for="contact_person">Contact person</label><input type="text" id="contact_person" name="contact_person" value="{{ supplier.contact_person|default:'' }}"></div>
+                <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ supplier.email|default:'' }}"></div>
+                <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" value="{{ supplier.phone|default:'' }}"></div>
+            </div>
+            <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "check" %}Save</button></div>
+        </form>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "trending" %}Logged prices</div><a href="{% url 'finance:price_history' %}?q={{ supplier.name|urlencode }}" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a></div>
+            {% if prices %}
+            <div class="table-wrap"><table class="table"><tbody>
+                {% for r in prices %}
+                <tr><td><span class="primary">{{ r.part_name }}</span><span class="secondary">{{ r.date_recorded|date:"d M Y" }}</span></td><td class="num">{{ r.unit_price }} {{ r.currency }}</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='trending' title='No prices logged' text='Price records with this supplier’s exact name show up here.' %}
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

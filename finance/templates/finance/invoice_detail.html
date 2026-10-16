@@ -1,166 +1,121 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
-{% block page_title %}🧾 Invoice: {{ invoice.invoice_number }}{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
 
 {% block content %}
-<style>
-    .info-card { 
-        background: var(--surface); 
-        padding: 20px 24px; 
-        border-radius: 10px; 
-        border: 1px solid var(--border); 
-        margin-bottom: 20px; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-    }
-
-    .badge-status { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
-    .status-UNPAID { background: #FEE2E2; color: #991B1B; }
-    .status-PAID { background: #D1FAE5; color: #065F46; }
-    .status-OVERDUE { background: #FEF3C7; color: #92400E; }
-
-    .add-item-card {
-        background: var(--surface);
-        padding: 18px 22px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .add-item-grid {
-        display: grid;
-        grid-template-columns: 2fr 1.5fr 100px 120px 120px;
-        gap: 12px;
-        align-items: center;
-        margin-top: 10px;
-    }
-
-    .add-item-grid select, .add-item-grid input {
-        padding: 9px 12px;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        font-size: 0.875rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
-    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background-color: #FAFCFF; }
-
-    .text-danger { color: var(--danger); font-weight: bold; background: none; border: none; cursor: pointer; font-size: 1rem; }
-</style>
-
-<a href="{% url 'finance:dashboard' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to Financial Workspace</a>
-
-<!-- INVOICE HEADER -->
-<div class="info-card">
-    <div>
-        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Client / Vessel</span>
-        <h2 style="margin: 2px 0 6px 0; color: var(--primary);">{{ invoice.customer.name }}</h2>
-        <div style="color: var(--text-secondary); font-size: 0.875rem;">
-            Issue Date: <strong>{{ invoice.issue_date|date:"d/m/Y" }}</strong> | Due Date: <strong>{{ invoice.due_date|date:"d/m/Y" }}</strong>
-        </div>
-        {% if invoice.google_drive_url %}
-            <a href="{{ invoice.google_drive_url }}" target="_blank" style="display: inline-block; margin-top: 8px; color: var(--accent); font-weight: 600; font-size: 0.85rem; text-decoration: none;">
-                📁 Open PDF Document in Google Drive ↗
-            </a>
-        {% endif %}
-    </div>
-
-    <div style="text-align: right;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Billed Amount</span>
-        <h2 style="margin: 2px 0 8px 0; color: var(--primary);">{{ invoice.total_amount }} €</h2>
-        <span class="badge-status status-{{ invoice.status }}">{{ invoice.status }}</span>
-
-        <!-- Quick Status Switch -->
-        <form method="POST" action="{% url 'finance:update_invoice_details' invoice.id %}" style="margin-top: 10px;">
-            {% csrf_token %}
-            <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 4px;">
-                <option value="UNPAID" {% if invoice.status == 'UNPAID' %}selected{% endif %}>🔴 Unpaid</option>
-                <option value="PAID" {% if invoice.status == 'PAID' %}selected{% endif %}>🟢 Paid</option>
-                <option value="OVERDUE" {% if invoice.status == 'OVERDUE' %}selected{% endif %}>⚠️ Overdue</option>
-            </select>
-        </form>
-    </div>
+<div class="crumbs no-print">
+    <a href="{% url 'finance:dashboard' %}">Invoices</a>{% icon "chevron-right" %}
+    {% if invoice.customer %}<a href="{% url 'finance:client_ledger' invoice.customer.id %}">{{ invoice.customer.name }}</a>{% icon "chevron-right" %}{% endif %}
+    <span>{{ invoice.invoice_number }}</span>
 </div>
 
-<!-- LINE ITEM ADDER -->
-<div class="add-item-card">
-    <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
-        + Add Billed Item / Service to Invoice
+<div class="print-only" style="margin-bottom:16px"><h2>MARINE SPECIALS</h2><p>Piraeus, Greece</p></div>
+
+<section class="card">
+    <div class="summary">
+        <div>
+            <div class="eyebrow">{{ invoice.get_invoice_type_display }} · {{ invoice.invoice_number }}</div>
+            <h1 style="font-size:22px;margin-top:2px">
+                {% if invoice.customer %}<a class="entity" href="{% url 'finance:client_ledger' invoice.customer.id %}">{{ invoice.customer.name }}</a>
+                {% elif invoice.supplier %}<a class="entity" href="{% url 'supplier_detail' invoice.supplier.id %}">{{ invoice.supplier.name }}</a>
+                {% else %}No client{% endif %}
+            </h1>
+            <div class="meta-line">
+                <span>{% icon "calendar" %}Issued {{ invoice.issue_date|date:"d M Y" }}</span>
+                <span {% if invoice.status == 'UNPAID' and invoice.due_date and invoice.due_date < today %}style="color:var(--danger)"{% endif %}>{% icon "clock" %}Due {{ invoice.due_date|date:"d M Y"|default:"—" }}</span>
+                {% if invoice.google_drive_url %}<span>{% icon "folder" %}<a href="{{ invoice.google_drive_url }}" target="_blank" rel="noopener">PDF in Drive</a></span>{% endif %}
+                {% if related %}<span>{% icon "link" %}From order <a href="{% url 'order_detail' related.id %}">{{ related.invoice_number }}</a></span>{% endif %}
+            </div>
+        </div>
+        <div class="summary-right">
+            <div class="eyebrow">Amount</div>
+            <div class="big">{{ invoice.total_amount|money }}</div>
+            <div style="margin-top:8px">{% status_badge invoice.status %}</div>
+        </div>
     </div>
-    
-    <form method="POST" action="{% url 'finance:add_invoice_item' invoice.id %}" class="add-item-grid">
+    <div class="card-footer no-print" style="justify-content:space-between;flex-wrap:wrap">
+        <div class="segmented" role="group" aria-label="Payment status">
+            {% for code in payment_statuses %}
+            <form method="POST" action="{% url 'finance:update_invoice_details' invoice.id %}">{% csrf_token %}<input type="hidden" name="status" value="{{ code }}"><button type="submit" class="{% if invoice.status == code %}on{% endif %}">{{ code|status_label }}</button></form>
+            {% endfor %}
+        </div>
+        <div class="button-row">
+            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}Print</button>
+            <details class="dropdown">
+                <summary class="btn btn-sm btn-icon" title="More">{% icon "more" %}</summary>
+                <div class="dropdown-menu">
+                    <a href="{% url 'finance:export_finances' %}?status={{ invoice.status }}">{% icon "download" %}Export {{ invoice.status|status_label|lower }} invoices</a>
+                    <hr>
+                    <form method="POST" action="{% url 'finance:delete_invoice' invoice.id %}" data-confirm="Delete {{ invoice.invoice_number }}? This cannot be undone.">
+                        {% csrf_token %}
+                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}Delete invoice</button>
+                    </form>
+                </div>
+            </details>
+        </div>
+    </div>
+</section>
+
+<div class="grid grid-main-side">
+    <div class="stack">
+        <section class="card no-print">
+            <div class="card-header"><div class="card-title">{% icon "plus" %}Add a line</div></div>
+            <form method="POST" action="{% url 'finance:add_invoice_item' invoice.id %}" class="card-body">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="field grow"><label for="li-part">Warehouse part</label><select id="li-part" name="inventory_id" data-parts="price"><option value="">Choose a part…</option></select></div>
+                    <div class="field grow"><label for="li-desc">…or custom line / service</label><input id="li-desc" type="text" name="description" placeholder="Description"></div>
+                    <div class="field w-qty"><label for="li-qty">Qty</label><input id="li-qty" type="number" name="quantity" value="1" min="1" required></div>
+                    <div class="field w-price"><label for="li-price">Unit price €</label><input id="li-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
+                    <button type="submit" class="btn btn-primary">{% icon "plus" %}Add</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "list" %}Lines</div></div>
+            {% if items %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
+                    <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td><span class="primary">{{ item.description }}</span>{% if item.inventory_item %}<span class="secondary no-print">{% icon "box" "icon-sm" %} <a href="{% url 'part_detail' item.inventory_item.id %}">{{ item.inventory_item.part_name }}</a></span>{% endif %}</td>
+                            <td class="num">{{ item.quantity }}</td>
+                            <td class="num">{{ item.unit_price|money }}</td>
+                            <td class="num"><strong>{{ item.total_price|money }}</strong></td>
+                            <td class="actions no-print">
+                                <form method="POST" action="{% url 'finance:delete_invoice_item' item.id %}" class="inline-form" data-confirm="Remove this line?">
+                                    {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">{% icon "trash" %}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot><tr><td colspan="3">Total</td><td class="num">{{ invoice.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
+                </table>
+            </div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='list' title='No lines yet' text='Add parts or services above — the total updates automatically.' %}
+            {% endif %}
+        </section>
+    </div>
+
+    <form method="POST" action="{% url 'finance:update_invoice_details' invoice.id %}" class="card no-print">
         {% csrf_token %}
-        
-        <div>
-            <select name="inventory_id">
-                <option value="">-- Choose from Master Warehouse List --</option>
-                {% for inv in master_items %}
-                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} €</option>
-                {% endfor %}
-            </select>
+        <div class="card-header"><div class="card-title">{% icon "edit" %}Details</div></div>
+        <div class="card-body" style="display:grid;gap:14px">
+            <div class="field">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for code, label in status_choices %}<option value="{{ code }}" {% if invoice.status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field"><label for="due_date">Due date</label><input type="date" id="due_date" name="due_date" value="{{ invoice.due_date|date:'Y-m-d' }}"></div>
+            <div class="field"><label for="google_drive_url">Google Drive PDF</label><input type="url" id="google_drive_url" name="google_drive_url" value="{{ invoice.google_drive_url|default:'' }}" placeholder="https://drive.google.com/…"></div>
         </div>
-
-        <div>
-            <input type="text" name="description" placeholder="Or custom item / service name...">
-        </div>
-
-        <div>
-            <input type="number" name="quantity" value="1" min="1" style="text-align: center;" required placeholder="Qty">
-        </div>
-
-        <div>
-            <input type="number" step="0.01" name="unit_price" placeholder="Price (€)">
-        </div>
-
-        <div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 9px; font-size: 0.875rem;">
-                + Add Item
-            </button>
-        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "check" %}Save details</button></div>
     </form>
 </div>
-
-<!-- INVOICE ITEMS TABLE -->
-<div class="card" style="padding: 0; overflow: hidden;">
-    <table>
-        <thead>
-            <tr>
-                <th>Item / Service Description</th>
-                <th style="width: 90px; text-align: center;">Qty</th>
-                <th style="width: 130px;">Unit Price (€)</th>
-                <th style="width: 130px;">Total (€)</th>
-                <th style="width: 70px; text-align: right;">Delete</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in invoice.order_items.all %}
-            <tr>
-                <td><strong style="color: var(--primary); font-size: 0.925rem;">{{ item.description }}</strong></td>
-                <td style="text-align: center;"><strong>{{ item.quantity }}</strong></td>
-                <td>{{ item.unit_price }} €</td>
-                <td><strong style="color: var(--primary);">{{ item.total_price }} €</strong></td>
-                <td style="text-align: right;">
-                    <form method="POST" action="{% url 'finance:delete_invoice_item' item.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="text-danger" title="Remove item" onclick="return confirm('Remove this line item?');">✕</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 40px; color: #94A3B8;">
-                    No line items attached to this invoice yet. Use the form above to add your first line item!
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{{ parts|json_script:"parts-data" }}
 {% endblock %}

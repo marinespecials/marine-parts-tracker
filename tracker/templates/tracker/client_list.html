@@ -1,32 +1,48 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Client Ledgers{% endblock %}
-{% block page_title %}👥 Client Ledgers Directory{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Clients{% endblock %}
 
 {% block content %}
+<div class="page-header">
+    <div>
+        <h1>Clients &amp; vessels</h1>
+        <p class="lede">Open a client to see their orders, invoices, balance and what they buy.</p>
+    </div>
+    <div class="actions"><a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}New order</a></div>
+</div>
+
 <div class="card">
-    <h3 style="margin-top:0; font-size:1.1rem; color:var(--primary); margin-bottom:20px;">All Accounts</h3>
-    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
-        <thead>
-            <tr style="background:#F8FAFC; text-align:left;">
-                <th style="padding:12px;">Client / Supplier Name</th>
-                <th style="padding:12px;">Invoices Processed</th>
-                <th style="padding:12px; text-align:right;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+    <form method="GET" class="toolbar">
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Client or vessel name…" aria-label="Search clients"></div>
+        <button type="submit" class="btn btn-sm">Search</button>
+        {% if query %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+        <span class="meta">{{ clients|length }} client{{ clients|length|pluralize }}</span>
+    </form>
+    {% if clients %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Client</th><th class="num">Orders</th><th class="num">Invoices</th><th class="num">Paid</th><th class="num">Outstanding</th><th>Last activity</th><th></th></tr></thead>
+            <tbody>
             {% for client in clients %}
-            <tr style="border-bottom:1px solid var(--border);">
-                <td style="padding:12px;"><strong style="font-size:0.95rem;">{{ client.name }}</strong></td>
-                <td style="padding:12px;"><span class="badge">{{ client.invoice_count }} Invoices</span></td>
-                <td style="padding:12px; text-align:right;">
-                    <a href="{% url 'finance:client_ledger' client.id %}" class="btn btn-primary" style="padding:4px 12px; font-size:0.8rem;">Open Ledger ↗</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3" style="text-align:center; padding:30px; color:#94A3B8;">No clients or suppliers found.</td></tr>
+                <tr data-href="{% url 'finance:client_ledger' client.id %}" class="row-link">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span class="avatar">{{ client.name|initials }}</span>
+                            <a class="entity" href="{% url 'finance:client_ledger' client.id %}">{{ client.name }}</a>
+                        </div>
+                    </td>
+                    <td class="num">{{ client.order_count }}</td>
+                    <td class="num">{{ client.invoice_count }}</td>
+                    <td class="num">{{ client.paid_total|money }}</td>
+                    <td class="num">{% if client.open_total %}<strong style="color:var(--warning)">{{ client.open_total|money }}</strong>{% else %}<span class="subtle">—</span>{% endif %}</td>
+                    <td class="nowrap muted">{{ client.last_activity|date:"d M Y"|default:"—" }}</td>
+                    <td class="actions"><a href="{% url 'finance:client_ledger' client.id %}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a></td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% include 'partials/empty.html' with icon='users' title='No clients found' text='Clients are created automatically when you make an order or invoice for a new name.' %}
+    {% endif %}
 </div>
 {% endblock %}

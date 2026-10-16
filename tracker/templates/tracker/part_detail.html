@@ -1,0 +1,145 @@
+{% extends 'base.html' %}{% load ui %}
+{% block title %}{{ item.part_name }}{% endblock %}
+
+{% block content %}
+<div class="crumbs">
+    <a href="{% url 'inventory_list' %}">Warehouse</a>{% icon "chevron-right" %}
+    <a href="{% url 'inventory_list' %}?category={{ item.category|urlencode }}">{{ item.get_category_display }}</a>{% icon "chevron-right" %}
+    <span>{{ item.part_name }}</span>
+</div>
+
+<section class="card">
+    <div class="summary">
+        <div>
+            <div class="eyebrow">{{ item.get_category_display }}</div>
+            <h1 style="font-size:22px;margin-top:2px">{{ item.part_name }}</h1>
+            <div class="meta-line">
+                {% if item.part_code %}<span class="mono">{{ item.part_code }}</span>{% endif %}
+                <span>{% icon "pin" %}{{ item.location }}</span>
+                <span>{% icon "euro" %}{{ item.unit_cost|money }} unit cost</span>
+                {% if pricelist %}<span>{% icon "tag" %}List price <a href="{% url 'finance:pricelist_dashboard' %}?q={{ pricelist.part_code|default:pricelist.part_name|urlencode }}">{{ pricelist.client_price|money }}</a></span>{% endif %}
+            </div>
+        </div>
+        <div class="summary-right">
+            <div class="eyebrow">In stock</div>
+            <div class="big" {% if item.is_low_stock %}style="color:var(--danger)"{% endif %}>{{ item.quantity }}</div>
+            <div class="subtle" style="font-size:12.5px">Reorder at {{ item.reorder_level }} · value {{ item.total_stock_value|money }}</div>
+        </div>
+    </div>
+    <div class="card-footer" style="justify-content:space-between;flex-wrap:wrap">
+        <div class="stepper">
+            <form method="POST" action="{% url 'adjust_stock' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="One less">−</button></form>
+            <span class="val {% if item.is_low_stock %}low{% endif %}">{{ item.quantity }}</span>
+            <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="One more">+</button></form>
+        </div>
+        <div class="button-row">
+            <a href="{% url 'po_list' %}#new-po" class="btn btn-sm">{% icon "cart" %}Reorder</a>
+            <a href="{% url 'finance:price_history' %}?q={{ item.part_name|urlencode }}" class="btn btn-sm">{% icon "trending" %}Price history</a>
+            <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-sm btn-primary">{% icon "edit" %}Edit part</a>
+        </div>
+    </div>
+</section>
+
+{% if item.is_low_stock %}
+<div class="callout warning">{% icon "alert" %}<div><strong>Low stock.</strong> {{ item.quantity }} left, reorder level is {{ item.reorder_level }}.{% if suppliers %} Last bought from {% for s in suppliers %}{% if forloop.first %}<a href="{% url 'supplier_detail' s.supplier.id %}">{{ s.supplier.name }}</a>{% endif %}{% endfor %}.{% endif %}</div></div>
+{% endif %}
+
+<div class="stats">
+    <div class="stat"><div class="stat-label">{% icon "orders" %}Units sold</div><div class="stat-value">{{ units_sold }}</div><div class="stat-meta">Across {{ order_lines|length }} recent line{{ order_lines|length|pluralize }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "users" %}Clients</div><div class="stat-value">{{ clients|length }}</div><div class="stat-meta">Who ordered this part</div></div>
+    <div class="stat"><div class="stat-label">{% icon "building" %}Suppliers</div><div class="stat-value">{{ suppliers|length }}</div><div class="stat-meta">From purchase orders</div></div>
+    <div class="stat"><div class="stat-label">{% icon "trending" %}Price records</div><div class="stat-value">{{ price_records|length }}</div><div class="stat-meta">Logged quotes &amp; prices</div></div>
+</div>
+
+<div class="grid grid-main-side">
+    <div class="stack">
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "orders" %}Orders &amp; invoices using this part</div></div>
+            {% if order_lines %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>Document</th><th>Client</th><th>Date</th><th>Status</th><th class="num">Qty</th><th class="num">Price</th></tr></thead>
+                <tbody>
+                {% for line in order_lines %}
+                    {% if line.order.status in 'PENDING PROCESSING DELIVERED' %}{% url 'order_detail' line.order.id as doc_url %}{% else %}{% url 'finance:invoice_detail' line.order.id as doc_url %}{% endif %}
+                    <tr data-href="{{ doc_url }}" class="row-link">
+                        <td><a class="entity" href="{{ doc_url }}">{{ line.order.invoice_number }}</a></td>
+                        <td>{% if line.order.customer %}<a class="entity" href="{% url 'finance:client_ledger' line.order.customer.id %}">{{ line.order.customer.name }}</a>{% else %}—{% endif %}</td>
+                        <td class="nowrap">{{ line.order.issue_date|date:"d M Y" }}</td>
+                        <td>{% status_badge line.order.status %}</td>
+                        <td class="num">{{ line.quantity }}</td>
+                        <td class="num">{{ line.unit_price|money }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='orders' title='Not ordered yet' text='When this part is added to an order or invoice it will be listed here.' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "cart" %}Purchase history</div></div>
+            {% if po_lines %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>PO</th><th>Supplier</th><th>Date</th><th>Status</th><th class="num">Qty</th><th class="num">Unit cost</th></tr></thead>
+                <tbody>
+                {% for line in po_lines %}
+                    <tr data-href="{% url 'po_detail' line.purchase_order.id %}" class="row-link">
+                        <td><a class="entity" href="{% url 'po_detail' line.purchase_order.id %}">{{ line.purchase_order.po_number }}</a></td>
+                        <td><a class="entity" href="{% url 'supplier_detail' line.purchase_order.supplier.id %}">{{ line.purchase_order.supplier.name }}</a></td>
+                        <td class="nowrap">{{ line.purchase_order.issue_date|date:"d M Y" }}</td>
+                        <td>{% status_badge line.purchase_order.status %}</td>
+                        <td class="num">{{ line.quantity }}</td>
+                        <td class="num">{{ line.unit_cost|money }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='cart' title='Never purchased through a PO' text='Add this part to a purchase order to track where it comes from.' %}
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="stack">
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "users" %}Top clients</div></div>
+            {% if clients %}
+            <div class="table-wrap"><table class="table"><tbody>
+                {% for c in clients %}
+                <tr><td><a class="entity" href="{% url 'finance:client_ledger' c.order__customer__id %}">{{ c.order__customer__name }}</a><span class="secondary">{{ c.orders }} order{{ c.orders|pluralize }}</span></td><td class="num">{{ c.qty }} pcs</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='users' title='No clients yet' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "building" %}Suppliers</div></div>
+            {% if suppliers %}
+            <div class="table-wrap"><table class="table"><tbody>
+                {% for s in suppliers %}
+                <tr><td><a class="entity" href="{% url 'supplier_detail' s.supplier.id %}">{{ s.supplier.name }}</a><span class="secondary">Last {{ s.last_date|date:"d M Y" }} at {{ s.last_cost|money }}</span></td><td class="num">{{ s.qty }} pcs</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='building' title='No supplier linked' text='Suppliers appear once this part is on a purchase order.' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "trending" %}Logged prices</div><a href="{% url 'finance:price_history' %}#new-price" class="btn btn-ghost btn-sm">{% icon "plus" %}Log</a></div>
+            {% if price_records %}
+            <div class="table-wrap"><table class="table"><tbody>
+                {% for r in price_records %}
+                <tr><td><span class="primary">{{ r.supplier_or_client_name }}</span><span class="secondary">{{ r.date_recorded|date:"d M Y" }}</span></td><td class="num">{{ r.unit_price }} {{ r.currency }}</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='trending' title='No prices logged' text='Log supplier quotes to compare prices over time.' %}
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

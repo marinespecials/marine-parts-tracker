@@ -1,31 +1,64 @@
-{% extends 'finance/base.html' %}
-{% block title %}Purchase Orders{% endblock %}
-{% block page_title %}🛒 Purchase Orders (Inbound){% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Purchase orders{% endblock %}
+
 {% block content %}
-<div class="card" style="margin-bottom: 20px; background: var(--accent-light);">
-    <form method="POST" style="display: flex; gap: 10px; align-items: center;">
-        {% csrf_token %}
-        <select name="supplier_id" required style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
-            <option value="">-- Select Supplier --</option>
-            {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
-        </select>
-        <button type="submit" class="btn btn-primary">+ Create Purchase Order</button>
-    </form>
+<div class="page-header">
+    <div>
+        <h1>Purchase orders</h1>
+        <p class="lede">Parts you've ordered from suppliers. Receiving a PO adds its parts to warehouse stock.</p>
+    </div>
+    <div class="actions"><a href="#new-po" class="btn btn-primary">{% icon "plus" %}New purchase order</a></div>
 </div>
+
 <div class="card">
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
-            <th style="padding:10px;">PO Number</th><th style="padding:10px;">Supplier</th><th style="padding:10px;">Date</th><th style="padding:10px;">Status</th><th style="padding:10px;">Total</th>
-        </tr>
-        {% for po in pos %}
-        <tr style="border-bottom:1px solid #e2e8f0;">
-            <td style="padding:10px;"><a href="{% url 'po_detail' po.id %}" style="font-weight:bold; color:var(--accent);">{{ po.po_number }}</a></td>
-            <td style="padding:10px;">{{ po.supplier.name }}</td>
-            <td style="padding:10px;">{{ po.issue_date|date:"Y-m-d" }}</td>
-            <td style="padding:10px;"><span class="badge">{{ po.status }}</span></td>
-            <td style="padding:10px;"><strong>{{ po.total_amount }} €</strong></td>
-        </tr>
-        {% endfor %}
-    </table>
+    <nav class="tabs">
+        <a href="?status=ALL" class="tab {% if status_filter == 'ALL' %}active{% endif %}">All <span class="count">{{ counts.ALL }}</span></a>
+        <a href="?status=OPEN" class="tab {% if status_filter == 'OPEN' %}active{% endif %}">{% icon "clock" "icon-sm" %}Open <span class="count">{{ counts.OPEN }}</span></a>
+        <a href="?status=RECEIVED" class="tab {% if status_filter == 'RECEIVED' %}active{% endif %}">{% icon "inbox" "icon-sm" %}Received <span class="count">{{ counts.RECEIVED }}</span></a>
+    </nav>
+    {% if pos %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>PO</th><th>Supplier</th><th>Date</th><th>Status</th><th class="num">Lines</th><th class="num">Total</th><th></th></tr></thead>
+            <tbody>
+            {% for po in pos %}
+                <tr data-href="{% url 'po_detail' po.id %}" class="row-link">
+                    <td><a class="entity" href="{% url 'po_detail' po.id %}">{{ po.po_number }}</a></td>
+                    <td><a class="entity" href="{% url 'supplier_detail' po.supplier.id %}">{{ po.supplier.name }}</a></td>
+                    <td class="nowrap">{{ po.issue_date|date:"d M Y" }}</td>
+                    <td>{% status_badge po.status %}</td>
+                    <td class="num">{{ po.line_count }}</td>
+                    <td class="num">{{ po.total_amount|money }}</td>
+                    <td class="actions"><a href="{% url 'po_detail' po.id %}" class="btn btn-ghost btn-icon btn-sm" title="Open">{% icon "chevron-right" %}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% include 'partials/empty.html' with icon='cart' title='No purchase orders here' text='Create one below to order parts from a supplier.' %}
+    {% endif %}
 </div>
+
+<form method="POST" class="card" id="new-po">
+    {% csrf_token %}
+    <div class="card-header"><div class="card-title">{% icon "plus" %}New purchase order</div></div>
+    <div class="card-body">
+        {% if suppliers %}
+        <div class="form-row">
+            <div class="field grow">
+                <label for="supplier_id">Supplier *</label>
+                <select id="supplier_id" name="supplier_id" required>
+                    <option value="">Choose a supplier…</option>
+                    {% for s in suppliers %}<option value="{{ s.id }}" {% if preset_supplier == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field grow"><label for="po_number">PO number</label><input type="text" id="po_number" name="po_number" placeholder="Auto: PO-1234"></div>
+            <button type="submit" class="btn btn-primary">Create &amp; add parts{% icon "arrow-right" %}</button>
+        </div>
+        {% else %}
+        <div class="callout">{% icon "info" %}<div>Add a supplier first. <a href="{% url 'supplier_list' %}#new-supplier">Add supplier →</a></div></div>
+        {% endif %}
+    </div>
+</form>
 {% endblock %}

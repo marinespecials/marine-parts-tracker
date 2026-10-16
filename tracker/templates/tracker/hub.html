@@ -1,186 +1,157 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Operational Hub{% endblock %}
-{% block page_title %}📊 Operational Hub & Key Metrics{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<style>
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .metric-card {
-        background: var(--surface);
-        padding: 20px 22px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-
-    .metric-card .title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        color: var(--text-secondary);
-        margin-bottom: 6px;
-    }
-
-    .metric-card .value {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: var(--primary);
-    }
-
-    .card-table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .card-table-header h2 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--primary);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
-    }
-
-    th {
-        text-align: left;
-        padding: 10px 14px;
-        background-color: #F8FAFC;
-        border-bottom: 2px solid var(--border);
-        color: var(--text-secondary);
-        font-weight: 600;
-    }
-
-    td {
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-    }
-
-    tr:hover td {
-        background-color: #FAFCFF;
-    }
-
-    .status-badge {
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .status-PENDING { background-color: #FEF3C7; color: #92400E; }
-    .status-PROCESSING { background-color: #DBEAFE; color: #1E40AF; }
-    .status-DELIVERED { background-color: #D1FAE5; color: #065F46; }
-</style>
-
-<!-- TOP KEY METRICS CARDS -->
-<div class="metrics-grid">
-    <div class="metric-card">
-        <div class="title">Active Orders</div>
-        <div class="value" style="color: var(--accent);">{{ total_orders }}</div>
+<div class="page-header">
+    <div>
+        <h1>Good to see you{% if user.get_username %}, {{ user.get_username|capfirst }}{% endif %}</h1>
+        <p class="lede">Here's where operations, stock and money stand today.</p>
     </div>
-    <div class="metric-card">
-        <div class="title">Completed Deliveries</div>
-        <div class="value" style="color: var(--success);">{{ total_deliveries }}</div>
-    </div>
-    <div class="metric-card">
-        <div class="title">Warehouse Catalog Items</div>
-        <div class="value">{{ total_inventory_items }}</div>
-    </div>
-    <div class="metric-card">
-        <div class="title">Unpaid Invoices ({{ unpaid_count }})</div>
-        <div class="value" style="color: {% if unpaid_count %}var(--danger){% else %}var(--text-secondary){% endif %};">€{{ unpaid_total|floatformat:2 }}</div>
-    </div>
-    <div class="metric-card">
-        <div class="title">Low Stock Alerts</div>
-        <div class="value" style="color: {% if low_stock_count > 0 %}var(--danger){% else %}var(--text-secondary){% endif %};">
-            {{ low_stock_count }}
-        </div>
+    <div class="actions">
+        <a href="{% url 'active_board' %}" class="btn">{% icon "board" %}Live board</a>
+        <a href="{% url 'create_order' %}" class="btn btn-primary">{% icon "plus" %}New order</a>
     </div>
 </div>
 
-<!-- ACTIVE ORDERS OVERVIEW TABLE -->
-<div class="card">
-    <div class="card-table-header">
-        <h2> Recent Active Operations & Orders</h2>
-        <a href="{% url 'orders_dashboard' %}" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">View All Orders →</a>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Order Number</th>
-                <th>Client / Vessel</th>
-                <th>Issue Date</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Total (€)</th>
-                <th style="text-align: right;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in active_orders %}
-            <tr>
-                <td><strong>{{ order.invoice_number }}</strong></td>
-                <td>{{ order.customer.name }}</td>
-                <td>{{ order.issue_date|date:"Y-m-d" }}</td>
-                <td>{{ order.due_date|date:"Y-m-d" }}</td>
-                <td>
-                    <span class="status-badge status-{{ order.status }}">
-                        {{ order.status }}
-                    </span>
-                </td>
-                <td><strong>{{ order.total_amount }} €</strong></td>
-                <td style="text-align: right;">
-                    <a href="{% url 'order_detail' order.id %}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.775rem;">
-                        Open Order
-                    </a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 32px;">
-                    No pending or processing orders right now.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="stats">
+    <a class="stat" href="{% url 'orders_dashboard' %}?status=PENDING">
+        <div class="stat-label">{% icon "orders" %}Active orders</div>
+        <div class="stat-value">{{ total_orders }}</div>
+        <div class="stat-meta">{{ total_deliveries }} delivered so far</div>
+    </a>
+    <a class="stat {% if overdue_count %}tone-danger{% endif %}" href="{% url 'finance:dashboard' %}?status={% if overdue_count %}OVERDUE{% else %}UNPAID{% endif %}">
+        <div class="stat-label">{% icon "receipt" %}Outstanding</div>
+        <div class="stat-value">{{ unpaid_total|money }}</div>
+        <div class="stat-meta">{{ unpaid_count }} unpaid{% if overdue_count %} · {{ overdue_count }} overdue{% endif %}</div>
+    </a>
+    <a class="stat tone-success" href="{% url 'finance:dashboard' %}?status=PAID">
+        <div class="stat-label">{% icon "euro" %}Paid this month</div>
+        <div class="stat-value">{{ paid_this_month|money }}</div>
+        <div class="stat-meta">Invoices issued this month</div>
+    </a>
+    <a class="stat" href="{% url 'inventory_list' %}">
+        <div class="stat-label">{% icon "box" %}Warehouse value</div>
+        <div class="stat-value">{{ warehouse_value|money }}</div>
+        <div class="stat-meta">{{ total_inventory_items }} parts on record</div>
+    </a>
+    <a class="stat {% if low_stock_count %}tone-warning{% endif %}" href="{% url 'inventory_list' %}?filter=LOW_STOCK">
+        <div class="stat-label">{% icon "alert" %}Low stock</div>
+        <div class="stat-value">{{ low_stock_count }}</div>
+        <div class="stat-meta">At or below reorder level</div>
+    </a>
 </div>
 
-{% if low_stock_items %}
-<div class="card">
-    <div class="card-table-header">
-        <h2>⚠️ Needs Reordering</h2>
-        <a href="{% url 'inventory_list' %}" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Open Warehouse →</a>
+<div class="grid grid-main-side">
+    <div class="stack">
+        <section class="card">
+            <div class="card-header">
+                <div class="card-title">{% icon "orders" %}Active orders</div>
+                <a href="{% url 'orders_dashboard' %}" class="btn btn-ghost btn-sm">View all{% icon "arrow-right" %}</a>
+            </div>
+            {% if active_orders %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Order</th><th>Client / vessel</th><th>Packing</th><th>Status</th><th class="num">Value</th></tr></thead>
+                    <tbody>
+                    {% for order in active_orders %}
+                        <tr data-href="{% url 'order_detail' order.id %}" class="row-link">
+                            <td><a class="entity" href="{% url 'order_detail' order.id %}">{{ order.invoice_number }}</a><span class="secondary">{{ order.issue_date|date:"d M Y" }}</span></td>
+                            <td>{% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}<span class="subtle">No client</span>{% endif %}</td>
+                            <td style="min-width:120px">
+                                {% with pct=order.packed_count|percent_of:order.line_count %}
+                                <div class="progress {% if pct == 100 %}done{% endif %}"><span style="width:{{ pct }}%"></span></div>
+                                <span class="secondary">{{ order.packed_count }}/{{ order.line_count }} packed</span>
+                                {% endwith %}
+                            </td>
+                            <td>{% status_badge order.status %}</td>
+                            <td class="num">{{ order.total_amount|money }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                {% url 'create_order' as new_order_url %}
+                {% include 'partials/empty.html' with icon='orders' title='No active orders' text='Everything pending has been delivered. New orders will show up here.' action_url=new_order_url action_label='Create order' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-title">{% icon "receipt" %}Recent invoices</div>
+                <a href="{% url 'finance:dashboard' %}" class="btn btn-ghost btn-sm">All invoices{% icon "arrow-right" %}</a>
+            </div>
+            {% if recent_invoices %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Invoice</th><th>Client</th><th>Due</th><th>Status</th><th class="num">Amount</th></tr></thead>
+                    <tbody>
+                    {% for inv in recent_invoices %}
+                        <tr data-href="{% url 'finance:invoice_detail' inv.id %}" class="row-link">
+                            <td><a class="entity" href="{% url 'finance:invoice_detail' inv.id %}">{{ inv.invoice_number }}</a></td>
+                            <td>{% if inv.customer %}<a class="entity" href="{% url 'finance:client_ledger' inv.customer.id %}">{{ inv.customer.name }}</a>{% else %}<span class="subtle">—</span>{% endif %}</td>
+                            <td class="nowrap">{{ inv.due_date|date:"d M Y"|default:"—" }}</td>
+                            <td>{% status_badge inv.status %}</td>
+                            <td class="num">{{ inv.total_amount|money }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                {% url 'finance:create_invoice' as new_inv_url %}
+                {% include 'partials/empty.html' with icon='receipt' title='No invoices yet' text='Convert a delivered order or create an invoice directly.' action_url=new_inv_url action_label='New invoice' %}
+            {% endif %}
+        </section>
     </div>
-    <table>
-        <thead><tr><th>Part</th><th>Code</th><th>In stock</th><th>Reorder level</th></tr></thead>
-        <tbody>
-            {% for item in low_stock_items %}
-            <tr>
-                <td><strong>{{ item.part_name }}</strong></td>
-                <td>{{ item.part_code|default:"—" }}</td>
-                <td style="color: var(--danger); font-weight: 700;">{{ item.quantity }}</td>
-                <td>{{ item.reorder_level }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <div class="stack">
+        <section class="card">
+            <div class="card-header">
+                <div class="card-title">{% icon "alert" %}Needs reordering</div>
+                <a href="{% url 'inventory_list' %}?filter=LOW_STOCK" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a>
+            </div>
+            {% if low_stock_items %}
+            <div class="table-wrap">
+                <table class="table">
+                    <tbody>
+                    {% for item in low_stock_items %}
+                        <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
+                            <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a><span class="secondary">{{ item.part_code|default:item.get_category_display }}</span></td>
+                            <td class="num"><span class="badge {% if item.quantity == 0 %}badge-danger{% else %}badge-warning{% endif %}">{{ item.quantity }} left</span></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer"><a href="{% url 'po_list' %}#new-po" class="btn btn-sm">{% icon "cart" %}Start a purchase order</a></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='check' title='Stock levels are healthy' text='No part is at or below its reorder level.' %}
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="card-title">{% icon "cart" %}Open purchase orders</div>
+                <a href="{% url 'po_list' %}?status=OPEN" class="btn btn-ghost btn-sm">All{% icon "arrow-right" %}</a>
+            </div>
+            {% if open_pos %}
+            <div class="table-wrap">
+                <table class="table">
+                    <tbody>
+                    {% for po in open_pos %}
+                        <tr data-href="{% url 'po_detail' po.id %}" class="row-link">
+                            <td><a class="entity" href="{% url 'po_detail' po.id %}">{{ po.po_number }}</a><span class="secondary"><a href="{% url 'supplier_detail' po.supplier.id %}">{{ po.supplier.name }}</a></span></td>
+                            <td class="num">{{ po.total_amount|money }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='cart' title='Nothing on order' text='Purchase orders waiting for delivery appear here.' %}
+            {% endif %}
+        </section>
+    </div>
 </div>
-{% endif %}
 {% endblock %}

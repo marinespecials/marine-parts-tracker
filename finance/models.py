@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from tracker.models import Customer
+from tracker.models import Customer, PART_CATEGORIES
 
 
 class Invoice(models.Model):
@@ -52,6 +52,8 @@ class Invoice(models.Model):
 
 
 class ClientFinancialProfile(models.Model):
+    RATING_LABELS = {'A': 'A · Excellent', 'B': 'B · Good', 'C': 'C · Risky'}
+
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
     lifetime_revenue = models.DecimalField(
         max_digits=12, decimal_places=2, default=0.00
@@ -84,14 +86,7 @@ class PriceRecord(models.Model):
 
 
 class MasterPricelistItem(models.Model):
-    CATEGORY_CHOICES = [
-        ('Filters', 'Filters & Separators'),
-        ('Electrical', 'Electrical & Batteries'),
-        ('Pumps', 'Pumps & Impellers'),
-        ('Valves', 'Valves & Plumbing'),
-        ('Engine Spares', 'Engine Spares'),
-        ('General', 'General Marine Hardware'),
-    ]
+    CATEGORY_CHOICES = PART_CATEGORIES  # same list as the warehouse
     AVAILABILITY_CHOICES = [
         ('In Stock', 'In Stock (Piraeus Warehouse)'),
         ('2-3 Days', 'Available (2-3 Business Days)'),

@@ -54,6 +54,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.nav_counts',
             ],
         },
     },
@@ -98,11 +99,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']  # app.css / app.js (the design system)
 # Django 5.1+ removed STATICFILES_STORAGE; STORAGES is the replacement.
+# On Render, files get hashed names + gzip so browsers can cache them forever.
+# Locally (and in tests) plain storage is used so no collectstatic step is needed.
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    'staticfiles': {'BACKEND': (
+        'whitenoise.storage.CompressedManifestStaticFilesStorage' if os.environ.get('RENDER')
+        else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    )},
 }
+WHITENOISE_USE_FINDERS = not os.environ.get('RENDER')  # serve /static/ locally without collectstatic
+WHITENOISE_MAX_AGE = 60 * 60 * 24 * 365 if os.environ.get('RENDER') else 0
 
 # Media files (QR Codes, PDF Invoices)
 MEDIA_URL = '/media/'

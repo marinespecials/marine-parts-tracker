@@ -1,0 +1,11 @@
+{% load ui %}<details class="dropdown">
+    <summary class="status-trigger" title="Change status">{% status_badge doc.status %}{% icon "chevron-down" %}</summary>
+    <div class="dropdown-menu left">
+        {% for code in statuses %}
+        <form method="POST" action="{% url 'change_order_status' doc.id code %}">
+            {% csrf_token %}
+            <button type="submit">{% if code == 'PENDING' %}{% icon "clock" %}{% elif code == 'PROCESSING' %}{% icon "refresh" %}{% elif code == 'DELIVERED' %}{% icon "truck" %}{% else %}{% icon "receipt" %}{% endif %}{{ code|status_label }}{% if doc.status == code %} {% icon "check" "icon-sm" %}{% endif %}</button>
+        </form>
+        {% endfor %}
+    </div>
+</details>

@@ -1,36 +1,55 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Smart Bulk Link Importer{% endblock %}
-{% block page_title %}⚡ Smart Bulk Link Importer{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Drive links{% endblock %}
 
 {% block content %}
-<style>
-    .form-group { margin-bottom: 20px; }
-    label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; }
-    textarea { width: 100%; height: 220px; padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.875rem; box-sizing: border-box; background: #FAFAFA; font-family: monospace; }
-    textarea:focus { outline: none; border-color: var(--accent); background: white; }
-    .alert-success { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; }
-</style>
+<div class="page-header">
+    <div>
+        <h1>Attach Google Drive PDFs</h1>
+        <p class="lede">Paste many Drive links at once and they're attached to the matching invoices and orders.</p>
+    </div>
+    <div class="actions"><a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener" class="btn">{% icon "folder" %}Open Drive folder{% icon "external" "icon-sm" %}</a></div>
+</div>
 
-<div class="card" style="max-width: 900px; margin: auto;">
-    {% if message %}
-        <div class="alert-success">✅ {{ message }}</div>
-    {% endif %}
+{% if results %}
+<section class="card">
+    <div class="card-header"><div class="card-title">{% icon "check" %}Results</div></div>
+    <div class="table-wrap"><table class="table">
+        <thead><tr><th>Outcome</th><th>Document</th><th>Note</th><th>Line</th></tr></thead>
+        <tbody>{% for r in results %}
+            <tr>
+                <td>{% if r.outcome == 'attached' %}<span class="badge badge-success">Attached</span>{% elif r.outcome == 'kept' %}<span class="badge badge-info">Kept</span>{% elif r.outcome == 'unmatched' %}<span class="badge badge-warning">No match</span>{% else %}<span class="badge badge-neutral">Skipped</span>{% endif %}</td>
+                <td>{% if r.doc %}<a class="entity" href="{% url 'finance:invoice_detail' r.doc.id %}">{{ r.doc.invoice_number }}</a>{% else %}—{% endif %}</td>
+                <td class="muted">{{ r.note }}</td>
+                <td class="mono subtle" style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.line }}</td>
+            </tr>{% endfor %}</tbody>
+    </table></div>
+</section>
+{% endif %}
 
-    <h3 style="margin-top:0; color:var(--primary);">Bulk Paste Google Drive Share Links</h3>
-    <p style="color:var(--text-secondary); font-size:0.875rem; margin-bottom:20px;">
-        Paste raw Google Drive file URLs separated by lines or spaces. The system will auto-parse titles, extract tail dates, clean supplier names, and assign document categories automatically.
-    </p>
-
-    <form method="POST">
+<div class="grid grid-main-side">
+    <form method="POST" class="card">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="raw_data">Paste Links Below:</label>
-            <textarea id="raw_data" name="raw_data" placeholder="https://drive.google.com/file/d/...&#10;https://drive.google.com/file/d/..." required></textarea>
+        <div class="card-header"><div class="card-title">{% icon "upload" %}Paste links</div></div>
+        <div class="card-body" style="display:grid;gap:14px">
+            <div class="callout" style="margin:0">{% icon "info" %}<div>One link per line, with the invoice or order number on the same line, for example:<br><code>INV-1042 https://drive.google.com/file/d/…</code><br>Copying the file name from Drive (e.g. <code>INV-1042.pdf</code>) together with its share link works too.</div></div>
+            <div class="field">
+                <label for="raw_data">Links</label>
+                <textarea id="raw_data" name="raw_data" rows="10" class="mono" placeholder="INV-1042 https://drive.google.com/file/d/...&#10;ORD-2210 https://drive.google.com/file/d/..." required></textarea>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" name="overwrite" value="1"> Replace links that are already attached</label>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; justify-content: center; font-size: 0.95rem;">
-            Process & Import Links
-        </button>
+        <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "link" %}Attach links</button></div>
     </form>
+
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "alert" %}Missing a PDF</div><span class="card-sub">newest 12</span></div>
+        {% if missing_links %}
+        <div class="table-wrap"><table class="table"><tbody>{% for doc in missing_links %}
+            <tr data-href="{% url 'finance:invoice_detail' doc.id %}" class="row-link"><td><a class="entity" href="{% url 'finance:invoice_detail' doc.id %}">{{ doc.invoice_number }}</a><span class="secondary">{{ doc.customer.name|default:"—" }}</span></td><td>{% status_badge doc.status %}</td></tr>
+        {% endfor %}</tbody></table></div>
+        {% else %}
+            {% include 'partials/empty.html' with icon='check' title='Everything has a PDF' %}
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

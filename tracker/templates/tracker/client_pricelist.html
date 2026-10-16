@@ -1,109 +1,55 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Client Spare Parts Catalog{% endblock %}
-{% block page_title %}📋 Spare Parts Price Catalog{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Client catalog{% endblock %}
 
 {% block content %}
-<style>
-    .catalog-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .search-bar-group {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .search-bar-group input, .search-bar-group select {
-        padding: 8px 12px;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        font-size: 0.875rem;
-    }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
-    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background-color: #FAFCFF; }
-
-    .badge-in-stock { background: #D1FAE5; color: #065F46; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-    .badge-out-stock { background: #FEE2E2; color: #991B1B; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-
-    /* PRINT STYLING - Hides sidebars and topbars when printing to PDF */
-    @media print {
-        .sidebar, .topbar, .header-actions-bar, .search-bar-group, .btn-print, .no-print {
-            display: none !important;
-        }
-        .main-wrapper { margin-left: 0 !important; width: 100% !important; }
-        .content-body { padding: 0 !important; }
-        .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
-        .print-header { display: block !important; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #0F172A; padding-bottom: 10px; }
-    }
-
-    .print-header { display: none; }
-</style>
-
-<!-- PRINT HEADER (ONLY VISIBLE ON PDF/PRINT) -->
-<div class="print-header">
-    <h1 style="margin: 0; font-size: 1.8rem; color: #0F172A;">⚓ MARINE SPECIALS</h1>
-    <p style="margin: 4px 0 0 0; color: #64748B; font-size: 0.9rem;">Piraeus, Greece | Spare Parts & Equipment Catalog</p>
+<div class="print-only" style="margin-bottom:18px">
+    <h1 style="font-size:24px">MARINE SPECIALS</h1>
+    <p>Piraeus, Greece · Spare parts &amp; equipment catalog · {{ today|date:"d M Y" }}</p>
 </div>
 
-<div class="catalog-header no-print">
-    <form method="GET" class="search-bar-group">
-        <input type="text" name="q" value="{{ query }}" placeholder="Search by part name or OEM #..." style="width: 260px;">
-        <select name="category" onchange="this.form.submit()">
-            <option value="ALL">All Categories</option>
-            {% for cat in categories %}
-                <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
-            {% endfor %}
+<div class="page-header no-print">
+    <div>
+        <h1>Client catalog</h1>
+        <p class="lede">A clean, printable parts list to share with clients. Prices shown are the warehouse unit prices.</p>
+    </div>
+    <div class="actions"><button type="button" class="btn" onclick="window.print()">{% icon "printer" %}Print / save PDF</button></div>
+</div>
+
+<div class="card">
+    <form method="GET" class="toolbar no-print">
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Search parts…" aria-label="Search catalog"></div>
+        <select name="category" data-autosubmit aria-label="Category">
+            <option value="ALL">All categories</option>
+            {% for code, label, n in categories %}<option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }} ({{ n }})</option>{% endfor %}
         </select>
-        <button type="submit" class="btn btn-outline">Search</button>
+        <button type="submit" class="btn btn-sm">Search</button>
+        {% if query or category_filter != 'ALL' %}<a href="?" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+        <span class="meta">{{ items|length }} part{{ items|length|pluralize }}</span>
     </form>
-
-    <button onclick="window.print();" class="btn btn-primary btn-print" style="padding: 9px 18px;">
-        🖨️ Print / Save as PDF Catalog
-    </button>
-</div>
-
-<div class="card" style="padding: 0; overflow: hidden;">
-    <table>
-        <thead>
-            <tr>
-                <th>Part / Component Name</th>
-                <th>OEM / Part Number</th>
-                <th>Category</th>
-                <th>Availability</th>
-                <th style="text-align: right;">Unit Price (€)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td><strong style="color: var(--primary); font-size: 0.95rem;">{{ item.part_name }}</strong></td>
-                <td>{{ item.part_code|default:"-" }}</td>
-                <td><span class="badge">{{ item.category }}</span></td>
-                <td>
-                    {% if item.quantity > 0 %}
-                        <span class="badge-in-stock">Available in Stock</span>
-                    {% else %}
-                        <span class="badge-out-stock">On Request</span>
-                    {% endif %}
-                </td>
-                <td style="text-align: right;"><strong style="font-size: 1rem; color: var(--primary);">{{ item.unit_cost }} €</strong></td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; color: #94A3B8; padding: 40px;">
-                    No parts listed in the catalog yet.
-                </td>
-            </tr>
+    {% if items %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Part</th><th>Part number</th><th>Category</th><th>Availability</th><th class="num">Unit price</th></tr></thead>
+            <tbody>
+            {% regroup items by get_category_display as groups %}
+            {% for group in groups %}
+                <tr><td colspan="5" style="background:var(--surface-2);font-weight:650;font-size:12.5px;color:var(--text-2)">{{ group.grouper }}</td></tr>
+                {% for item in group.list %}
+                <tr>
+                    <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a></td>
+                    <td class="mono">{{ item.part_code|default:"—" }}</td>
+                    <td class="muted">{{ item.get_category_display }}</td>
+                    <td>{% if item.quantity > 0 %}<span class="badge badge-success">In stock</span>{% else %}<span class="badge badge-neutral">On request</span>{% endif %}</td>
+                    <td class="num"><strong>{{ item.unit_cost|money }}</strong></td>
+                </tr>
+                {% endfor %}
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% url 'inventory_list' as wh_url %}
+        {% include 'partials/empty.html' with icon='tag' title='No parts to show' text='Parts added to the warehouse appear here automatically.' action_url=wh_url action_label='Go to warehouse' %}
+    {% endif %}
 </div>
 {% endblock %}

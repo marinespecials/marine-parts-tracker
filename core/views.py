@@ -5,6 +5,12 @@ from django.core.cache import cache
 from django.http import HttpResponse
 
 
+def healthz(request):
+    """Keep-awake endpoint for an uptime pinger (e.g. UptimeRobot every 10 min).
+    Deliberately does NOT touch the database, so Neon can still sleep and save compute hours."""
+    return HttpResponse('ok', content_type='text/plain')
+
+
 class ThrottledLoginView(LoginView):
     """Login that locks an IP out for 15 minutes after 5 wrong passwords.
 

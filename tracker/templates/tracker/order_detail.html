@@ -1,241 +1,140 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Order Details - {{ order.invoice_number }}{% endblock %}
-{% block page_title %}🧾 Order: {{ order.invoice_number }}{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}{{ order.invoice_number }}{% endblock %}
 
 {% block content %}
-<style>
-    .info-card { 
-        background: var(--surface); 
-        padding: 20px 24px; 
-        border-radius: 10px; 
-        border: 1px solid var(--border); 
-        margin-bottom: 20px; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-    }
-
-    .status-btn-group { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
-    .btn-status { 
-        padding: 6px 12px; 
-        border-radius: 6px; 
-        font-weight: 600; 
-        cursor: pointer; 
-        border: 1px solid var(--border); 
-        background: white; 
-        font-size: 0.8rem; 
-        transition: all 0.15s;
-    }
-    .btn-status:hover { background: #F1F5F9; border-color: var(--accent); }
-
-    .add-item-card {
-        background: var(--surface);
-        padding: 18px 22px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .add-item-grid {
-        display: grid;
-        grid-template-columns: 2fr 1.5fr 100px 120px 120px;
-        gap: 12px;
-        align-items: center;
-        margin-top: 10px;
-    }
-
-    .add-item-grid select, .add-item-grid input {
-        padding: 9px 12px;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        font-size: 0.875rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { text-align: left; padding: 12px 14px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
-    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background-color: #FAFCFF; }
-
-    .btn-qty-step {
-        background: white;
-        border: 1px solid var(--border);
-        color: var(--primary);
-        font-weight: 800;
-        font-size: 0.85rem;
-        width: 26px;
-        height: 26px;
-        border-radius: 4px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s;
-    }
-    .btn-qty-step:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-
-    .text-danger { color: var(--danger); font-weight: bold; background: none; border: none; cursor: pointer; font-size: 1rem; }
-</style>
-
-<a href="{% url 'orders_dashboard' %}" style="display: inline-block; margin-bottom: 15px; color: var(--accent); font-weight: 600; text-decoration: none;">← Back to All Orders</a>
-
-<!-- Order Overview Header -->
-<div class="info-card">
-    <div>
-        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Client / Vessel</span>
-        <h2 style="margin: 2px 0 6px 0; color: var(--primary);">{{ order.customer.name }}</h2>
-        <div style="color: var(--text-secondary); font-size: 0.875rem;">Date: <strong>{{ order.issue_date|date:"d/m/Y" }}</strong></div>
-        
-        <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-outline" style="margin-top: 10px; padding: 5px 12px; font-size: 0.8rem; background: #EFF6FF; color: var(--accent); border-color: #BFDBFE;">
-            📱 Open Mobile Packing Checklist ➔
-        </a>
-    </div>
-
-    <div style="text-align: right;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Order Value</span>
-        <h2 style="margin: 2px 0 8px 0; color: var(--primary);">{{ order.total_amount }} €</h2>
-        <div style="font-size: 0.85rem; color: var(--text-secondary);">
-            Status: <strong style="color: var(--accent);">{{ order.status }}</strong>
-        </div>
-
-        <div class="status-btn-group">
-            <form method="POST" action="{% url 'change_order_status' order.id 'PENDING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🕒 Pending</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'PROCESSING' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">⚙️ Processing</button></form>
-            <form method="POST" action="{% url 'change_order_status' order.id 'DELIVERED' %}" style="display:inline;">{% csrf_token %}<button type="submit" class="btn-status">🚚 Set Delivered</button></form>
-
-            <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" style="display:inline; margin-left: 8px;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary" style="background-color: var(--success); font-size: 0.8rem; padding: 6px 12px;" onclick="return confirm('Convert this order into an Unpaid Financial Invoice?');">
-                    🧾 Convert to Invoice ➔
-                </button>
-            </form>
-        </div>
-    </div>
+<div class="crumbs no-print">
+    <a href="{% url 'orders_dashboard' %}">Orders</a>{% icon "chevron-right" %}
+    {% if order.customer %}<a href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% icon "chevron-right" %}{% endif %}
+    <span>{{ order.invoice_number }}</span>
 </div>
 
-<!-- LINKED WAREHOUSE ADD ITEM FORM -->
-<div class="add-item-card">
-    <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
-        + Add Part / Item to Order (Linked to Warehouse Storage)
+<div class="print-only" style="margin-bottom:16px">
+    <h2>MARINE SPECIALS — Delivery note</h2>
+    <p>Piraeus, Greece</p>
+</div>
+
+<section class="card">
+    <div class="summary">
+        <div>
+            <div class="eyebrow">Order {{ order.invoice_number }}</div>
+            <h1 style="font-size:22px;margin-top:2px">
+                {% if order.customer %}<a class="entity" href="{% url 'finance:client_ledger' order.customer.id %}">{{ order.customer.name }}</a>{% else %}No client{% endif %}
+            </h1>
+            <div class="meta-line">
+                <span>{% icon "calendar" %}Ordered {{ order.issue_date|date:"d M Y" }}</span>
+                {% if order.due_date %}<span>{% icon "truck" %}Deliver by {{ order.due_date|date:"d M Y" }}</span>{% endif %}
+                <span>{% icon "box" %}{{ packed_count }}/{{ items|length }} packed</span>
+                {% if related %}<span>{% icon "link" %}Invoiced as <a href="{% url 'finance:invoice_detail' related.id %}">{{ related.invoice_number }}</a> {% status_badge related.status %}</span>{% endif %}
+            </div>
+        </div>
+        <div class="summary-right">
+            <div class="eyebrow">Order value</div>
+            <div class="big">{{ order.total_amount|money }}</div>
+            <div style="margin-top:8px">{% status_badge order.status %}</div>
+        </div>
     </div>
-    
-    <form method="POST" action="{% url 'add_order_item' order.id %}" class="add-item-grid">
+    <div class="card-footer no-print" style="justify-content:space-between;flex-wrap:wrap">
+        <div class="segmented" role="group" aria-label="Order status">
+            {% for code in order_statuses %}
+            <form method="POST" action="{% url 'change_order_status' order.id code %}">{% csrf_token %}<button type="submit" class="{% if order.status == code %}on{% endif %}">{{ code|status_label }}</button></form>
+            {% endfor %}
+        </div>
+        <div class="button-row">
+            <a href="{% url 'mobile_packing_list' order.id %}" class="btn btn-sm">{% icon "smartphone" %}Packing mode</a>
+            <button type="button" class="btn btn-sm" onclick="window.print()">{% icon "printer" %}Print</button>
+            {% if related and related.invoice_number|slice:":4" == "INV-" %}
+                <a href="{% url 'finance:invoice_detail' related.id %}" class="btn btn-sm btn-primary">{% icon "receipt" %}Open invoice</a>
+            {% else %}
+            <form method="POST" action="{% url 'convert_order_to_invoice' order.id %}" class="inline-form" data-confirm="Create an unpaid invoice from this order?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-primary">{% icon "receipt" %}Convert to invoice</button>
+            </form>
+            {% endif %}
+            <details class="dropdown">
+                <summary class="btn btn-sm btn-icon" title="More">{% icon "more" %}</summary>
+                <div class="dropdown-menu">
+                    <form method="POST" action="{% url 'delete_order' order.id %}" data-confirm="Delete {{ order.invoice_number }}? Linked parts go back into stock.">
+                        {% csrf_token %}
+                        <button type="submit" style="color:var(--danger)">{% icon "trash" %}Delete order</button>
+                    </form>
+                </div>
+            </details>
+        </div>
+    </div>
+</section>
+
+<section class="card no-print">
+    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a part</div><span class="card-sub">Stock is deducted automatically</span></div>
+    <form method="POST" action="{% url 'add_order_item' order.id %}" class="card-body">
         {% csrf_token %}
-        
-        <div>
-            <select name="inventory_id">
-                <option value="">-- Choose from Master Warehouse Storage --</option>
-                {% for inv in master_items %}
-                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - {{ inv.unit_cost }} € (Stock: {{ inv.quantity }})</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div>
-            <input type="text" name="description" placeholder="Or type unlisted item name...">
-        </div>
-
-        <div>
-            <input type="number" name="quantity" value="1" min="1" style="text-align: center;" required placeholder="Qty">
-        </div>
-
-        <div>
-            <input type="number" step="0.01" name="unit_price" placeholder="Price (€)">
-        </div>
-
-        <div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 9px; font-size: 0.875rem;">
-                + Add Item
-            </button>
+        <div class="form-row">
+            <div class="field grow"><label for="add-part">Warehouse part</label><select id="add-part" name="inventory_id" data-parts="price"><option value="">Choose a part…</option></select></div>
+            <div class="field grow"><label for="add-desc">…or an item not in stock</label><input id="add-desc" type="text" name="description" placeholder="Item name"></div>
+            <div class="field w-qty"><label for="add-qty">Qty</label><input id="add-qty" type="number" name="quantity" value="1" min="1" required></div>
+            <div class="field w-price"><label for="add-price">Unit price €</label><input id="add-price" type="number" step="0.01" min="0" name="unit_price" placeholder="0.00" data-price-target></div>
+            <button type="submit" class="btn btn-primary">{% icon "plus" %}Add</button>
         </div>
     </form>
-</div>
+</section>
 
-<!-- ORDER ITEMS TABLE WITH LINK BADGES & STEPPERS -->
-<div class="card" style="padding: 0; overflow: hidden;">
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 60px; text-align: center;">Packed</th>
-                <th>Item Description / Part</th>
-                <th style="width: 130px; text-align: center;">Qty (Adjust)</th>
-                <th style="width: 130px;">Unit Price (€)</th>
-                <th style="width: 130px;">Total (€)</th>
-                <th style="width: 70px; text-align: right;">Delete</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in order.order_items.all %}
-            <tr style="{% if item.is_packed %}opacity: 0.65; background-color: #F8FAFC;{% endif %}">
-                <td style="text-align: center;">
-                    <form method="POST" action="{% url 'toggle_item_packed' item.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.25rem;">
-                            {% if item.is_packed %}✅{% else %}⬜{% endif %}
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <strong style="{% if item.is_packed %}text-decoration: line-through; color: #94A3B8;{% endif %} font-size: 0.925rem;">
-                        {{ item.description }}
-                    </strong>
-                    
-                    {% if item.inventory_item %}
-                        <div style="font-size: 0.75rem; color: #059669; margin-top: 2px; font-weight: 600;">
-                            📍 Linked to Warehouse: {{ item.inventory_item.part_name }} (Current Stock: {{ item.inventory_item.quantity }})
+<section class="card">
+    <div class="card-header">
+        <div class="card-title">{% icon "list" %}Items</div>
+        <div style="min-width:160px"><div class="progress {% if progress == 100 %}done{% endif %}"><span style="width:{{ progress }}%"></span></div></div>
+    </div>
+    {% if items %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th style="width:44px" class="no-print">Packed</th><th>Item</th><th>Qty</th><th class="num">Unit price</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
+            <tbody>
+            {% for item in items %}
+                <tr class="{% if item.is_packed %}is-done{% endif %}">
+                    <td class="no-print">
+                        <form method="POST" action="{% url 'toggle_item_packed' item.id %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="check {% if item.is_packed %}on{% endif %}" aria-label="{% if item.is_packed %}Mark not packed{% else %}Mark packed{% endif %}">{% icon "check" %}</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="primary">{{ item.description }}</span>
+                        {% if item.inventory_item %}
+                            <span class="secondary">
+                                {% icon "box" "icon-sm" %} <a href="{% url 'part_detail' item.inventory_item.id %}">{{ item.inventory_item.part_name }}</a>
+                                · {{ item.inventory_item.quantity }} left · {% icon "pin" "icon-sm" %} {{ item.inventory_item.location }}
+                            </span>
+                        {% else %}
+                            <form method="POST" action="{% url 'link_order_item_to_inventory' item.id %}" class="form-row no-print" style="margin-top:6px">
+                                {% csrf_token %}
+                                <select name="inventory_id" required data-parts="stock" style="height:30px;font-size:12.5px;max-width:320px"><option value="">Not linked to stock — pick part…</option></select>
+                                <button type="submit" class="btn btn-sm">{% icon "link" %}Link &amp; deduct</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="stepper no-print">
+                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="Decrease">−</button></form>
+                            <span class="val">{{ item.quantity }}</span>
+                            <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="Increase">+</button></form>
                         </div>
-                    {% else %}
-                        <form method="POST" action="{% url 'link_order_item_to_inventory' item.id %}" style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+                        <span class="print-only">{{ item.quantity }}</span>
+                    </td>
+                    <td class="num">{{ item.unit_price|money }}</td>
+                    <td class="num"><strong>{{ item.total_price|money }}</strong></td>
+                    <td class="actions no-print">
+                        <form method="POST" action="{% url 'delete_order_item' item.id %}" class="inline-form" data-confirm="Remove this item? Its stock goes back to the warehouse.">
                             {% csrf_token %}
-                            <select name="inventory_id" style="padding: 3px 6px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #991B1B;" required>
-                                <option value="">⚠️ Not Linked to Warehouse - Select Part...</option>
-                                {% for inv in master_items %}
-                                    <option value="{{ inv.id }}">{{ inv.part_name }} {% if inv.part_code %}({{ inv.part_code }}){% endif %} - Qty: {{ inv.quantity }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.725rem; background: #EFF6FF; border-color: #BFDBFE; color: var(--accent);">
-                                🔗 Link & Deduct Stock
-                            </button>
+                            <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Remove">{% icon "trash" %}</button>
                         </form>
-                    {% endif %}
-                </td>
-
-                <td style="text-align: center;">
-                    <div style="display: inline-flex; align-items: center; gap: 6px;">
-                        <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'decrease' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-qty-step" title="Decrease item count">-</button>
-                        </form>
-
-                        <strong style="font-size: 0.95rem; min-width: 22px; display: inline-block; text-align: center;">{{ item.quantity }}</strong>
-
-                        <form method="POST" action="{% url 'adjust_order_item_qty' item.id 'increase' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-qty-step" title="Increase item count">+</button>
-                        </form>
-                    </div>
-                </td>
-
-                <td>{{ item.unit_price }} €</td>
-                <td><strong style="color: var(--primary);">{{ item.total_price }} €</strong></td>
-                <td style="text-align: right;">
-                    <form method="POST" action="{% url 'delete_order_item' item.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="text-danger" title="Remove item" onclick="return confirm('Remove this item from the order?');">✕</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 40px; color: #94A3B8;">
-                    No items added to this order yet. Select an item from warehouse storage above!
-                </td>
-            </tr>
+                    </td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
+            </tbody>
+            <tfoot><tr><td class="no-print"></td><td colspan="3">Total</td><td class="num">{{ order.total_amount|money }}</td><td class="no-print"></td></tr></tfoot>
+        </table>
+    </div>
+    {% else %}
+        {% include 'partials/empty.html' with icon='box' title='No items yet' text='Add parts from the warehouse above — stock updates as you go.' %}
+    {% endif %}
+</section>
+{{ parts|json_script:"parts-data" }}
 {% endblock %}

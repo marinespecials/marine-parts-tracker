@@ -1,7 +1,63 @@
+import re
 from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
+
+
+# One category list shared by the warehouse, the client catalog and the master price list.
+PART_CATEGORIES = [
+    ('General', 'General Hardware'),
+    ('Engine Spares', 'Engine Spares'),
+    ('Filters', 'Filters & Separators'),
+    ('Pumps', 'Pumps & Impellers'),
+    ('Valves', 'Valves & Plumbing'),
+    ('Hoses & Fittings', 'Hoses & Fittings'),
+    ('Seals & Bearings', 'Seals & Bearings'),
+    ('Electrical', 'Electrical & Batteries'),
+    ('Anodes', 'Anodes & Corrosion'),
+    ('Lubricants', 'Oils & Lubricants'),
+    ('Safety', 'Safety Equipment'),
+]
+
+# Keyword rules used to suggest a category from a part's name/code (English + Greek).
+# Order matters: the first matching rule wins ("oil filter" is a Filter, not a Lubricant).
+CATEGORY_KEYWORDS = [
+    ('Filters', ['filter', 'φίλτρ', 'φιλτρ', 'separator', 'racor', 'strainer']),
+    ('Pumps', ['pump', 'impeller', 'αντλ', 'φτερωτ']),
+    ('Anodes', ['anode', 'zinc', 'ψευδαργ', 'ανόδι', 'ανοδι']),
+    ('Seals & Bearings', ['seal', 'o-ring', 'oring', 'o ring', 'bearing', 'τσιμουχ', 'τσιμούχ', 'ρουλεμ', 'φλάντζ', 'φλαντζ', 'gasket', 'packing']),
+    ('Valves', ['valve', 'βαλβ', 'βάνα', 'βανα', 'ball cock', 'seacock', 'check valve']),
+    ('Hoses & Fittings', ['hose', 'fitting', 'clamp', 'σωλ', 'coupling', 'elbow', 'nipple', 'adapter', 'connector', 'σφιγκτ']),
+    ('Electrical', ['battery', 'μπαταρ', 'cable', 'καλώδ', 'καλωδ', 'fuse', 'relay', 'switch', 'alternator', 'δυναμ',
+                    'starter', 'μίζα', 'μιζα', 'charger', 'inverter', 'led', 'lamp', 'bulb', 'λάμπ', 'λαμπ', 'breaker',
+                    'wire', 'sensor', 'αισθητ', 'solenoid', 'victron', 'volt', 'amper']),
+    ('Engine Spares', ['piston', 'injector', 'μπεκ', 'belt', 'ιμάντ', 'ιμαντ', 'thermostat', 'θερμοστ', 'turbo',
+                       'liner', 'cylinder', 'κύλινδ', 'κυλινδ', 'crank', 'camshaft', 'glow plug', 'spark plug',
+                       'μπουζ', 'rocker', 'exhaust', 'εξατμ', 'heat exchanger', 'yanmar', 'volvo', 'mtu', 'caterpillar', 'cummins']),
+    ('Lubricants', ['oil', 'λάδι', 'λαδι', 'grease', 'γράσ', 'γρασ', 'lubric', 'coolant', 'antifreeze', 'αντιψυκτ']),
+    ('Safety', ['life jacket', 'lifejacket', 'σωσίβ', 'σωσιβ', 'flare', 'extinguisher', 'πυροσβεστ', 'epirb', 'buoy',
+                'raft', 'σχεδί', 'first aid', 'harness']),
+]
+
+
+def _keyword_pattern(word):
+    # Latin keywords must start a word ("led" matches "LED lamp", not "sealed");
+    # Greek keywords are stems, so they may appear anywhere.
+    return re.compile((r'\b' if word.isascii() else '') + re.escape(word))
+
+
+_CATEGORY_PATTERNS = [(cat, [_keyword_pattern(w) for w in words]) for cat, words in CATEGORY_KEYWORDS]
+
+
+def guess_category(*texts):
+    """Suggest a category from part name / code. Returns 'General' when nothing matches."""
+    haystack = ' '.join(t for t in texts if t).lower()
+    for category, patterns in _CATEGORY_PATTERNS:
+        if any(p.search(haystack) for p in patterns):
+            return category
+    return 'General'
+
 
 class Customer(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -12,13 +68,7 @@ class Customer(models.Model):
 
 
 class InventoryItem(models.Model):
-    CATEGORY_CHOICES = [
-        ('General', 'General'),
-        ('Electrical', 'Electrical'),
-        ('Filters', 'Filters'),
-        ('Pumps', 'Pumps'),
-        ('Valves', 'Valves'),
-    ]
+    CATEGORY_CHOICES = PART_CATEGORIES
     part_name = models.CharField(max_length=255)
     part_code = models.CharField(max_length=100, blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='General')

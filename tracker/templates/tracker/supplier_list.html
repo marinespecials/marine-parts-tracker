@@ -1,28 +1,53 @@
-{% extends 'finance/base.html' %}
+{% extends 'base.html' %}{% load ui %}
 {% block title %}Suppliers{% endblock %}
-{% block page_title %}🏢 Supplier & Vendor Database{% endblock %}
+
 {% block content %}
-<div class="card" style="margin-bottom: 20px;">
-    <form method="POST" style="display: flex; gap: 10px; align-items: center;">
-        {% csrf_token %}
-        <input type="text" name="name" placeholder="Supplier Name" required class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
-        <input type="email" name="email" placeholder="Email" class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
-        <input type="text" name="phone" placeholder="Phone" class="search-bar input" style="padding:8px; border-radius:6px; border:1px solid #ccc; flex:1;">
-        <button type="submit" class="btn btn-primary">+ Add Supplier</button>
-    </form>
+<div class="page-header">
+    <div>
+        <h1>Suppliers</h1>
+        <p class="lede">Vendors you buy from. Open one to see its purchase orders, the parts it supplies and logged prices.</p>
+    </div>
+    <div class="actions"><a href="#new-supplier" class="btn btn-primary" onclick="document.getElementById('s-name').focus()">{% icon "plus" %}Add supplier</a></div>
 </div>
+
 <div class="card">
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
-            <th style="padding:10px;">Supplier Name</th><th style="padding:10px;">Contact</th><th style="padding:10px;">Total POs</th>
-        </tr>
-        {% for s in suppliers %}
-        <tr style="border-bottom:1px solid #e2e8f0;">
-            <td style="padding:10px;"><strong>{{ s.name }}</strong></td>
-            <td style="padding:10px;">{{ s.email|default:"-" }} <br> <small>{{ s.phone|default:"" }}</small></td>
-            <td style="padding:10px;"><span class="badge">{{ s.po_count }} Orders</span></td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% if suppliers %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Supplier</th><th>Contact</th><th class="num">POs</th><th class="num">Total ordered</th><th>Last PO</th><th></th></tr></thead>
+            <tbody>
+            {% for s in suppliers %}
+                <tr data-href="{% url 'supplier_detail' s.id %}" class="row-link">
+                    <td><div style="display:flex;align-items:center;gap:10px"><span class="avatar">{{ s.name|initials }}</span><a class="entity" href="{% url 'supplier_detail' s.id %}">{{ s.name }}</a></div></td>
+                    <td>
+                        <span class="primary">{{ s.contact_person|default:"—" }}</span>
+                        <span class="secondary">{% if s.email %}<a href="mailto:{{ s.email }}">{{ s.email }}</a>{% endif %}{% if s.email and s.phone %} · {% endif %}{% if s.phone %}<a href="tel:{{ s.phone }}">{{ s.phone }}</a>{% endif %}</span>
+                    </td>
+                    <td class="num">{{ s.po_count }}</td>
+                    <td class="num">{{ s.po_total|money }}</td>
+                    <td class="nowrap muted">{{ s.last_po|date:"d M Y"|default:"—" }}</td>
+                    <td class="actions"><a href="{% url 'po_list' %}?supplier={{ s.id }}#new-po" class="btn btn-ghost btn-sm" title="New purchase order">{% icon "cart" %}New PO</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% include 'partials/empty.html' with icon='building' title='No suppliers yet' text='Add the vendors you buy from below, then raise purchase orders against them.' %}
+    {% endif %}
 </div>
+
+<form method="POST" class="card" id="new-supplier">
+    {% csrf_token %}
+    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a supplier</div></div>
+    <div class="card-body">
+        <div class="form-grid">
+            <div class="field"><label for="s-name">Company name *</label><input type="text" id="s-name" name="name" required placeholder="e.g. Jabsco Hellas"></div>
+            <div class="field"><label for="s-contact">Contact person</label><input type="text" id="s-contact" name="contact_person"></div>
+            <div class="field"><label for="s-email">Email</label><input type="email" id="s-email" name="email"></div>
+            <div class="field"><label for="s-phone">Phone</label><input type="tel" id="s-phone" name="phone"></div>
+        </div>
+    </div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}Add supplier</button></div>
+</form>
 {% endblock %}

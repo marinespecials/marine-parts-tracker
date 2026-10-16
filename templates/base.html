@@ -1,0 +1,143 @@
+{% load static ui %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Operations{% endblock %} · Marine Specials</title>
+    <script>
+        /* apply the saved theme before first paint (no white flash in dark mode) */
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('ms-theme'); } catch (e) {}
+            if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <meta name="theme-color" content="#0A0F17" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F6F7F9">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27><rect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230B2A6F%27/><g fill=%27none%27 stroke=%27white%27 stroke-width=%272.4%27 stroke-linecap=%27round%27><circle cx=%2716%27 cy=%279%27 r=%273%27/><path d=%27M16 27V12M10 17H7a9 9 0 0 0 18 0h-3%27/></g></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+{% include 'partials/icons.html' %}
+<div class="app">
+    <div class="backdrop"></div>
+
+    <aside class="sidebar" aria-label="Main navigation">
+        <a href="{% url 'app_hub' %}" class="brand">
+            <span class="brand-mark">{% icon "anchor" %}</span>
+            <span class="brand-name">MARINE SPECIALS<small>Operations Platform</small></span>
+        </a>
+
+        <nav class="nav">
+            <a href="{% url 'app_hub' %}" class="{% active 'hub' 'app_hub' %}">{% icon "home" %}Dashboard</a>
+
+            <div class="nav-section">
+                <div class="nav-label">Operations</div>
+                <a href="{% url 'orders_dashboard' %}" class="{% active 'orders_dashboard' 'create_order' 'order_detail' 'mobile_packing_list' %}">
+                    {% icon "orders" %}Orders{% if nav_counts.active_orders %}<span class="count">{{ nav_counts.active_orders }}</span>{% endif %}
+                </a>
+                <a href="{% url 'active_board' %}" class="{% active 'active_board' %}">{% icon "board" %}Live board</a>
+                <a href="{% url 'research_hub' %}" class="{% active 'research_hub' %}">{% icon "chart" %}Analytics</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Inventory</div>
+                <a href="{% url 'inventory_list' %}" class="{% active 'inventory_list' 'edit_inventory_item' 'part_detail' %}">
+                    {% icon "box" %}Warehouse{% if nav_counts.low_stock %}<span class="count alert" title="Low stock">{{ nav_counts.low_stock }}</span>{% endif %}
+                </a>
+                <a href="{% url 'client_pricelist' %}" class="{% active 'client_pricelist' %}">{% icon "tag" %}Client catalog</a>
+                <a href="{% url 'finance:pricelist_dashboard' %}" class="{% active 'finance:pricelist_dashboard' %}">{% icon "list" %}Master price list</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Finance</div>
+                <a href="{% url 'finance:dashboard' %}" class="{% active 'finance:dashboard' 'finance:invoice_detail' 'finance:create_invoice' %}">
+                    {% icon "receipt" %}Invoices{% if nav_counts.overdue %}<span class="count alert" title="Overdue">{{ nav_counts.overdue }}</span>{% endif %}
+                </a>
+                <a href="{% url 'client_list' %}" class="{% active 'client_list' 'finance:client_ledger' %}">{% icon "users" %}Clients</a>
+                <a href="{% url 'finance:price_history' %}" class="{% active 'finance:price_history' %}">{% icon "trending" %}Price history</a>
+                <a href="{% url 'finance:bulk_import' %}" class="{% active 'finance:bulk_import' %}">{% icon "upload" %}Drive links</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Purchasing</div>
+                <a href="{% url 'po_list' %}" class="{% active 'po_list' 'po_detail' %}">{% icon "cart" %}Purchase orders</a>
+                <a href="{% url 'supplier_list' %}" class="{% active 'supplier_list' 'supplier_detail' %}">{% icon "building" %}Suppliers</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Shortcuts</div>
+                <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener">{% icon "folder" %}Google Drive{% icon "external" "icon-sm subtle" %}</a>
+                <a href="{% url 'finance:export_finances' %}">{% icon "download" %}Export CSV</a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            {% if user.is_authenticated %}
+            <div class="user-row">
+                <span class="avatar">{{ user.get_username|initials }}</span>
+                <span class="who">{{ user.get_username }}</span>
+                <button type="button" class="btn btn-ghost btn-icon btn-sm" data-theme-toggle title="Switch light / dark" aria-label="Switch light or dark theme">
+                    {% icon "moon" "when-light" %}{% icon "sun" "when-dark" %}
+                </button>
+                <form method="post" action="{% url 'logout' %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Sign out" aria-label="Sign out">{% icon "logout" %}</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button type="button" class="btn btn-ghost btn-icon menu-toggle" data-nav-toggle aria-label="Open menu">{% icon "menu" %}</button>
+            <form method="GET" action="{% url 'global_search' %}" class="search-box" role="search">
+                {% icon "search" %}
+                <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search orders, invoices, parts, clients…" id="global-search" autocomplete="off" aria-label="Search everything">
+                <kbd>/</kbd>
+            </form>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-actions">
+                {% block topbar_actions %}{% endblock %}
+                <details class="dropdown">
+                    <summary class="btn btn-primary">{% icon "plus" %}<span class="btn-label">New</span></summary>
+                    <div class="dropdown-menu">
+                        <a href="{% url 'create_order' %}">{% icon "orders" %}Order</a>
+                        <a href="{% url 'finance:create_invoice' %}">{% icon "receipt" %}Invoice</a>
+                        <a href="{% url 'po_list' %}#new-po">{% icon "cart" %}Purchase order</a>
+                        <hr>
+                        <a href="{% url 'inventory_list' %}#new-part">{% icon "box" %}Warehouse part</a>
+                        <a href="{% url 'supplier_list' %}#new-supplier">{% icon "building" %}Supplier</a>
+                        <a href="{% url 'finance:price_history' %}#new-price">{% icon "trending" %}Price record</a>
+                    </div>
+                </details>
+            </div>
+        </header>
+
+        {% if messages %}
+        <div class="toasts" role="status" aria-live="polite">
+            {% for message in messages %}
+            <div class="toast {{ message.tags }}">
+                {% if message.tags == 'success' %}{% icon "check" %}{% elif message.tags == 'error' or message.tags == 'warning' %}{% icon "alert" %}{% else %}{% icon "info" %}{% endif %}
+                <span>{{ message }}</span>
+                <button type="button" aria-label="Dismiss">{% icon "x" "icon-sm" %}</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

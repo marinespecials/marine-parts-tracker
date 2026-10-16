@@ -9,7 +9,7 @@ urlpatterns = [
     # Universal Global Search
     path('search/', views.global_search, name='global_search'),
     
-    # 🔬 NEW: Research & General Data Hub
+    # Analytics & parts research
     path('research/', views.research_hub, name='research_hub'),
     
     # Live Operations Board
@@ -32,6 +32,8 @@ urlpatterns = [
 
     # Warehouse & Stock
     path('warehouse/', views.inventory_list, name='inventory_list'),
+    path('warehouse/auto-categorise/', views.auto_categorise, name='auto_categorise'),
+    path('warehouse/<int:item_id>/', views.part_detail, name='part_detail'),
     path('warehouse/<int:item_id>/adjust/<str:action>/', views.adjust_stock, name='adjust_stock'),
     path('warehouse/<int:item_id>/edit/', views.edit_inventory_item, name='edit_inventory_item'),
     path('warehouse/<int:item_id>/delete/', views.delete_inventory_item, name='delete_inventory_item'),
@@ -40,6 +42,7 @@ urlpatterns = [
     path('catalog/', views.client_pricelist, name='client_pricelist'),
     path('clients/', views.client_list, name='client_list'),
     path('suppliers/', views.supplier_list, name='supplier_list'),
+    path('suppliers/<int:supplier_id>/', views.supplier_detail, name='supplier_detail'),
     path('purchasing/', views.po_list, name='po_list'),
     path('purchasing/<int:po_id>/', views.po_detail, name='po_detail'),
     path('purchasing/<int:po_id>/delete/', views.delete_po, name='delete_po'),

@@ -87,3 +87,91 @@ class OrderBehaviourTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('text/csv', response['Content-Type'])
         self.assertIn('ORD-1', response.content.decode('utf-8'))
+
+
+class CategoryGuessTests(TestCase):
+    def test_keywords_pick_the_right_category(self):
+        from tracker.models import guess_category
+        self.assertEqual(guess_category('Racor oil filter 2010PM'), 'Filters')  # filter beats oil
+        self.assertEqual(guess_category('Raw water pump impeller'), 'Pumps')
+        self.assertEqual(guess_category('Μπαταρια AGM 100Ah'), 'Electrical')
+        self.assertEqual(guess_category('LED deck lamp'), 'Electrical')
+        self.assertEqual(guess_category('Assembled bracket'), 'General')  # "led" inside a word must not match
+        self.assertEqual(guess_category('Shaft zinc anode'), 'Anodes')
+        self.assertEqual(guess_category('Something odd'), 'General')
+
+
+class PagesAndLinksTests(TestCase):
+    """Every page renders with real-looking data, and the new connected pages work."""
+
+    def setUp(self):
+        cache.clear()
+        from finance.models import PriceRecord, MasterPricelistItem
+        from tracker.models import Supplier, PurchaseOrder, PurchaseOrderItem
+        User.objects.create_user('tester', password='pw-for-tests-123')
+        self.client.login(username='tester', password='pw-for-tests-123')
+        self.customer = Customer.objects.create(name='M/V Aegean Star')
+        self.part = InventoryItem.objects.create(part_name='Oil filter', part_code='OF-1', category='General',
+                                                 quantity=2, reorder_level=5, unit_cost=Decimal('12.50'))
+        self.order = Invoice.objects.create(invoice_number='ORD-1001', customer=self.customer, status='PENDING')
+        OrderItem.objects.create(order=self.order, inventory_item=self.part, description='Oil filter', quantity=1, unit_price=Decimal('20'))
+        self.invoice = Invoice.objects.create(invoice_number='INV-1001', customer=self.customer, status='UNPAID', total_amount=Decimal('20'))
+        self.supplier = Supplier.objects.create(name='Jabsco Hellas', email='orders@example.com')
+        self.po = PurchaseOrder.objects.create(po_number='PO-1', supplier=self.supplier)
+        PurchaseOrderItem.objects.create(purchase_order=self.po, inventory_item=self.part, quantity=10, unit_cost=Decimal('9'))
+        PriceRecord.objects.create(part_name='Oil filter', supplier_or_client_name='Jabsco Hellas', unit_price=Decimal('9'))
+        MasterPricelistItem.objects.create(part_name='Oil filter', part_code='OF-1', cost_price=Decimal('10'))
+
+    def test_every_page_renders(self):
+        pages = [
+            reverse('hub'), reverse('active_board'), reverse('orders_dashboard') + '?status=ALL', reverse('create_order'),
+            reverse('order_detail', args=[self.order.id]), reverse('mobile_packing_list', args=[self.order.id]),
+            reverse('inventory_list'), reverse('inventory_list') + '?filter=LOW_STOCK&category=Filters',
+            reverse('part_detail', args=[self.part.id]), reverse('edit_inventory_item', args=[self.part.id]),
+            reverse('client_pricelist'), reverse('client_list'), reverse('research_hub'),
+            reverse('global_search') + '?q=oil', reverse('supplier_list'), reverse('supplier_detail', args=[self.supplier.id]),
+            reverse('po_list'), reverse('po_detail', args=[self.po.id]),
+            reverse('finance:dashboard'), reverse('finance:create_invoice'),
+            reverse('finance:invoice_detail', args=[self.invoice.id]), reverse('finance:client_ledger', args=[self.customer.id]),
+            reverse('finance:bulk_import'), reverse('finance:pricelist_dashboard'), reverse('finance:price_history'),
+        ]
+        for url in pages:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200, url)
+
+    def test_order_and_invoice_link_to_each_other(self):
+        self.assertContains(self.client.get(reverse('order_detail', args=[self.order.id])), 'INV-1001')
+        self.assertContains(self.client.get(reverse('finance:invoice_detail', args=[self.invoice.id])), 'ORD-1001')
+
+    def test_part_page_connects_orders_suppliers_and_prices(self):
+        response = self.client.get(reverse('part_detail', args=[self.part.id]))
+        for text in ('ORD-1001', 'M/V Aegean Star', 'Jabsco Hellas', 'PO-1'):
+            self.assertContains(response, text)
+
+    def test_auto_categorise_only_runs_on_post(self):
+        self.client.get(reverse('auto_categorise'))
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.category, 'General')
+        self.client.post(reverse('auto_categorise'))
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.category, 'Filters')
+
+    def test_price_history_form_saves(self):
+        from finance.models import PriceRecord
+        self.client.post(reverse('finance:price_history'), {
+            'part_name': 'Impeller', 'supplier_name': 'M/V Aegean Star', 'unit_price': '45,50', 'date_recorded': '2026-10-01',
+        })
+        record = PriceRecord.objects.get(part_name='Impeller')
+        self.assertEqual(record.unit_price, Decimal('45.50'))
+        self.assertEqual(record.customer, self.customer)
+
+    def test_drive_links_attach_to_matching_invoice(self):
+        self.client.post(reverse('finance:bulk_import'), {'raw_data': 'INV-1001 https://drive.google.com/file/d/abc/view\nnothing here'})
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.google_drive_url, 'https://drive.google.com/file/d/abc/view')
+
+    def test_healthz_is_public_and_skips_login(self):
+        self.client.logout()
+        response = self.client.get('/healthz/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b'ok')

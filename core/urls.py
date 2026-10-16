@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 
-from core.views import ThrottledLoginView
+from core.views import ThrottledLoginView, healthz
 from django.urls import path, include
 
 urlpatterns = [
+    path('healthz/', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     path('login/', ThrottledLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

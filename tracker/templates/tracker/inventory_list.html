@@ -1,176 +1,101 @@
-{% extends 'finance/base.html' %}
-
-{% block title %}Warehouse Stock List{% endblock %}
-{% block page_title %}📦 Warehouse Inventory Management{% endblock %}
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Warehouse{% endblock %}
 
 {% block content %}
-<style>
-    .quick-add-card { 
-        background: var(--surface); 
-        padding: 18px 22px; 
-        border-radius: 10px; 
-        border: 1px solid var(--border); 
-        margin-bottom: 22px; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .quick-add-grid { 
-        display: grid; 
-        grid-template-columns: 2fr 1.5fr 80px 1.5fr 110px 110px; 
-        gap: 10px; 
-        align-items: center; 
-        margin-top: 8px;
-    }
-    .quick-add-grid input {
-        padding: 8px 10px;
-        border-radius: 6px;
-        border: 1px solid var(--border);
-        font-size: 0.85rem;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .tab-bar { display: flex; gap: 6px; border-bottom: 2px solid var(--border); margin-bottom: 18px; }
-    .tab-item { padding: 9px 16px; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; border-radius: 6px 6px 0 0; }
-    .tab-item:hover { color: var(--primary); background: #F1F5F9; }
-    .tab-item.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: white; font-weight: 700; }
-    .tab-badge { background: #E2E8F0; color: #334155; padding: 2px 7px; border-radius: 10px; font-size: 0.725rem; margin-left: 6px; }
-    .tab-item.active .tab-badge { background: var(--accent); color: white; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; padding: 10px 12px; background-color: #F8FAFC; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-weight: 600; }
-    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background-color: #FAFCFF; }
-
-    /* INLINE STOCK ADJUSTMENT BUTTONS */
-    .btn-stock-adj {
-        background: white;
-        border: 1px solid var(--border);
-        color: var(--primary);
-        font-weight: 800;
-        font-size: 0.9rem;
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s;
-    }
-    .btn-stock-adj:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-    .badge-low { background: #FEE2E2; color: #991B1B; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
-    .text-link { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.825rem; }
-    .text-danger { color: var(--danger); font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; font-size: 0.825rem; }
-</style>
-
-<!-- ADD ITEM FORM -->
-<div class="quick-add-card">
-    <div style="font-size: 0.825rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
-        + Fast Log New Warehouse Part
+<div class="page-header">
+    <div>
+        <h1>Warehouse stock</h1>
+        <p class="lede">Every part on record — click a part to see its orders, suppliers and price history.</p>
     </div>
-    
-    <form method="POST" class="quick-add-grid">
-        {% csrf_token %}
-        <input type="hidden" name="add_item" value="1">
-
-        <input type="text" name="part_name" placeholder="Part Name *" required>
-        <input type="text" name="part_code" placeholder="OEM / Part Code">
-        <input type="number" name="quantity" value="1" min="1" placeholder="Qty">
-        <input type="text" name="location" placeholder="Location / Bin" value="Piraeus Warehouse">
-        <input type="number" step="0.01" name="unit_cost" placeholder="Unit Cost (€)">
-
-        <button type="submit" class="btn btn-primary" style="padding: 8px; justify-content: center; font-size: 0.85rem;">
-            + Save Part
-        </button>
-    </form>
+    <div class="actions">
+        {% if counts.GENERAL %}
+        <form method="POST" action="{% url 'auto_categorise' %}" class="inline-form"
+              data-confirm="Suggest a category for the {{ counts.GENERAL }} parts still in General Hardware, based on their names? You can change any of them afterwards.">
+            {% csrf_token %}
+            <button type="submit" class="btn" title="Sort parts in General Hardware into categories">{% icon "sparkles" %}Auto-sort {{ counts.GENERAL }} uncategorised</button>
+        </form>
+        {% endif %}
+        <a href="#new-part" class="btn btn-primary" onclick="document.getElementById('part_name').focus()">{% icon "plus" %}Add part</a>
+    </div>
 </div>
 
-<!-- INVENTORY TABLE & FILTERS -->
-<div class="card" style="padding: 18px 22px;">
-    <!-- Filter Tabs -->
-    <div class="tab-bar">
-        <a href="?filter=ALL" class="tab-item {% if filter_type == 'ALL' or not filter_type %}active{% endif %}">
-            📦 All Items <span class="tab-badge">{{ counts.ALL }}</span>
-        </a>
-        <a href="?filter=LOW_STOCK" class="tab-item {% if filter_type == 'LOW_STOCK' %}active{% endif %}" style="color: var(--danger);">
-            ⚠️ Low Stock <span class="tab-badge" style="background:#FEE2E2; color:#991B1B;">{{ counts.LOW_STOCK }}</span>
-        </a>
-    </div>
+<div class="card">
+    <nav class="tabs" aria-label="Stock filter">
+        <a href="?filter=ALL&category={{ category_filter }}" class="tab {% if filter_type != 'LOW_STOCK' %}active{% endif %}">All parts <span class="count">{{ counts.ALL }}</span></a>
+        <a href="?filter=LOW_STOCK&category={{ category_filter }}" class="tab {% if filter_type == 'LOW_STOCK' %}active{% endif %}">{% icon "alert" "icon-sm" %}Low stock <span class="count">{{ counts.LOW_STOCK }}</span></a>
+    </nav>
+    <form method="GET" class="toolbar">
+        <input type="hidden" name="filter" value="{{ filter_type }}">
+        <div class="search-box">{% icon "search" %}<input type="search" name="q" value="{{ query }}" placeholder="Name, code or bin…" aria-label="Search parts"></div>
+        <select name="category" data-autosubmit aria-label="Category">
+            <option value="ALL">All categories</option>
+            {% for code, label, n in categories %}<option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }} ({{ n }})</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm">Search</button>
+        {% if query or category_filter != 'ALL' %}<a href="?filter={{ filter_type }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+        <span class="meta">{{ total_items }} part{{ total_items|pluralize }} · <strong>{{ total_warehouse_value|money }}</strong></span>
+    </form>
 
-    <!-- Search Controls -->
-    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-        <form method="GET" style="display: flex; gap: 8px;">
-            <input type="hidden" name="filter" value="{{ filter_type }}">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search by name, part # or location..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border); width: 280px; font-size: 0.85rem;">
-            <button type="submit" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.825rem;">Search</button>
-        </form>
-        <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
-            Total Warehouse Value: <strong style="color: var(--primary);">{{ total_warehouse_value }} €</strong>
+    {% if items %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Part</th><th>Category</th><th>Location</th><th>In stock</th><th class="num">Unit cost</th><th class="num">Value</th><th></th></tr></thead>
+            <tbody>
+            {% for item in items %}
+                <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
+                    <td><a class="entity" href="{% url 'part_detail' item.id %}">{{ item.part_name }}</a>{% if item.part_code %}<span class="secondary mono">{{ item.part_code }}</span>{% endif %}</td>
+                    <td><a class="chip" href="?category={{ item.category|urlencode }}">{{ item.get_category_display }}</a></td>
+                    <td class="muted">{{ item.location }}</td>
+                    <td>
+                        <div class="stepper">
+                            <form method="POST" action="{% url 'adjust_stock' item.id 'decrease' %}">{% csrf_token %}<button type="submit" aria-label="One less">−</button></form>
+                            <span class="val {% if item.is_low_stock %}low{% endif %}" title="{% if item.is_low_stock %}At or below reorder level ({{ item.reorder_level }}){% endif %}">{{ item.quantity }}</span>
+                            <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}">{% csrf_token %}<button type="submit" aria-label="One more">+</button></form>
+                        </div>
+                    </td>
+                    <td class="num">{{ item.unit_cost|money }}</td>
+                    <td class="num"><strong>{{ item.stock_value|money }}</strong></td>
+                    <td class="actions">
+                        <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">{% icon "edit" %}</a>
+                        <form method="POST" action="{% url 'delete_inventory_item' item.id %}" class="inline-form" data-confirm="Delete {{ item.part_name }} from the warehouse?">
+                            {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="Delete">{% icon "trash" %}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% if query or category_filter != 'ALL' or filter_type == 'LOW_STOCK' %}
+            {% include 'partials/empty.html' with icon='search' title='No parts match' text='Try a different search, category or filter.' %}
+        {% else %}
+            {% include 'partials/empty.html' with icon='box' title='The warehouse is empty' text='Add your first part below, or receive a purchase order.' %}
+        {% endif %}
+    {% endif %}
+</div>
+
+<form method="POST" class="card" id="new-part">
+    {% csrf_token %}
+    <input type="hidden" name="add_item" value="1">
+    <div class="card-header"><div class="card-title">{% icon "plus" %}Add a part</div></div>
+    <div class="card-body">
+        <div class="form-grid">
+            <div class="field"><label for="part_name">Part name *</label><input type="text" id="part_name" name="part_name" placeholder="e.g. Raw water impeller" required></div>
+            <div class="field"><label for="part_code">OEM / part code</label><input type="text" id="part_code" name="part_code" placeholder="e.g. 128990-42200"></div>
+            <div class="field">
+                <label for="category">Category</label>
+                <select id="category" name="category">
+                    <option value="AUTO">Detect from name</option>
+                    {% for code, label, n in categories %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field"><label for="location">Location / bin</label><input type="text" id="location" name="location" value="Piraeus Warehouse"></div>
+            <div class="field"><label for="quantity">Quantity</label><input type="number" id="quantity" name="quantity" value="1" min="0"></div>
+            <div class="field"><label for="reorder_level">Reorder at</label><input type="number" id="reorder_level" name="reorder_level" value="5" min="0"></div>
+            <div class="field"><label for="unit_cost">Unit cost €</label><input type="number" step="0.01" min="0" id="unit_cost" name="unit_cost" placeholder="0.00"></div>
         </div>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Part Name</th>
-                <th>OEM / Code</th>
-                <th>Location / Bin</th>
-                <th style="text-align: center;">In Stock (Inline Adj)</th>
-                <th>Unit Cost (€)</th>
-                <th>Total Value (€)</th>
-                <th style="text-align: right;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td><strong style="color: var(--primary);">{{ item.part_name }}</strong></td>
-                <td>{{ item.part_code|default:"-" }}</td>
-                <td><span class="badge">📍 {{ item.location }}</span></td>
-                
-                <!-- INLINE STOCK ADJUSTMENT CONTROL -->
-                <td style="text-align: center;">
-                    <div style="display: inline-flex; align-items: center; gap: 8px;">
-                        <form method="POST" action="{% url 'adjust_stock' item.id 'decrease' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-stock-adj" title="Decrease quantity by 1">-</button>
-                        </form>
-
-                        <strong style="font-size: 1rem; min-width: 24px; text-align: center; {% if item.quantity <= item.reorder_level %}color: var(--danger);{% endif %}">
-                            {{ item.quantity }}
-                        </strong>
-
-                        <form method="POST" action="{% url 'adjust_stock' item.id 'increase' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-stock-adj" title="Increase quantity by 1">+</button>
-                        </form>
-
-                        {% if item.quantity <= item.reorder_level %}
-                            <span class="badge-low">LOW</span>
-                        {% endif %}
-                    </div>
-                </td>
-
-                <td>{{ item.unit_cost }} €</td>
-                <td><strong>{{ item.total_stock_value }} €</strong></td>
-                <td style="text-align: right;">
-                    <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-                        <a href="{% url 'edit_inventory_item' item.id %}" class="text-link">Edit</a>
-                        <form method="POST" action="{% url 'delete_inventory_item' item.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="text-danger" onclick="return confirm('Delete this inventory item?');">Delete</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" style="text-align: center; color: #94A3B8; padding: 35px;">
-                    No inventory items logged. Use the form above to add your first part!
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}Save part</button></div>
+</form>
 {% endblock %}
