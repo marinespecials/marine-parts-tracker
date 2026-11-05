@@ -13,7 +13,7 @@ from django.utils.translation import gettext as _
 from core.utils import to_decimal, to_int, redirect_back
 
 from .models import (
-    Customer, InventoryItem, OrderItem, Supplier, PurchaseOrder, PurchaseOrderItem,
+    Customer, InventoryItem, OrderItem, Supplier, PurchaseOrder, PurchaseOrderItem, SupplierPrice,
     PART_CATEGORIES, guess_category,
 )
 from finance.models import Invoice, PriceRecord, MasterPricelistItem
@@ -32,12 +32,16 @@ STOCK_VALUE = ExpressionWrapper(F('quantity') * F('unit_cost'), output_field=Dec
 # SHARED HELPERS
 # ==========================================
 
-def parts_json():
-    """Every warehouse part, once, for the part pickers (static/js/app.js fills the <select>s)."""
+def parts_json(supplier=None):
+    """Every warehouse part, once, for the part pickers (static/js/app.js fills the <select>s).
+    'price' = selling price (orders/invoices); 'cost' = what we pay — that supplier's price when given."""
+    supplier_cost = dict(SupplierPrice.objects.filter(supplier=supplier).values_list('item_id', 'price')) if supplier else {}
+    rows = InventoryItem.objects.order_by('part_name').values('id', 'part_name', 'part_code', 'quantity', 'unit_cost', 'sale_price')
     return [
         {'id': p['id'], 'name': p['part_name'], 'code': p['part_code'] or '', 'qty': p['quantity'],
-         'cost': f"{p['unit_cost']:.2f}"}
-        for p in InventoryItem.objects.order_by('part_name').values('id', 'part_name', 'part_code', 'quantity', 'unit_cost')
+         'cost': f"{supplier_cost.get(p['id'], p['unit_cost']):.2f}",
+         'price': f"{p['sale_price'] if p['sale_price'] is not None else p['unit_cost']:.2f}"}
+        for p in rows
     ]
 
 
@@ -77,7 +81,7 @@ def _process_order_item_stock(inventory_id, custom_desc, quantity, unit_price, w
 
     if inv_item:
         desc = clean_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item.part_code else inv_item.part_name)
-        price = to_decimal(unit_price, default=inv_item.unit_cost, minimum=0)
+        price = to_decimal(unit_price, default=inv_item.default_sell_price, minimum=0)
         move_stock(inv_item, -quantity, 'SALE', who, note)
     elif clean_desc:
         price = to_decimal(unit_price, minimum=0)
@@ -508,7 +512,8 @@ def inventory_list(request):
                 quantity=0,
                 reorder_level=to_int(request.POST.get('reorder_level'), 5, 0),
                 location=location,
-                unit_cost=unit_cost
+                unit_cost=unit_cost,
+                sale_price=to_decimal(request.POST.get('sale_price'), minimum=0) if request.POST.get('sale_price', '').strip() else None,
             )
             if quantity:
                 move_stock(item, quantity, 'NEW', request)
@@ -603,6 +608,8 @@ def part_detail(request, item_id):
         'pricelist': pricelist,
         'categories': PART_CATEGORIES,
         'movements': item.movements.select_related('user')[:30],
+        'supplier_prices': item.supplier_prices.select_related('supplier'),
+        'all_suppliers': Supplier.objects.order_by('name'),
         'last_count': item.movements.filter(reason='COUNT').select_related('user').first(),
     })
 
@@ -652,6 +659,8 @@ def edit_inventory_item(request, item_id):
         item.reorder_level = to_int(request.POST.get('reorder_level'), item.reorder_level, 0)
         item.location = request.POST.get('location', item.location)
         item.unit_cost = to_decimal(request.POST.get('unit_cost'), default=item.unit_cost, minimum=0)
+        raw_sale = request.POST.get('sale_price', '').strip()
+        item.sale_price = to_decimal(raw_sale, minimum=0) if raw_sale else None
         category = request.POST.get('category')
         if category in CATEGORY_CODES:
             item.category = category
@@ -824,7 +833,14 @@ def supplier_detail(request, supplier_id):
              .annotate(qty=Sum('quantity'), last_cost=Max('unit_cost'), last_date=Max('purchase_order__issue_date'))
              .order_by('-last_date'))
     prices = PriceRecord.objects.filter(supplier_or_client_name__iexact=supplier.name).order_by('-date_recorded')[:15]
+    price_list = list(supplier.prices.select_related('item').order_by('item__part_name'))
+    best = {}
+    for sp in SupplierPrice.objects.filter(item__in=[sp.item_id for sp in price_list]).order_by('price'):
+        best.setdefault(sp.item_id, sp.price)
+    for sp in price_list:
+        sp.is_best = best.get(sp.item_id) == sp.price
     return render(request, 'tracker/supplier_detail.html', {
+        'price_list': price_list,
         'supplier': supplier,
         'pos': pos,
         'parts': parts,
@@ -899,7 +915,7 @@ def po_detail(request, po_id):
     return render(request, 'tracker/po_detail.html', {
         'po': po,
         'items': po.items.select_related('inventory_item').order_by('id'),
-        'parts': parts_json(),
+        'parts': parts_json(supplier=po.supplier),
     })
 
 
@@ -924,3 +940,49 @@ def delete_po_item(request, item_id):
         po.save()
         return redirect('po_detail', po_id=po.id)
     return redirect('po_list')
+
+
+@transaction.atomic
+def supplier_price_save(request, item_id):
+    """Add or update what one supplier charges for this item. A changed price is also kept in Price history."""
+    item = get_object_or_404(InventoryItem, id=item_id)
+    if request.method == 'POST':
+        supplier_id = request.POST.get('supplier_id')
+        new_name = request.POST.get('new_supplier', '').strip()
+        supplier = None
+        if supplier_id:
+            supplier = Supplier.objects.filter(id=supplier_id).first()
+        elif new_name:
+            supplier = Supplier.objects.filter(name__iexact=new_name).first() or Supplier.objects.create(name=new_name)
+        raw_price = request.POST.get('price', '').strip()
+        if not supplier or not raw_price:
+            messages.error(request, _("Choose a supplier and enter a price."))
+            return redirect('part_detail', item_id=item.id)
+        price = to_decimal(raw_price, minimum=0)
+        currency = request.POST.get('currency', 'EUR')
+        lead = request.POST.get('lead_time_days', '').strip()
+        sp, created = SupplierPrice.objects.get_or_create(item=item, supplier=supplier, defaults={'price': price})
+        changed = created or sp.price != price
+        sp.price = price
+        sp.currency = currency if currency in ('EUR', 'USD', 'GBP') else 'EUR'
+        sp.supplier_code = request.POST.get('supplier_code', '').strip()
+        sp.lead_time_days = to_int(lead, None, 0) if lead else None
+        sp.notes = request.POST.get('notes', '').strip()[:255]
+        sp.save()
+        if changed:  # keep the price trail for the Price history chart
+            PriceRecord.objects.create(part_name=item.part_name, part_code=item.part_code or '', supplier_or_client_name=supplier.name,
+                                       unit_price=price, currency=sp.currency, notes=_('Supplier price'))
+            log_activity(request, 'price_logged', f'{item.part_name} · {supplier.name} · {price} {sp.currency}',
+                         reverse('part_detail', args=[item.id]))
+        messages.success(request, _("Price from %(s)s saved.") % {'s': supplier.name})
+    return redirect('part_detail', item_id=item.id)
+
+
+@transaction.atomic
+def supplier_price_delete(request, price_id):
+    sp = get_object_or_404(SupplierPrice, id=price_id)
+    item_id = sp.item_id
+    if request.method == 'POST':
+        sp.delete()
+        messages.success(request, _("Supplier price removed."))
+    return redirect('part_detail', item_id=item_id)

@@ -17,6 +17,9 @@
                 {% if item.part_code %}<span class="mono">{{ item.part_code }}</span>{% endif %}
                 <span>{% icon "pin" %}{{ item.location }}</span>
                 <span>{% icon "euro" %}{{ item.unit_cost|money }} {% trans "unit cost" %}</span>
+                {% if can_money %}
+                <span>{% icon "tag" %}{% if item.sale_price is not None %}<strong>{{ item.sale_price|money }}</strong> {% trans "selling price" %}{% if item.margin_percent is not None %} · <span class="badge {% if item.margin_percent >= 32 %}badge-success{% elif item.margin_percent >= 15 %}badge-warning{% else %}badge-danger{% endif %} plain">{{ item.margin_percent }}% {% trans "margin" %}</span>{% endif %}{% else %}<a href="{% url 'edit_inventory_item' item.id %}">{% trans "Set selling price" %}</a>{% endif %}</span>
+                {% endif %}
                 {% if pricelist %}<span>{% icon "tag" %}{% trans "List price" %} <a href="{% url 'finance:pricelist_dashboard' %}?q={{ pricelist.part_code|default:pricelist.part_name|urlencode }}">{{ pricelist.client_price|money }}</a></span>{% endif %}
             </div>
         </div>
@@ -51,12 +54,69 @@
 <div class="stats">
     <div class="stat"><div class="stat-label">{% icon "orders" %}{% trans "Units sold" %}</div><div class="stat-value">{{ units_sold }}</div><div class="stat-meta">{% trans "Across" %} {{ order_lines|length }} {% if order_lines|length == 1 %}{% trans "recent line" %}{% else %}{% trans "recent lines" %}{% endif %}</div></div>
     <div class="stat"><div class="stat-label">{% icon "users" %}{% trans "Clients" %}</div><div class="stat-value">{{ clients|length }}</div><div class="stat-meta">{% trans "Who ordered this part" %}</div></div>
-    <div class="stat"><div class="stat-label">{% icon "building" %}{% trans "Suppliers" %}</div><div class="stat-value">{{ suppliers|length }}</div><div class="stat-meta">{% trans "From purchase orders" %}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "building" %}{% trans "Suppliers" %}</div>{% if supplier_prices %}<div class="stat-value">{{ supplier_prices|length }}</div><div class="stat-meta">{% trans "Best price" %} {{ supplier_prices.0.price|money }}</div>{% else %}<div class="stat-value">{{ suppliers|length }}</div><div class="stat-meta">{% trans "From purchase orders" %}</div>{% endif %}</div>
     <div class="stat"><div class="stat-label">{% icon "trending" %}{% trans "Price records" %}</div><div class="stat-value">{{ price_records|length }}</div><div class="stat-meta">{% trans "Logged quotes &amp; prices" %}</div></div>
 </div>
 
 <div class="grid grid-main-side">
     <div class="stack">
+        {% if can_money %}
+        <section class="card" id="supplier-prices">
+            <div class="card-header">
+                <div class="card-title">{% icon "building" %}{% trans "Supplier prices" %}</div>
+                <span class="card-sub">{% trans "Same item, different sources — compare before you buy" %}</span>
+            </div>
+            {% if supplier_prices %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>{% trans "Supplier" %}</th><th>{% trans "Their code" %}</th><th>{% trans "Delivery" %}</th><th>{% trans "Updated" %}</th><th class="num">{% trans "Price" %}</th><th></th></tr></thead>
+                <tbody>{% for sp in supplier_prices %}
+                    <tr>
+                        <td><a class="entity" href="{% url 'supplier_detail' sp.supplier.id %}">{{ sp.supplier.name }}</a>{% if forloop.first and supplier_prices|length > 1 %} <span class="badge badge-success">{% trans "Best price" %}</span>{% endif %}{% if sp.notes %}<span class="secondary">{{ sp.notes }}</span>{% endif %}</td>
+                        <td class="mono muted">{{ sp.supplier_code|default:"—" }}</td>
+                        <td class="muted nowrap">{% if sp.lead_time_days is not None %}{{ sp.lead_time_days }} {% trans "days" %}{% else %}—{% endif %}</td>
+                        <td class="muted nowrap">{{ sp.updated_at|date:"d M Y" }}</td>
+                        <td class="num"><strong>{% if sp.currency == 'EUR' %}{{ sp.price|money }}{% else %}{{ sp.price }} {{ sp.currency }}{% endif %}</strong>{% if not forloop.first and sp.currency == 'EUR' %}<span class="secondary">+{{ sp.price|sub:supplier_prices.0.price|money }}</span>{% endif %}</td>
+                        <td class="actions">
+                            <details class="dropdown">
+                                <summary class="btn btn-ghost btn-icon btn-sm" title="{% trans 'Edit' %}">{% icon "edit" %}</summary>
+                                <form method="POST" action="{% url 'supplier_price_save' item.id %}" class="dropdown-menu team-edit">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="supplier_id" value="{{ sp.supplier.id }}">
+                                    <div class="field"><label>{% trans "Price" %}</label><input type="number" step="0.01" min="0" name="price" value="{{ sp.price|stringformat:'.2f' }}" required></div>
+                                    <div class="field"><label>{% trans "Currency" %}</label><select name="currency">{% for c in 'EUR,USD,GBP'|split:',' %}<option {% if sp.currency == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+                                    <div class="field"><label>{% trans "Their code" %}</label><input type="text" name="supplier_code" value="{{ sp.supplier_code }}"></div>
+                                    <div class="field"><label>{% trans "Delivery (days)" %}</label><input type="number" min="0" name="lead_time_days" value="{{ sp.lead_time_days|default_if_none:'' }}"></div>
+                                    <div class="field"><label>{% trans "Note" %}</label><input type="text" name="notes" value="{{ sp.notes }}"></div>
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">{% icon "check" %}{% trans "Save" %}</button>
+                                </form>
+                            </details>
+                            <form method="POST" action="{% url 'supplier_price_delete' sp.id %}" class="inline-form" data-confirm="{% trans 'Remove this supplier price?' %}">
+                                {% csrf_token %}<button type="submit" class="btn btn-ghost btn-icon btn-sm" title="{% trans 'Remove' %}">{% icon "trash" %}</button>
+                            </form>
+                        </td>
+                    </tr>{% endfor %}</tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='building' title=_("No supplier prices yet") text=_("Add what each supplier charges for this item. The cheapest is highlighted.") %}
+            {% endif %}
+            <form method="POST" action="{% url 'supplier_price_save' item.id %}" class="card-body" style="border-top:1px solid var(--border)">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="field grow"><label for="sp-supplier">{% trans "Supplier" %}</label>
+                        <select id="sp-supplier" name="supplier_id">
+                            <option value="">{% trans "Choose…" %}</option>
+                            {% for s in all_suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field grow"><label for="sp-new">{% trans "…or new supplier" %}</label><input id="sp-new" type="text" name="new_supplier" placeholder="{% trans 'Supplier name' %}"></div>
+                    <div class="field w-price"><label for="sp-price">{% trans "Price €" %}</label><input id="sp-price" type="number" step="0.01" min="0" name="price" placeholder="0.00" required></div>
+                    <div class="field w-price"><label for="sp-code">{% trans "Their code" %}</label><input id="sp-code" type="text" name="supplier_code"></div>
+                    <div class="field w-qty"><label for="sp-lead">{% trans "Days" %}</label><input id="sp-lead" type="number" min="0" name="lead_time_days"></div>
+                    <button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Add" %}</button>
+                </div>
+            </form>
+        </section>
+        {% endif %}
         <section class="card">
             <div class="card-header"><div class="card-title">{% icon "orders" %}{% trans "Orders &amp; invoices using this part" %}</div></div>
             {% if order_lines %}

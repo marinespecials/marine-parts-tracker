@@ -30,6 +30,23 @@
 <div class="grid grid-main-side">
     <div class="stack">
         <section class="card">
+            <div class="card-header"><div class="card-title">{% icon "tag" %}{% trans "Their price list" %}</div><span class="card-sub">{% trans "What this supplier charges per item" %}</span></div>
+            {% if price_list %}
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Their code" %}</th><th>{% trans "Updated" %}</th><th class="num">{% trans "Price" %}</th></tr></thead>
+                <tbody>{% for sp in price_list %}
+                    <tr data-href="{% url 'part_detail' sp.item.id %}#supplier-prices" class="row-link">
+                        <td><a class="entity" href="{% url 'part_detail' sp.item.id %}#supplier-prices">{{ sp.item.part_name }}</a>{% if sp.item.part_code %}<span class="secondary mono">{{ sp.item.part_code }}</span>{% endif %}</td>
+                        <td class="mono muted">{{ sp.supplier_code|default:"—" }}</td>
+                        <td class="muted nowrap">{{ sp.updated_at|date:"d M Y" }}</td>
+                        <td class="num"><strong>{% if sp.currency == 'EUR' %}{{ sp.price|money }}{% else %}{{ sp.price }} {{ sp.currency }}{% endif %}</strong>{% if sp.is_best %} <span class="badge badge-success plain">{% trans "Best price" %}</span>{% endif %}</td>
+                    </tr>{% endfor %}</tbody>
+            </table></div>
+            {% else %}
+                {% include 'partials/empty.html' with icon='tag' title=_("No prices from this supplier yet") text=_("Add supplier prices from each part's page.") %}
+            {% endif %}
+        </section>
+        <section class="card">
             <div class="card-header"><div class="card-title">{% icon "cart" %}{% trans "Purchase orders" %}</div></div>
             {% if pos %}
             <div class="table-wrap"><table class="table">

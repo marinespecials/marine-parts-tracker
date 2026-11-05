@@ -1,0 +1,124 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Import from Excel" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% trans "Import from Excel" %}</h1>
+        <p class="lede">{% trans "Bring in items and clients from your ERP. Nothing is deleted, and existing items keep their stock quantity." %}</p>
+    </div>
+</div>
+
+{% if step == 'upload' %}
+<div class="grid grid-main-side">
+    <form method="POST" enctype="multipart/form-data" class="card">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <div class="card-header"><div class="card-title">{% icon "upload" %}{% trans "1. Upload the file" %}</div></div>
+        <div class="card-body" style="display:grid;gap:16px">
+            <div class="field">
+                <label>{% trans "What are you importing?" %}</label>
+                <div class="segmented" style="width:max-content">
+                    <label style="display:flex"><input type="radio" name="kind" value="items" checked class="hidden"><span class="seg-opt">{% icon "box" "icon-sm" %} {% trans "Warehouse items" %}</span></label>
+                    <label style="display:flex"><input type="radio" name="kind" value="clients" class="hidden"><span class="seg-opt">{% icon "users" "icon-sm" %} {% trans "Clients" %}</span></label>
+                </div>
+            </div>
+            <div class="field">
+                <label for="file">{% trans "Excel (.xlsx) or CSV file" %}</label>
+                <input type="file" id="file" name="file" accept=".xlsx,.csv" required class="file-input">
+                <span class="hint">{% trans "The first sheet is read. The header row is found automatically. Up to 10 MB / 20,000 rows." %}</span>
+            </div>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary">{% trans "Continue" %}{% icon "arrow-right" %}</button></div>
+    </form>
+
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "info" %}{% trans "How it works" %}</div></div>
+        <div class="card-body" style="display:grid;gap:10px;font-size:13.5px">
+            <p><strong>{% trans "Items" %}</strong> — {% trans "matched by part code (or exact name). Existing items get updated names, prices, category and location; their stock quantity is not changed. New items are added with the quantity from the file." %}</p>
+            <p>{% trans "If the file has a supplier column, the cost is also saved as that supplier's price on the item." %}</p>
+            <p><strong>{% trans "Clients" %}</strong> — {% trans "matched by ΑΦΜ, then ERP code, then exact name. Empty cells never erase details you already have." %}</p>
+            <p class="muted">{% trans "You will see a preview before anything is saved." %}</p>
+            <div class="button-row" style="margin-top:4px">
+                <a class="btn btn-sm" href="{% url 'import_template' 'items' %}">{% icon "download" %}{% trans "Example: items" %}</a>
+                <a class="btn btn-sm" href="{% url 'import_template' 'clients' %}">{% icon "download" %}{% trans "Example: clients" %}</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% else %}
+<form method="POST">
+    {% csrf_token %}
+    <section class="card">
+        <div class="card-header">
+            <div class="card-title">{% icon "list" %}{% trans "2. Check the columns" %}</div>
+            <span class="card-sub">{{ filename }} · {{ total_rows }} {% trans "rows" %} · {% if kind == 'items' %}{% trans "Warehouse items" %}{% else %}{% trans "Clients" %}{% endif %}</span>
+        </div>
+        <div class="card-body">
+            <p class="muted" style="margin-bottom:14px;font-size:13.5px">{% trans "For each field, choose the column from your file that holds it. Columns were matched automatically from their names — correct any that are wrong and press “Update preview”." %}</p>
+            <div class="form-grid">
+                {% for f in fields %}
+                <div class="field">
+                    <label for="map_{{ f.key }}">{{ f.label }}</label>
+                    <select id="map_{{ f.key }}" name="map_{{ f.key }}">
+                        <option value="">— {% trans "not in file" %} —</option>
+                        {% for i, h in headers %}<option value="{{ i }}" {% if f.col == i %}selected{% endif %}>{{ h }}</option>{% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-footer" style="justify-content:space-between">
+            <button type="submit" name="action" value="cancel" class="btn btn-ghost" formnovalidate>{% trans "Cancel" %}</button>
+            <button type="submit" name="action" value="remap" class="btn">{% icon "refresh" %}{% trans "Update preview" %}</button>
+        </div>
+    </section>
+
+    <div class="stats">
+        <div class="stat tone-success"><div class="stat-label">{% icon "plus" %}{% trans "New" %}</div><div class="stat-value">{{ counts.create }}</div></div>
+        <div class="stat"><div class="stat-label">{% icon "edit" %}{% trans "Will be updated" %}</div><div class="stat-value">{{ counts.update }}</div></div>
+        <div class="stat"><div class="stat-label">{% icon "check" %}{% trans "Already up to date" %}</div><div class="stat-value">{{ counts.same }}</div></div>
+        <div class="stat {% if counts.skip %}tone-warning{% endif %}"><div class="stat-label">{% icon "alert" %}{% trans "Skipped" %}</div><div class="stat-value">{{ counts.skip }}</div></div>
+    </div>
+
+    <section class="card">
+        <div class="card-header"><div class="card-title">{% icon "search" %}{% trans "3. Preview" %}</div><span class="card-sub">{% trans "first 30 changes" %}</span></div>
+        {% if preview %}
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th>{% trans "Row" %}</th><th>{% trans "Action" %}</th><th>{% if kind == 'items' %}{% trans "Part" %}{% else %}{% trans "Client" %}{% endif %}</th><th>{% trans "What changes" %}</th></tr></thead>
+            <tbody>{% for p in preview %}
+                <tr>
+                    <td class="muted">{{ p.row }}</td>
+                    <td>{% if p.action == 'create' %}<span class="badge badge-success">{% trans "New" %}</span>{% else %}<span class="badge badge-info">{% trans "Update" %}</span>{% endif %}</td>
+                    <td><span class="primary">{{ p.name }}</span>{% if p.code %}<span class="secondary mono">{{ p.code }}</span>{% endif %}</td>
+                    <td class="muted" style="font-size:12.5px">
+                        {% if p.action == 'create' %}
+                            {% if kind == 'items' %}{% if p.values.quantity is not None %}{% trans "Stock" %} {{ p.values.quantity }}{% endif %}{% if p.values.unit_cost is not None %} · {% trans "cost" %} {{ p.values.unit_cost|money }}{% endif %}{% if p.values.sale_price is not None %} · {% trans "sells" %} {{ p.values.sale_price|money }}{% endif %}{% if p.values.supplier %} · {{ p.values.supplier }}{% endif %}
+                            {% else %}{{ p.values.tax_id|default:"" }} {{ p.values.city|default:"" }}{% endif %}
+                        {% else %}
+                            {% for label, value in p.change_list %}<span class="chip" style="margin:1px">{{ label }} → {{ value }}</span>{% endfor %}
+                        {% endif %}
+                    </td>
+                </tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}
+            {% include 'partials/empty.html' with icon='check' title=_("Nothing new to import") text=_("Everything in the file already matches the app (or the columns aren't matched yet).") %}
+        {% endif %}
+        {% if skipped %}
+        <div class="card-body" style="border-top:1px solid var(--border)">
+            <div class="label" style="margin-bottom:6px">{% trans "Skipped rows" %}</div>
+            {% for p in skipped %}<div class="muted" style="font-size:12.5px">{% trans "Row" %} {{ p.row }}: {{ p.name|default:p.code }} — {{ p.reason }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="card-footer">
+            {% if not has_required %}<span class="muted" style="margin-right:auto">{% trans "Choose which column holds the name (or code) first." %}</span>{% endif %}
+            <button type="submit" name="action" value="commit" class="btn btn-primary" {% if not has_required or not counts.create and not counts.update %}disabled{% endif %}
+                    data-confirm="{% trans 'Import now? New records are added and existing ones updated. Nothing is deleted.' %}">
+                {% icon "check" %}{% trans "Confirm import" %} ({{ counts.create|add:counts.update }})
+            </button>
+        </div>
+    </section>
+</form>
+{% endif %}
+{% endblock %}

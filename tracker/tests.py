@@ -1,3 +1,4 @@
+import io
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -274,3 +275,94 @@ class StockHistoryRolesAndToolsTests(TestCase):
         self.client.login(username='office', password='pw-for-tests-123')
         self.assertEqual(self.client.get('/team/').status_code, 302)
         self.assertEqual(self.client.get('/finance/').status_code, 200)
+
+
+class SupplierPricesAndImportTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        User.objects.create_superuser('boss', password='pw-for-tests-123')
+        self.client.login(username='boss', password='pw-for-tests-123')
+        self.part = InventoryItem.objects.create(part_name='AGM battery 100Ah', part_code='VIC-AGM100', quantity=4,
+                                                 unit_cost=Decimal('180'), sale_price=Decimal('245'))
+
+    def _xlsx(self, rows):
+        import io
+        from openpyxl import Workbook
+        wb = Workbook()
+        for r in rows:
+            wb.active.append(r)
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        buf.name = 'erp.xlsx'
+        return buf
+
+    def test_supplier_prices_are_compared_and_logged(self):
+        from finance.models import PriceRecord
+        from tracker.models import SupplierPrice
+        url = reverse('supplier_price_save', args=[self.part.id])
+        self.client.post(url, {'new_supplier': 'Victron GR', 'price': '182,50', 'supplier_code': 'V-1'})
+        self.client.post(url, {'new_supplier': 'Batteries Ltd', 'price': '171'})
+        prices = list(SupplierPrice.objects.filter(item=self.part).values_list('supplier__name', 'price'))
+        self.assertEqual(prices, [('Batteries Ltd', Decimal('171.00')), ('Victron GR', Decimal('182.50'))])  # cheapest first
+        self.assertEqual(PriceRecord.objects.filter(part_name='AGM battery 100Ah').count(), 2)
+        page = self.client.get(reverse('part_detail', args=[self.part.id]))
+        self.assertContains(page, 'Batteries Ltd')
+        self.assertEqual(InventoryItem.objects.filter(part_name='AGM battery 100Ah').count(), 1)  # still one item
+
+    def test_orders_use_selling_price_and_pos_use_supplier_price(self):
+        from tracker.models import Supplier, SupplierPrice
+        from tracker.views import parts_json
+        self.client.post(reverse('create_order'), {'customer_name': 'M/V Test', 'inventory_id': self.part.id, 'quantity': 1})
+        self.assertEqual(OrderItem.objects.get().unit_price, Decimal('245.00'))
+        s = Supplier.objects.create(name='Batteries Ltd')
+        SupplierPrice.objects.create(item=self.part, supplier=s, price=Decimal('171'))
+        row = next(p for p in parts_json(supplier=s) if p['id'] == self.part.id)
+        self.assertEqual((row['cost'], row['price']), ('171.00', '245.00'))
+
+    def test_item_import_updates_details_but_keeps_stock(self):
+        from tracker.models import SupplierPrice
+        f = self._xlsx([
+            ['Αναφορά αποθήκης'],                       # title row above the headers
+            ['Κωδικός', 'Περιγραφή', 'Υπόλοιπο', 'Τιμή αγοράς', 'Τιμή πώλησης', 'Προμηθευτής'],
+            ['VIC-AGM100', 'AGM battery 100Ah (new name)', 99, 175, 250, 'Victron GR'],
+            ['F-2010', 'Racor φίλτρο 2010PM', 12, '18,40', '29,90', ''],
+            ['F-2010', 'duplicate row', 1, 1, 1, ''],
+            ['', '', '', '', '', ''],
+        ])
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'items', 'file': f})
+        page = self.client.get(reverse('import_data'))
+        self.assertEqual(page.context['counts'], {'create': 1, 'update': 1, 'same': 0, 'skip': 1})
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        self.part.refresh_from_db()
+        self.assertEqual(self.part.quantity, 4)                     # stock kept
+        self.assertEqual(self.part.part_name, 'AGM battery 100Ah (new name)')
+        self.assertEqual((self.part.unit_cost, self.part.sale_price), (Decimal('175.00'), Decimal('250.00')))
+        new = InventoryItem.objects.get(part_code='F-2010')
+        self.assertEqual((new.quantity, new.sale_price, new.category), (12, Decimal('29.90'), 'Filters'))
+        self.assertEqual(new.movements.get().reason, 'NEW')
+        self.assertEqual(SupplierPrice.objects.get(item=self.part).price, Decimal('175.00'))
+
+    def test_client_import_matches_by_tax_id_and_keeps_details(self):
+        Customer.objects.create(name='Aegean Shipping SA', tax_id='099999999', phone='210 111')
+        csv_file = io.BytesIO('Επωνυμία;ΑΦΜ;Τηλέφωνο;Πόλη\nAegean Shipping;099999999;;Piraeus\nBlue Star Ferries;094000000;210 222;Athens\n'.encode('utf-8-sig'))
+        csv_file.name = 'clients.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'clients', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        aegean = Customer.objects.get(tax_id='099999999')
+        self.assertEqual((aegean.name, aegean.phone, aegean.city), ('Aegean Shipping', '210 111', 'Piraeus'))  # empty cell kept phone
+        self.assertTrue(Customer.objects.filter(name='Blue Star Ferries', city='Athens').exists())
+
+    def test_template_download_and_technician_block(self):
+        r = self.client.get(reverse('import_template', args=['items']))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('spreadsheetml', r['Content-Type'])
+        from tracker.roles import set_role
+        tech = User.objects.create_user('tech', password='pw-for-tests-123')
+        set_role(tech, 'Technician')
+        self.client.logout()
+        self.client.login(username='tech', password='pw-for-tests-123')
+        self.assertEqual(self.client.get(reverse('import_data')).status_code, 302)

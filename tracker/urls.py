@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, team_views, warehouse_tools
+from . import views, team_views, warehouse_tools, import_views
 
 urlpatterns = [
     # Main Portal Hub
@@ -37,6 +37,8 @@ urlpatterns = [
     path('warehouse/count/', warehouse_tools.stock_count, name='stock_count'),
     path('warehouse/dead-stock/', warehouse_tools.dead_stock, name='dead_stock'),
     path('warehouse/<int:item_id>/scan/', warehouse_tools.scan_part, name='scan_part'),
+    path('warehouse/<int:item_id>/supplier-price/', views.supplier_price_save, name='supplier_price_save'),
+    path('warehouse/supplier-price/<int:price_id>/delete/', views.supplier_price_delete, name='supplier_price_delete'),
     path('warehouse/<int:item_id>/', views.part_detail, name='part_detail'),
     path('warehouse/<int:item_id>/adjust/<str:action>/', views.adjust_stock, name='adjust_stock'),
     path('warehouse/<int:item_id>/edit/', views.edit_inventory_item, name='edit_inventory_item'),
@@ -54,6 +56,8 @@ urlpatterns = [
 
     # Team, activity log, own password
     path('team/', team_views.team, name='team'),
+    path('import/', import_views.import_data, name='import_data'),
+    path('import/template/<str:kind>/', import_views.import_template, name='import_template'),
     path('activity/', team_views.activity, name='activity'),
     path('account/password/', team_views.PasswordChange.as_view(), name='password_change'),
 ]

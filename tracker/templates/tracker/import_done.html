@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% load ui i18n %}
+{% block title %}{% trans "Import finished" %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% trans "Import finished" %}</h1>
+        <p class="lede">{{ filename }}</p>
+    </div>
+    <div class="actions">
+        <a href="{% url 'import_data' %}" class="btn">{% icon "upload" %}{% trans "Import another file" %}</a>
+        {% if kind == 'items' %}<a href="{% url 'inventory_list' %}" class="btn btn-primary">{% trans "Open warehouse" %}{% icon "arrow-right" %}</a>
+        {% else %}<a href="{% url 'client_list' %}" class="btn btn-primary">{% trans "Open clients" %}{% icon "arrow-right" %}</a>{% endif %}
+    </div>
+</div>
+
+<div class="stats">
+    <div class="stat tone-success"><div class="stat-label">{% icon "plus" %}{% trans "Added" %}</div><div class="stat-value">{{ result.created }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "edit" %}{% trans "Updated" %}</div><div class="stat-value">{{ result.updated }}</div></div>
+    <div class="stat"><div class="stat-label">{% icon "check" %}{% trans "Already up to date" %}</div><div class="stat-value">{{ counts.same }}</div></div>
+    {% if kind == 'items' %}<div class="stat"><div class="stat-label">{% icon "building" %}{% trans "Supplier prices saved" %}</div><div class="stat-value">{{ result.prices }}</div></div>{% endif %}
+    <div class="stat {% if counts.skip %}tone-warning{% endif %}"><div class="stat-label">{% icon "alert" %}{% trans "Skipped" %}</div><div class="stat-value">{{ counts.skip }}</div></div>
+</div>
+
+{% if skipped %}
+<section class="card">
+    <div class="card-header"><div class="card-title">{% icon "alert" %}{% trans "Skipped rows" %}</div></div>
+    <div class="table-wrap"><table class="table"><tbody>{% for p in skipped %}
+        <tr><td class="muted">{% trans "Row" %} {{ p.row }}</td><td>{{ p.name|default:p.code }}</td><td class="muted">{{ p.reason }}</td></tr>
+    {% endfor %}</tbody></table></div>
+</section>
+{% endif %}
+{% endblock %}

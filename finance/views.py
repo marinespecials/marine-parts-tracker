@@ -63,6 +63,18 @@ def client_ledger(request, client_id):
     client = get_object_or_404(Customer, id=client_id)
     profile, _created = ClientFinancialProfile.objects.get_or_create(customer=client)
 
+    if request.method == 'POST' and 'update_details' in request.POST:
+        new_name = request.POST.get('name', '').strip()
+        if new_name and new_name != client.name and Customer.objects.filter(name__iexact=new_name).exclude(id=client.id).exists():
+            messages.error(request, _("Another client already has the name %(n)s.") % {'n': new_name})
+            return redirect('finance:client_ledger', client_id=client.id)
+        client.name = new_name or client.name
+        for field in ('tax_id', 'tax_office', 'phone', 'email', 'address', 'city', 'code'):
+            setattr(client, field, request.POST.get(field, '').strip())
+        client.save()
+        messages.success(request, _("Client details saved."))
+        return redirect('finance:client_ledger', client_id=client.id)
+
     if request.method == 'POST' and 'update_profile' in request.POST:
         rating = request.POST.get('internal_rating', profile.internal_rating)
         if rating in ClientFinancialProfile.RATING_LABELS:
@@ -161,7 +173,7 @@ def create_invoice(request):
                 if inventory_id:
                     inv_item = InventoryItem.objects.filter(id=inventory_id).first()
                     desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-                    price = to_decimal(unit_price, default=(inv_item.unit_cost if inv_item else 0), minimum=0)
+                    price = to_decimal(unit_price, default=(inv_item.default_sell_price if inv_item else 0), minimum=0)
                 else:
                     inv_item = None
                     desc = custom_desc
@@ -216,7 +228,7 @@ def add_invoice_item(request, invoice_id):
         if inventory_id:
             inv_item = InventoryItem.objects.filter(id=inventory_id).first()
             desc = custom_desc or (f"{inv_item.part_name} ({inv_item.part_code})" if inv_item and inv_item.part_code else (inv_item.part_name if inv_item else 'Item'))
-            unit_price = to_decimal(custom_price, default=(inv_item.unit_cost if inv_item else 0), minimum=0)
+            unit_price = to_decimal(custom_price, default=(inv_item.default_sell_price if inv_item else 0), minimum=0)
         else:
             inv_item = None
             desc = custom_desc or 'Billed Item / Service'

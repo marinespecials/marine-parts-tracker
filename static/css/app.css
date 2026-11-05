@@ -585,3 +585,9 @@ td.empty-cell { padding: 0 !important; }
     .labels { grid-template-columns: repeat(3, 1fr); gap: 4mm; }
     .qr-label { border: 1px dashed #bbb; min-height: 32mm; }
 }
+
+/* ---------- Import page ---------- */
+.seg-opt { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-2); }
+input:checked + .seg-opt { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+input:focus-visible + .seg-opt { outline: 2px solid var(--accent); }
+.file-input { padding: 10px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); width: 100%; font: inherit; }

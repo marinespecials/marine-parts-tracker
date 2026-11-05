@@ -12,7 +12,7 @@ ROLE_HELP = {
 }
 
 # Pages a technician cannot open (money, clients, suppliers, team).
-TECHNICIAN_BLOCKED = ('/finance/', '/clients/', '/catalog/', '/research/', '/purchasing/', '/suppliers/', '/team/', '/activity/')
+TECHNICIAN_BLOCKED = ('/finance/', '/clients/', '/catalog/', '/research/', '/purchasing/', '/suppliers/', '/team/', '/activity/', '/import/')
 ADMIN_ONLY = ('/team/',)
 
 

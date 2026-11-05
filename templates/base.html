@@ -92,7 +92,10 @@
             <div class="nav-section">
                 <div class="nav-label">{% trans "Shortcuts" %}</div>
                 <a href="https://drive.google.com/drive/folders/17-QI8Ct2UwCgP7617tC2PhtGiVujWrLF?usp=drive_link" target="_blank" rel="noopener">{% icon "folder" %}Google Drive{% icon "external" "icon-sm subtle" %}</a>
-                {% if can_money %}<a href="{% url 'finance:export_finances' %}">{% icon "download" %}{% trans "Export CSV" %}</a>{% endif %}
+                {% if can_money %}
+                <a href="{% url 'import_data' %}" class="{% active 'import_data' %}">{% icon "upload" %}{% trans "Import from Excel" %}</a>
+                <a href="{% url 'finance:export_finances' %}">{% icon "download" %}{% trans "Export CSV" %}</a>
+                {% endif %}
             </div>
         </nav>
 

@@ -79,10 +79,11 @@
                 var o = document.createElement('option');
                 o.value = p.id;
                 var label = p.name + (p.code ? ' (' + p.code + ')' : '');
-                if (mode === 'price') label += ' · ' + (root.lang === 'el' ? p.cost.replace('.', ',') : p.cost) + ' € · ' + p.qty + ' ' + TEXT.inStock;
+                if (mode === 'price') label += ' · ' + fmt(p.price) + ' € · ' + p.qty + ' ' + TEXT.inStock;
                 else if (mode === 'stock') label += ' · ' + p.qty + ' ' + TEXT.inStock;
                 o.textContent = label;
-                o.dataset.cost = p.cost;
+                // orders/invoices fill in the selling price; purchase orders fill in what the supplier charges
+                o.dataset.cost = mode === 'price' ? p.price : p.cost;
                 frag.appendChild(o);
             });
             sel.appendChild(frag);
@@ -99,6 +100,7 @@
 
     // ---- Searchable picker: type part name or code instead of scrolling a long list ----
     // The original <select> stays in the form (hidden) and keeps the chosen value.
+    function fmt(n) { return root.lang === 'el' ? String(n).replace('.', ',') : String(n); }
     function norm(t) { return (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
     function makeSearchable(sel, parts, mode) {
         var wrap = document.createElement('div');
@@ -129,8 +131,7 @@
 
         var shown = [], active = -1;
         function meta(p) {
-            var cost = root.lang === 'el' ? p.cost.replace('.', ',') : p.cost;
-            return (mode === 'price' ? cost + ' € · ' : '') + p.qty + ' ' + TEXT.inStock;
+            return fmt(mode === 'price' ? p.price : p.cost) + ' € · ' + p.qty + ' ' + TEXT.inStock;
         }
         function highlight() {
             Array.prototype.forEach.call(list.children, function (li, i) { li.classList.toggle('on', i === active); });

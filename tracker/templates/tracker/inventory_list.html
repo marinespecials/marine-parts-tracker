@@ -22,6 +22,8 @@
                 <a href="{% url 'print_labels' %}">{% icon "qr" %}{% trans "Print part labels" %}</a>
                 <a href="{% url 'print_labels' %}?kind=shelves">{% icon "pin" %}{% trans "Print shelf labels" %}</a>
                 <a href="{% url 'dead_stock' %}">{% icon "alert" %}{% trans "Dead stock report" %}</a>
+                <hr>
+                <a href="{% url 'import_data' %}">{% icon "upload" %}{% trans "Import from Excel" %}</a>
             </div>
         </details>
         <a href="#new-part" class="btn btn-primary" onclick="document.getElementById('part_name').focus()">{% icon "plus" %}{% trans "Add part" %}</a>
@@ -48,7 +50,7 @@
     {% if items %}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Category" %}</th><th>{% trans "Location" %}</th><th>{% trans "In stock" %}</th><th class="num">{% trans "Unit cost" %}</th><th class="num">{% trans "Value" %}</th><th></th></tr></thead>
+            <thead><tr><th>{% trans "Part" %}</th><th>{% trans "Category" %}</th><th>{% trans "Location" %}</th><th>{% trans "In stock" %}</th><th class="num">{% trans "Unit cost" %}</th><th class="num">{% trans "Selling price" %}</th><th class="num">{% trans "Value" %}</th><th></th></tr></thead>
             <tbody>
             {% for item in items %}
                 <tr data-href="{% url 'part_detail' item.id %}" class="row-link">
@@ -63,6 +65,7 @@
                         </div>
                     </td>
                     <td class="num">{{ item.unit_cost|money }}</td>
+                    <td class="num">{% if item.sale_price is not None %}{{ item.sale_price|money }}{% if item.margin_percent is not None %}<span class="secondary">{{ item.margin_percent }}%</span>{% endif %}{% else %}<span class="subtle">—</span>{% endif %}</td>
                     <td class="num"><strong>{{ item.stock_value|money }}</strong></td>
                     <td class="actions">
                         <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-ghost btn-icon btn-sm" title="{% trans "Edit" %}">{% icon "edit" %}</a>
@@ -103,6 +106,7 @@
             <div class="field"><label for="quantity">{% trans "Quantity" %}</label><input type="number" id="quantity" name="quantity" value="1" min="0"></div>
             <div class="field"><label for="reorder_level">{% trans "Reorder at" %}</label><input type="number" id="reorder_level" name="reorder_level" value="5" min="0"></div>
             <div class="field"><label for="unit_cost">{% trans "Unit cost €" %}</label><input type="number" step="0.01" min="0" id="unit_cost" name="unit_cost" placeholder="0.00"></div>
+            <div class="field"><label for="sale_price">{% trans "Selling price €" %}</label><input type="number" step="0.01" min="0" id="sale_price" name="sale_price" placeholder="{% trans 'not set' %}"><span class="hint">{% trans "Fills in automatically on orders and invoices." %}</span></div>
         </div>
     </div>
     <div class="card-footer"><button type="submit" class="btn btn-primary">{% icon "plus" %}{% trans "Save part" %}</button></div>

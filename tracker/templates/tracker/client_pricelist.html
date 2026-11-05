@@ -10,7 +10,7 @@
 <div class="page-header no-print">
     <div>
         <h1>{% trans "Client catalog" %}</h1>
-        <p class="lede">{% trans "A clean, printable parts list to share with clients. Prices shown are the warehouse unit prices." %}</p>
+        <p class="lede">{% trans "A clean, printable parts list to share with clients, with your selling prices. Parts without a selling price show “on request”." %}</p>
     </div>
     <div class="actions"><button type="button" class="btn" onclick="window.print()">{% icon "printer" %}{% trans "Print / save PDF" %}</button></div>
 </div>
@@ -40,7 +40,7 @@
                     <td class="mono">{{ item.part_code|default:"—" }}</td>
                     <td class="muted">{{ item.get_category_display }}</td>
                     <td>{% if item.quantity > 0 %}<span class="badge badge-success">{% trans "In stock" %}</span>{% else %}<span class="badge badge-neutral">{% trans "On request" %}</span>{% endif %}</td>
-                    <td class="num"><strong>{{ item.unit_cost|money }}</strong></td>
+                    <td class="num">{% if item.sale_price is not None %}<strong>{{ item.sale_price|money }}</strong>{% else %}<span class="subtle">{% trans "On request" %}</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             {% endfor %}

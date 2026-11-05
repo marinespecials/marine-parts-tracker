@@ -63,6 +63,14 @@ def guess_category(*texts):
 class Customer(models.Model):
     name = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
+    # Optional business details (filled in by hand or by the Excel import from the ERP)
+    code = models.CharField(max_length=50, blank=True, default='', help_text="Client code in the ERP")
+    tax_id = models.CharField(max_length=20, blank=True, default='', help_text="ΑΦΜ")
+    tax_office = models.CharField(max_length=100, blank=True, default='', help_text="ΔΟΥ")
+    phone = models.CharField(max_length=50, blank=True, default='')
+    email = models.CharField(max_length=254, blank=True, default='')
+    address = models.CharField(max_length=255, blank=True, default='')
+    city = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
         return self.name
@@ -77,7 +85,21 @@ class InventoryItem(models.Model):
     reorder_level = models.IntegerField(default=5)
     location = models.CharField(max_length=100, default='Piraeus Warehouse')
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
+                                     help_text="Selling price to clients (empty = not set yet)")
     supplier = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+
+    @property
+    def default_sell_price(self):
+        """Price that fills in on orders/invoices: the selling price, or the cost if none is set yet."""
+        return self.sale_price if self.sale_price is not None else self.unit_cost
+
+    @property
+    def margin_percent(self):
+        """Gross margin of the selling price over the cost, e.g. 32 (%). None if it can't be worked out."""
+        if self.sale_price is None or not self.sale_price:
+            return None
+        return round((self.sale_price - Decimal(str(self.unit_cost))) * 100 / self.sale_price, 1)
 
     @property
     def total_stock_value(self):
@@ -184,6 +206,7 @@ class ActivityLog(models.Model):
         'price_logged': _('Logged price'),
         'user_created': _('Added team member'),
         'user_updated': _('Changed team member'),
+        'data_import': _('Imported Excel file'),
     }
     user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
     action = models.CharField(max_length=40)
@@ -200,3 +223,23 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.action} {self.target}"
+
+
+
+class SupplierPrice(models.Model):
+    """What a supplier charges us for one item. Same item, many suppliers — compare and buy from the best."""
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='supplier_prices')
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='prices')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='EUR')
+    supplier_code = models.CharField(max_length=100, blank=True, default='', help_text="The supplier's own part number")
+    lead_time_days = models.PositiveIntegerField(null=True, blank=True)
+    notes = models.CharField(max_length=255, blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['price']
+        constraints = [models.UniqueConstraint(fields=['item', 'supplier'], name='one_price_per_supplier_per_item')]
+
+    def __str__(self):
+        return f"{self.item.part_name} @ {self.supplier.name}: {self.price} {self.currency}"

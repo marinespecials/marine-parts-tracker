@@ -75,3 +75,17 @@ def percent_of(part, whole):
         return int(round(100 * float(part) / float(whole))) if float(whole) else 0
     except (TypeError, ValueError):
         return 0
+
+
+@register.filter
+def sub(value, other):
+    """{{ a|sub:b }} -> a - b (for 'how much more than the best price')."""
+    try:
+        return Decimal(str(value)) - Decimal(str(other))
+    except (InvalidOperation, ValueError, TypeError):
+        return ''
+
+
+@register.filter
+def split(value, sep=','):
+    return str(value).split(sep)
