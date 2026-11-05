@@ -422,3 +422,19 @@ class SupplierPricesAndImportTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'boom')
         self.assertFalse(Customer.objects.filter(name='A Co').exists())
+
+    def test_renamed_client_name_is_reserved_for_the_rest_of_the_file(self):
+        name = 'ΕΣΤΙΑΤΟΡΙΑ ΚΑΦΕΖΑΧΑΡΟΠΛΑΣΤΕΙΑ ΓΕΥΣΙΠΛΟΙΑ ΑΝΩΝΥΜΗ ΕΤΑΙΡΕΙΑ'
+        Customer.objects.create(name='ΓΕΥΣΙΠΛΟΙΑ ΑΕ', tax_id='111111111')
+        Customer.objects.create(name='Other old name', tax_id='333333333')
+        content = f'Επωνυμία;ΑΦΜ\n{name};111111111\n{name};222222222\n{name};333333333\n'
+        csv_file = io.BytesIO(content.encode('utf-8-sig'))
+        csv_file.name = 'clients3.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'clients', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        done = self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        self.assertEqual(done.status_code, 200)                      # used to fail on the unique name
+        self.assertEqual(Customer.objects.get(tax_id='111111111').name, name)
+        self.assertEqual(Customer.objects.get(tax_id='222222222').name, f'{name} (222222222)')
+        self.assertEqual(Customer.objects.get(tax_id='333333333').name, 'Other old name')

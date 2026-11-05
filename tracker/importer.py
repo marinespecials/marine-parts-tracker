@@ -346,8 +346,12 @@ def _plan_parties(rows, mapping, model, fields, no_name_reason):
         if existing:
             changes = {f: _fit(f, values[f], model) for f in ('name',) + fields
                        if values[f] and _fit(f, values[f], model) != (getattr(existing, f) or '')}
-            if 'name' in changes and norm(changes['name']) in taken and by_name.get(norm(changes['name'])) is not existing:
-                changes.pop('name')  # another record already uses that name — keep both as they are
+            if 'name' in changes:
+                new_key = norm(changes['name'])
+                if new_key in taken and by_name.get(new_key) is not existing:
+                    changes.pop('name')  # another record already uses (or will use) that name — keep the current one
+                else:
+                    taken.add(new_key)  # reserve it, so no later row in this file can take it too
             plan.append({'row': n, 'action': 'update' if changes else 'same', 'record': existing, 'code': values['code'],
                          'name': existing.name, 'changes': changes, 'values': values})
         elif not values['name']:
