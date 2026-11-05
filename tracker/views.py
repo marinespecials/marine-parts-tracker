@@ -823,6 +823,8 @@ def supplier_detail(request, supplier_id):
         supplier.contact_person = request.POST.get('contact_person', '').strip()
         supplier.email = request.POST.get('email', '').strip()
         supplier.phone = request.POST.get('phone', '').strip()
+        for field in ('tax_id', 'tax_office', 'address', 'city', 'code'):
+            setattr(supplier, field, request.POST.get(field, '').strip())
         supplier.save()
         messages.success(request, _("Supplier details saved."))
         return redirect('supplier_detail', supplier_id=supplier.id)

@@ -100,6 +100,15 @@
                 <div class="field"><label for="contact_person">{% trans "Contact person" %}</label><input type="text" id="contact_person" name="contact_person" value="{{ supplier.contact_person|default:'' }}"></div>
                 <div class="field"><label for="email">{% trans "Email" %}</label><input type="email" id="email" name="email" value="{{ supplier.email|default:'' }}"></div>
                 <div class="field"><label for="phone">{% trans "Phone" %}</label><input type="tel" id="phone" name="phone" value="{{ supplier.phone|default:'' }}"></div>
+                <div class="form-row">
+                    <div class="field grow"><label for="tax_id">{% trans "Tax ID (ΑΦΜ)" %}</label><input type="text" id="tax_id" name="tax_id" value="{{ supplier.tax_id }}"></div>
+                    <div class="field grow"><label for="tax_office">{% trans "Tax office (ΔΟΥ)" %}</label><input type="text" id="tax_office" name="tax_office" value="{{ supplier.tax_office }}"></div>
+                </div>
+                <div class="field"><label for="address">{% trans "Address" %}</label><input type="text" id="address" name="address" value="{{ supplier.address }}"></div>
+                <div class="form-row">
+                    <div class="field grow"><label for="city">{% trans "City" %}</label><input type="text" id="city" name="city" value="{{ supplier.city }}"></div>
+                    <div class="field grow"><label for="code">{% trans "ERP code" %}</label><input type="text" id="code" name="code" value="{{ supplier.code }}"></div>
+                </div>
             </div>
             <div class="card-footer"><button type="submit" class="btn btn-primary btn-sm">{% icon "check" %}{% trans "Save" %}</button></div>
         </form>

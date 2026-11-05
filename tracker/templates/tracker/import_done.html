@@ -10,6 +10,7 @@
     <div class="actions">
         <a href="{% url 'import_data' %}" class="btn">{% icon "upload" %}{% trans "Import another file" %}</a>
         {% if kind == 'items' %}<a href="{% url 'inventory_list' %}" class="btn btn-primary">{% trans "Open warehouse" %}{% icon "arrow-right" %}</a>
+        {% elif kind == 'suppliers' %}<a href="{% url 'supplier_list' %}" class="btn btn-primary">{% trans "Open suppliers" %}{% icon "arrow-right" %}</a>
         {% else %}<a href="{% url 'client_list' %}" class="btn btn-primary">{% trans "Open clients" %}{% icon "arrow-right" %}</a>{% endif %}
     </div>
 </div>

@@ -135,6 +135,12 @@ class Supplier(models.Model):
     contact_person = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
+    # Optional business details (by hand or from the Excel import)
+    code = models.CharField(max_length=50, blank=True, default='', help_text="Supplier code in the ERP")
+    tax_id = models.CharField(max_length=20, blank=True, default='', help_text="ΑΦΜ")
+    tax_office = models.CharField(max_length=100, blank=True, default='', help_text="ΔΟΥ")
+    address = models.CharField(max_length=255, blank=True, default='')
+    city = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
         return self.name

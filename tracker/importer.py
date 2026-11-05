@@ -45,8 +45,19 @@ FIELDS = {
         ('city', _('City'), ['πολη', 'περιοχ', 'city', 'town']),
         ('name', _('Client name'), ['επωνυμ', 'ονομ', 'πελατ', 'name', 'company', 'customer']),
     ],
+    'suppliers': [
+        ('tax_id', _('Tax ID (ΑΦΜ)'), ['αφμ', 'α.φ.μ', 'vat', 'tax id', 'afm', 'tin']),
+        ('tax_office', _('Tax office (ΔΟΥ)'), ['δου', 'δ.ο.υ', 'tax office', 'doy']),
+        ('code', _('ERP code'), ['κωδικ', 'κωδ.', 'code']),
+        ('email', _('Email'), ['email', 'e-mail', 'mail']),
+        ('phone', _('Phone'), ['τηλ', 'κινητ', 'phone', 'mobile', 'tel']),
+        ('contact_person', _('Contact person'), ['υπευθυν', 'επαφ', 'contact', 'person']),
+        ('address', _('Address'), ['διευθυνσ', 'οδος', 'address', 'street']),
+        ('city', _('City'), ['πολη', 'περιοχ', 'city', 'town']),
+        ('name', _('Supplier name'), ['επωνυμ', 'ονομ', 'προμηθευτ', 'name', 'company', 'supplier', 'vendor']),
+    ],
 }
-REQUIRED = {'items': ('part_name', 'part_code'), 'clients': ('name',)}  # items need a name or a code
+REQUIRED = {'items': ('part_name', 'part_code'), 'clients': ('name',), 'suppliers': ('name',)}  # items need a name or a code
 
 
 def norm(text):
@@ -279,25 +290,27 @@ def apply_items(plan, user):
 # ---------------------------------------------------------------- clients
 
 CLIENT_FIELDS = ('code', 'tax_id', 'tax_office', 'phone', 'email', 'address', 'city')
+SUPPLIER_FIELDS = ('code', 'tax_id', 'tax_office', 'contact_person', 'phone', 'email', 'address', 'city')
 
 
-def _fit(field, value):
+def _fit(field, value, model=Customer):
     """Cut text to the database column's maximum length."""
-    return value[:Customer._meta.get_field(field).max_length]
+    return value[:model._meta.get_field(field).max_length]
 
 
 def _digits(text):
     return re.sub(r'\D', '', text or '')
 
 
-def plan_clients(rows, mapping):
-    clients = list(Customer.objects.all())
-    by_tax = {_digits(c.tax_id): c for c in clients if _digits(c.tax_id)}
-    by_code = {norm(c.code): c for c in clients if c.code}
-    by_name = {norm(c.name): c for c in clients}
+def _plan_parties(rows, mapping, model, fields, no_name_reason):
+    """Clients and suppliers: match by ΑΦΜ, then ERP code, then exact name. Empty cells never wipe data."""
+    records = list(model.objects.all())
+    by_tax = {_digits(r.tax_id): r for r in records if _digits(r.tax_id)}
+    by_code = {norm(r.code): r for r in records if r.code}
+    by_name = {norm(r.name): r for r in records}
     plan, seen = [], set()
     for n, row in enumerate(rows, start=getattr(rows, 'first_line', 2)):
-        values = {f: cell_text(_get(row, mapping, f)) for f in ('name',) + CLIENT_FIELDS}
+        values = {f: cell_text(_get(row, mapping, f)) for f in ('name',) + fields}
         values['name'] = values['name'][:255]
         if not any(values.values()):
             continue
@@ -310,14 +323,14 @@ def plan_clients(rows, mapping):
             or (by_code.get(norm(values['code'])) if values['code'] else None) \
             or (by_name.get(norm(values['name'])) if values['name'] else None)
         if existing:
-            changes = {f: _fit(f, values[f]) for f in ('name',) + CLIENT_FIELDS
-                       if values[f] and _fit(f, values[f]) != getattr(existing, f)}
-            if 'name' in changes and norm(changes['name']) in by_name and by_name[norm(changes['name'])] != existing:
-                changes.pop('name')  # another client already uses that name — keep both as they are
-            plan.append({'row': n, 'action': 'update' if changes else 'same', 'client': existing, 'code': values['code'],
+            changes = {f: _fit(f, values[f], model) for f in ('name',) + fields
+                       if values[f] and _fit(f, values[f], model) != (getattr(existing, f) or '')}
+            if 'name' in changes and norm(changes['name']) in by_name and by_name[norm(changes['name'])] is not existing:
+                changes.pop('name')  # another record already uses that name — keep both as they are
+            plan.append({'row': n, 'action': 'update' if changes else 'same', 'record': existing, 'code': values['code'],
                          'name': existing.name, 'changes': changes, 'values': values})
         elif not values['name']:
-            plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': '', 'reason': _('New client without a name')})
+            plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': '', 'reason': no_name_reason})
         else:
             by_name[norm(values['name'])] = True  # reserve the name for this file
             plan.append({'row': n, 'action': 'create', 'code': values['code'], 'name': values['name'], 'values': values})
@@ -325,20 +338,39 @@ def plan_clients(rows, mapping):
 
 
 @transaction.atomic
-def apply_clients(plan):
+def _apply_parties(plan, model, fields):
     new, updated = [], []
     for p in plan:
         if p['action'] == 'create':
             v = p['values']
-            new.append(Customer(name=v['name'], **{f: _fit(f, v[f]) for f in CLIENT_FIELDS}))
+            new.append(model(name=v['name'], **{f: _fit(f, v[f], model) for f in fields}))
         elif p['action'] == 'update':
             for field, value in p['changes'].items():
-                setattr(p['client'], field, value)
-            updated.append(p['client'])
-    Customer.objects.bulk_create(new, batch_size=500)
+                setattr(p['record'], field, value)
+            updated.append(p['record'])
+    model.objects.bulk_create(new, batch_size=500)
     if updated:
-        Customer.objects.bulk_update(updated, ('name',) + CLIENT_FIELDS, batch_size=500)
+        model.objects.bulk_update(updated, ('name',) + fields, batch_size=500)
     return {'created': len(new), 'updated': len(updated), 'prices': 0}
+
+
+def plan_clients(rows, mapping):
+    return _plan_parties(rows, mapping, Customer, CLIENT_FIELDS, _('New client without a name'))
+
+
+def apply_clients(plan):
+    return _apply_parties(plan, Customer, CLIENT_FIELDS)
+
+
+def plan_suppliers(rows, mapping):
+    return _plan_parties(rows, mapping, Supplier, SUPPLIER_FIELDS, _('New supplier without a name'))
+
+
+def apply_suppliers(plan):
+    return _apply_parties(plan, Supplier, SUPPLIER_FIELDS)
+
+
+PLANNERS = {'items': plan_items, 'clients': plan_clients, 'suppliers': plan_suppliers}
 
 
 def summarize(plan):

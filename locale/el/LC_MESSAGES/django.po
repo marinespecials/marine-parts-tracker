@@ -1002,8 +1002,8 @@ msgstr "Τίποτα σε παραγγελία"
 msgid "Purchase orders waiting for delivery appear here."
 msgstr "Εδώ εμφανίζονται οι παραγγελίες αγοράς που περιμένουν παράδοση."
 
-msgid "Bring in items and clients from your ERP. Nothing is deleted, and existing items keep their stock quantity."
-msgstr "Φέρτε είδη και πελάτες από το ERP. Τίποτα δεν διαγράφεται και τα υπάρχοντα είδη κρατούν το απόθεμά τους."
+msgid "Bring in items, clients and suppliers from your ERP. Nothing is deleted, and existing items keep their stock quantity."
+msgstr "Φέρτε είδη, πελάτες και προμηθευτές από το ERP. Τίποτα δεν διαγράφεται και τα υπάρχοντα είδη κρατούν το απόθεμά τους."
 
 msgid "1. Upload the file"
 msgstr "1. Ανέβασμα αρχείου"
@@ -1046,6 +1046,9 @@ msgstr "Παράδειγμα: είδη"
 
 msgid "Example: clients"
 msgstr "Παράδειγμα: πελάτες"
+
+msgid "Example: suppliers"
+msgstr "Παράδειγμα: προμηθευτές"
 
 msgid "2. Check the columns"
 msgstr "2. Έλεγχος στηλών"
@@ -1118,6 +1121,9 @@ msgstr "Εισαγωγή άλλου αρχείου"
 
 msgid "Open warehouse"
 msgstr "Άνοιγμα αποθήκης"
+
+msgid "Open suppliers"
+msgstr "Άνοιγμα προμηθευτών"
 
 msgid "Open clients"
 msgstr "Άνοιγμα πελατών"
@@ -1515,6 +1521,9 @@ msgstr "πρόσφατες γραμμές"
 msgid "Who ordered this part"
 msgstr "Όσοι παρήγγειλαν αυτό το ανταλλακτικό"
 
+msgid "Best price"
+msgstr "Καλύτερη τιμή"
+
 msgid "From purchase orders"
 msgstr "Από παραγγελίες αγοράς"
 
@@ -1535,9 +1544,6 @@ msgstr "Παράδοση"
 
 msgid "Price"
 msgstr "Τιμή"
-
-msgid "Best price"
-msgstr "Καλύτερη τιμή"
 
 msgid "Delivery (days)"
 msgstr "Παράδοση (ημέρες)"
@@ -2162,6 +2168,9 @@ msgstr "Εισαγωγή Excel"
 
 msgid "New client without a name"
 msgstr "Νέος πελάτης χωρίς όνομα"
+
+msgid "New supplier without a name"
+msgstr "Νέος προμηθευτής χωρίς όνομα"
 
 msgid "General Hardware"
 msgstr "Γενικά"

@@ -80,11 +80,12 @@ def import_data(request):
             if not any(f in mapping for f in importer.REQUIRED[kind]):
                 messages.error(request, _("Choose which column holds the name (or code) first."))
                 return redirect('import_data')
+            plan = importer.PLANNERS[kind](rows, mapping)
             if kind == 'items':
-                plan = importer.plan_items(rows, mapping)
                 result = importer.apply_items(plan, request.user if request.user.is_authenticated else None)
+            elif kind == 'suppliers':
+                result = importer.apply_suppliers(plan)
             else:
-                plan = importer.plan_clients(rows, mapping)
                 result = importer.apply_clients(plan)
             counts = importer.summarize(plan)
             log_activity(request, 'data_import',
@@ -108,7 +109,7 @@ def import_data(request):
     kind = state['kind']
     headers, rows = importer.read_table(_path(state))
     mapping = state.get('mapping') or importer.guess_mapping(headers, kind)
-    plan = importer.plan_items(rows, mapping) if kind == 'items' else importer.plan_clients(rows, mapping)
+    plan = importer.PLANNERS[kind](rows, mapping)
     counts = importer.summarize(plan)
     fields = [{'key': key, 'label': label, 'col': mapping.get(key)} for key, label, _kw in importer.FIELDS[kind]]
     preview = [p for p in plan if p['action'] in ('create', 'update')][:30]
@@ -134,6 +135,9 @@ def import_template(request, kind):
                   'unit_cost': 180, 'sale_price': 245, 'location': 'Bin B1', 'reorder_level': 2, 'supplier': 'Victron Energy GR'},
         'clients': {'name': 'Aegean Shipping', 'code': 'C-0042', 'tax_id': '099999999', 'tax_office': 'Α΄ Πειραιά',
                     'phone': '+30 210 000 0000', 'email': 'info@example.com', 'address': 'Akti Miaouli 1', 'city': 'Piraeus'},
+        'suppliers': {'name': 'Victron Energy GR', 'code': 'S-0007', 'tax_id': '088888888', 'tax_office': 'ΦΑΕ Πειραιά',
+                      'contact_person': 'Maria Kosta', 'phone': '+30 210 000 0001', 'email': 'sales@example.com',
+                      'address': 'Thiseos 10', 'city': 'Athens'},
     }[kind]
     order = [f for f, _l, _k in importer.FIELDS[kind]]
     order.sort(key=lambda f: 0 if f in ('part_code', 'part_name', 'name', 'code') else 1)

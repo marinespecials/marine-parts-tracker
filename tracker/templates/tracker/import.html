@@ -5,7 +5,7 @@
 <div class="page-header">
     <div>
         <h1>{% trans "Import from Excel" %}</h1>
-        <p class="lede">{% trans "Bring in items and clients from your ERP. Nothing is deleted, and existing items keep their stock quantity." %}</p>
+        <p class="lede">{% trans "Bring in items, clients and suppliers from your ERP. Nothing is deleted, and existing items keep their stock quantity." %}</p>
     </div>
 </div>
 
@@ -21,6 +21,7 @@
                 <div class="segmented" style="width:max-content">
                     <label style="display:flex"><input type="radio" name="kind" value="items" checked class="hidden"><span class="seg-opt">{% icon "box" "icon-sm" %} {% trans "Warehouse items" %}</span></label>
                     <label style="display:flex"><input type="radio" name="kind" value="clients" class="hidden"><span class="seg-opt">{% icon "users" "icon-sm" %} {% trans "Clients" %}</span></label>
+                    <label style="display:flex"><input type="radio" name="kind" value="suppliers" class="hidden"><span class="seg-opt">{% icon "building" "icon-sm" %} {% trans "Suppliers" %}</span></label>
                 </div>
             </div>
             <div class="field">
@@ -37,11 +38,12 @@
         <div class="card-body" style="display:grid;gap:10px;font-size:13.5px">
             <p><strong>{% trans "Items" %}</strong> — {% trans "matched by part code (or exact name). Existing items get updated names, prices, category and location; their stock quantity is not changed. New items are added with the quantity from the file." %}</p>
             <p>{% trans "If the file has a supplier column, the cost is also saved as that supplier's price on the item." %}</p>
-            <p><strong>{% trans "Clients" %}</strong> — {% trans "matched by ΑΦΜ, then ERP code, then exact name. Empty cells never erase details you already have." %}</p>
+            <p><strong>{% trans "Clients" %} / {% trans "Suppliers" %}</strong> — {% trans "matched by ΑΦΜ, then ERP code, then exact name. Empty cells never erase details you already have." %}</p>
             <p class="muted">{% trans "You will see a preview before anything is saved." %}</p>
             <div class="button-row" style="margin-top:4px">
                 <a class="btn btn-sm" href="{% url 'import_template' 'items' %}">{% icon "download" %}{% trans "Example: items" %}</a>
                 <a class="btn btn-sm" href="{% url 'import_template' 'clients' %}">{% icon "download" %}{% trans "Example: clients" %}</a>
+                <a class="btn btn-sm" href="{% url 'import_template' 'suppliers' %}">{% icon "download" %}{% trans "Example: suppliers" %}</a>
             </div>
         </div>
     </section>
@@ -53,7 +55,7 @@
     <section class="card">
         <div class="card-header">
             <div class="card-title">{% icon "list" %}{% trans "2. Check the columns" %}</div>
-            <span class="card-sub">{{ filename }} · {{ total_rows }} {% trans "rows" %} · {% if kind == 'items' %}{% trans "Warehouse items" %}{% else %}{% trans "Clients" %}{% endif %}</span>
+            <span class="card-sub">{{ filename }} · {{ total_rows }} {% trans "rows" %} · {% if kind == 'items' %}{% trans "Warehouse items" %}{% elif kind == 'suppliers' %}{% trans "Suppliers" %}{% else %}{% trans "Clients" %}{% endif %}</span>
         </div>
         <div class="card-body">
             <p class="muted" style="margin-bottom:14px;font-size:13.5px">{% trans "For each field, choose the column from your file that holds it. Columns were matched automatically from their names — correct any that are wrong and press “Update preview”." %}</p>
@@ -86,7 +88,7 @@
         <div class="card-header"><div class="card-title">{% icon "search" %}{% trans "3. Preview" %}</div><span class="card-sub">{% trans "first 30 changes" %}</span></div>
         {% if preview %}
         <div class="table-wrap"><table class="table">
-            <thead><tr><th>{% trans "Row" %}</th><th>{% trans "Action" %}</th><th>{% if kind == 'items' %}{% trans "Part" %}{% else %}{% trans "Client" %}{% endif %}</th><th>{% trans "What changes" %}</th></tr></thead>
+            <thead><tr><th>{% trans "Row" %}</th><th>{% trans "Action" %}</th><th>{% if kind == 'items' %}{% trans "Part" %}{% elif kind == 'suppliers' %}{% trans "Supplier" %}{% else %}{% trans "Client" %}{% endif %}</th><th>{% trans "What changes" %}</th></tr></thead>
             <tbody>{% for p in preview %}
                 <tr>
                     <td class="muted">{{ p.row }}</td>

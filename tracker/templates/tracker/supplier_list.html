@@ -7,7 +7,7 @@
         <h1>{% trans "Suppliers" %}</h1>
         <p class="lede">{% trans "Vendors you buy from. Open one to see its purchase orders, the parts it supplies and logged prices." %}</p>
     </div>
-    <div class="actions"><a href="#new-supplier" class="btn btn-primary" onclick="document.getElementById('s-name').focus()">{% icon "plus" %}{% trans "Add supplier" %}</a></div>
+    <div class="actions"><a href="{% url 'import_data' %}" class="btn">{% icon "upload" %}{% trans "Import from Excel" %}</a><a href="#new-supplier" class="btn btn-primary" onclick="document.getElementById('s-name').focus()">{% icon "plus" %}{% trans "Add supplier" %}</a></div>
 </div>
 
 <div class="card">

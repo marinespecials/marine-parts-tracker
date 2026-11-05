@@ -379,3 +379,19 @@ class SupplierPricesAndImportTests(TestCase):
         done = self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
         self.assertEqual(done.status_code, 200)
         self.assertEqual(Customer.objects.filter(name='MASTER @OWNERS OF ATLANTIS II').count(), 1)
+
+    def test_supplier_import_matches_and_adds(self):
+        from tracker.models import Supplier
+        Supplier.objects.create(name='Victron Energy GR', phone='210 000')
+        csv_file = io.BytesIO('Επωνυμία;ΑΦΜ;Υπεύθυνος;Email;Τηλέφωνο\nVictron Energy GR;088888888;Maria Kosta;sales@victron.example;\nJabsco Hellas;077777777;;;210 555\n'.encode('utf-8-sig'))
+        csv_file.name = 'suppliers.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'suppliers', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))
+        self.assertEqual(page.context['counts'], {'create': 1, 'update': 1, 'same': 0, 'skip': 0})
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        victron = Supplier.objects.get(name='Victron Energy GR')
+        self.assertEqual((victron.tax_id, victron.contact_person, victron.phone), ('088888888', 'Maria Kosta', '210 000'))
+        self.assertTrue(Supplier.objects.filter(name='Jabsco Hellas', tax_id='077777777').exists())
+        self.assertEqual(Supplier.objects.count(), 2)
+        self.assertEqual(self.client.get(reverse('import_template', args=['suppliers'])).status_code, 200)
