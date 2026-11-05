@@ -2139,6 +2139,12 @@ msgstr "Δεν βρέθηκαν γραμμές στο αρχείο. Ελέγξτ
 msgid "The uploaded file has expired — please upload it again."
 msgstr "Το αρχείο έληξε — ανεβάστε το ξανά."
 
+msgid "The import could not be completed and nothing was saved. Details: %(e)s"
+msgstr "Η εισαγωγή δεν ολοκληρώθηκε και δεν αποθηκεύτηκε τίποτα. Λεπτομέρειες: %(e)s"
+
+msgid "This file could not be read. Details: %(e)s"
+msgstr "Το αρχείο δεν μπόρεσε να διαβαστεί. Λεπτομέρειες: %(e)s"
+
 msgid "Part code"
 msgstr "Κωδικός είδους"
 

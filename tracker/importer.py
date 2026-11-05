@@ -114,8 +114,12 @@ def read_table(path):
                 break
             except UnicodeDecodeError:
                 continue
-        dialect = csv.Sniffer().sniff(text[:4000], delimiters=';,\t') if text.strip() else csv.excel
-        grid = [row for row in csv.reader(io.StringIO(text), dialect)]
+        try:
+            delimiter = csv.Sniffer().sniff(text[:4000], delimiters=';,\t').delimiter
+        except csv.Error:  # e.g. a one-column file: there is no separator to detect
+            first = text.splitlines()[0] if text.strip() else ''
+            delimiter = ';' if ';' in first else ('\t' if '\t' in first else ',')
+        grid = [row for row in csv.reader(io.StringIO(text), delimiter=delimiter)]
     else:
         from openpyxl import load_workbook
         wb = load_workbook(path, read_only=True, data_only=True)
@@ -302,12 +306,25 @@ def _digits(text):
     return re.sub(r'\D', '', text or '')
 
 
+def _free_name(name, values, row, taken):
+    """A name no other record uses: 'Name', else 'Name (ΑΦΜ)' / 'Name (code)' / 'Name (#row)'."""
+    if norm(name) not in taken:
+        return name
+    suffix = _digits(values.get('tax_id')) or values.get('code') or f'#{row}'
+    candidate, n = f'{name} ({suffix})'[:255], 2
+    while norm(candidate) in taken:
+        candidate, n = f'{name} ({suffix}-{n})'[:255], n + 1
+    return candidate
+
+
 def _plan_parties(rows, mapping, model, fields, no_name_reason):
-    """Clients and suppliers: match by ΑΦΜ, then ERP code, then exact name. Empty cells never wipe data."""
+    """Clients and suppliers: match by ΑΦΜ, then ERP code, then exact name. Empty cells never wipe data.
+    The same name with a DIFFERENT ΑΦΜ is a different company: it gets its own record (ΑΦΜ added to the name)."""
     records = list(model.objects.all())
     by_tax = {_digits(r.tax_id): r for r in records if _digits(r.tax_id)}
     by_code = {norm(r.code): r for r in records if r.code}
     by_name = {norm(r.name): r for r in records}
+    taken = set(by_name)          # every name in use, including new ones planned from this file
     plan, seen = [], set()
     for n, row in enumerate(rows, start=getattr(rows, 'first_line', 2)):
         values = {f: cell_text(_get(row, mapping, f)) for f in ('name',) + fields}
@@ -319,20 +336,25 @@ def _plan_parties(rows, mapping, model, fields, no_name_reason):
             plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': values['name'], 'reason': _('Duplicate of an earlier row in the file')})
             continue
         seen.add(key)
-        existing = (by_tax.get(_digits(values['tax_id'])) if _digits(values['tax_id']) else None) \
-            or (by_code.get(norm(values['code'])) if values['code'] else None) \
-            or (by_name.get(norm(values['name'])) if values['name'] else None)
+        tax = _digits(values['tax_id'])
+        existing = (by_tax.get(tax) if tax else None) or (by_code.get(norm(values['code'])) if values['code'] else None)
+        if existing is None and values['name']:
+            same_name = by_name.get(norm(values['name']))
+            # same name but a different ΑΦΜ = a different company, never merge them
+            if same_name is not None and not (tax and _digits(same_name.tax_id) and _digits(same_name.tax_id) != tax):
+                existing = same_name
         if existing:
             changes = {f: _fit(f, values[f], model) for f in ('name',) + fields
                        if values[f] and _fit(f, values[f], model) != (getattr(existing, f) or '')}
-            if 'name' in changes and norm(changes['name']) in by_name and by_name[norm(changes['name'])] is not existing:
+            if 'name' in changes and norm(changes['name']) in taken and by_name.get(norm(changes['name'])) is not existing:
                 changes.pop('name')  # another record already uses that name — keep both as they are
             plan.append({'row': n, 'action': 'update' if changes else 'same', 'record': existing, 'code': values['code'],
                          'name': existing.name, 'changes': changes, 'values': values})
         elif not values['name']:
             plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': '', 'reason': no_name_reason})
         else:
-            by_name[norm(values['name'])] = True  # reserve the name for this file
+            values['name'] = _free_name(values['name'], values, n, taken)
+            taken.add(norm(values['name']))
             plan.append({'row': n, 'action': 'create', 'code': values['code'], 'name': values['name'], 'values': values})
     return plan
 

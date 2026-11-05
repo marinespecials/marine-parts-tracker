@@ -1,4 +1,5 @@
 """Import page: upload an Excel/CSV file → check the column matching and preview → confirm."""
+import logging
 import os
 import secrets
 import tempfile
@@ -13,6 +14,7 @@ from . import importer
 from .stock import log_activity
 
 MAX_BYTES = 10 * 1024 * 1024
+log = logging.getLogger(__name__)
 TMP = Path(tempfile.gettempdir())
 
 
@@ -80,13 +82,18 @@ def import_data(request):
             if not any(f in mapping for f in importer.REQUIRED[kind]):
                 messages.error(request, _("Choose which column holds the name (or code) first."))
                 return redirect('import_data')
-            plan = importer.PLANNERS[kind](rows, mapping)
-            if kind == 'items':
-                result = importer.apply_items(plan, request.user if request.user.is_authenticated else None)
-            elif kind == 'suppliers':
-                result = importer.apply_suppliers(plan)
-            else:
-                result = importer.apply_clients(plan)
+            try:
+                plan = importer.PLANNERS[kind](rows, mapping)
+                if kind == 'items':
+                    result = importer.apply_items(plan, request.user if request.user.is_authenticated else None)
+                elif kind == 'suppliers':
+                    result = importer.apply_suppliers(plan)
+                else:
+                    result = importer.apply_clients(plan)
+            except Exception as exc:  # everything runs in one transaction, so nothing was saved
+                log.exception('Import failed: %s', state.get('filename'))
+                messages.error(request, _("The import could not be completed and nothing was saved. Details: %(e)s") % {'e': str(exc)[:300]})
+                return redirect('import_data')
             counts = importer.summarize(plan)
             log_activity(request, 'data_import',
                          f"{state['filename']}: +{result['created']} / ~{result['updated']}")
@@ -107,9 +114,15 @@ def import_data(request):
         return redirect('import_data')
 
     kind = state['kind']
-    headers, rows = importer.read_table(_path(state))
-    mapping = state.get('mapping') or importer.guess_mapping(headers, kind)
-    plan = importer.PLANNERS[kind](rows, mapping)
+    try:
+        headers, rows = importer.read_table(_path(state))
+        mapping = state.get('mapping') or importer.guess_mapping(headers, kind)
+        plan = importer.PLANNERS[kind](rows, mapping)
+    except Exception as exc:
+        log.exception('Import preview failed: %s', state.get('filename'))
+        _cleanup(request)
+        messages.error(request, _("This file could not be read. Details: %(e)s") % {'e': str(exc)[:300]})
+        return redirect('import_data')
     counts = importer.summarize(plan)
     fields = [{'key': key, 'label': label, 'col': mapping.get(key)} for key, label, _kw in importer.FIELDS[kind]]
     preview = [p for p in plan if p['action'] in ('create', 'update')][:30]

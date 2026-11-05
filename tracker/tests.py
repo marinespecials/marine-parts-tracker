@@ -395,3 +395,30 @@ class SupplierPricesAndImportTests(TestCase):
         self.assertTrue(Supplier.objects.filter(name='Jabsco Hellas', tax_id='077777777').exists())
         self.assertEqual(Supplier.objects.count(), 2)
         self.assertEqual(self.client.get(reverse('import_template', args=['suppliers'])).status_code, 200)
+
+    def test_same_client_name_with_different_tax_id_is_a_separate_client(self):
+        Customer.objects.create(name='MASTER', tax_id='011111111')
+        csv_file = io.BytesIO('Επωνυμία;ΑΦΜ\nMASTER;022222222\nNEPTUNE SHIPPING;033333333\nNeptune Shipping;044444444\nMASTER;011111111\n'.encode('utf-8-sig'))
+        csv_file.name = 'clients2.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'clients', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))
+        self.assertEqual(page.status_code, 200)
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        done = self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        self.assertEqual(done.status_code, 200)
+        self.assertEqual(Customer.objects.get(name='MASTER').tax_id, '011111111')   # never overwritten
+        self.assertEqual(Customer.objects.get(tax_id='022222222').name, 'MASTER (022222222)')
+        self.assertEqual(Customer.objects.get(tax_id='044444444').name, 'Neptune Shipping (044444444)')
+
+    def test_unexpected_import_error_shows_message_not_500(self):
+        from unittest import mock
+        csv_file = io.BytesIO('Επωνυμία\nA Co\n'.encode('utf-8-sig'))
+        csv_file.name = 'c.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'clients', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        with mock.patch('tracker.importer.apply_clients', side_effect=RuntimeError('boom')), self.assertLogs('tracker', 'ERROR'):
+            r = self.client.post(reverse('import_data'), {'action': 'commit', **mapping}, follow=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'boom')
+        self.assertFalse(Customer.objects.filter(name='A Co').exists())

@@ -125,6 +125,17 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
+# Errors go to the console, so they appear in Render → Logs (DEBUG stays off).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+        'tracker': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+    },
+}
+
 # --- Authentication -------------------------------------------------------
 REQUIRE_LOGIN = os.environ.get('REQUIRE_LOGIN', 'True') == 'True'
 LOGIN_URL = 'login'
