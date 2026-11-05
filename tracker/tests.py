@@ -366,3 +366,16 @@ class SupplierPricesAndImportTests(TestCase):
         self.client.logout()
         self.client.login(username='tech', password='pw-for-tests-123')
         self.assertEqual(self.client.get(reverse('import_data')).status_code, 302)
+
+    def test_client_import_with_duplicate_rows_shows_preview_and_result(self):
+        csv_file = io.BytesIO('Επωνυμία;ΑΦΜ\nMASTER @OWNERS OF ATLANTIS II;\nMASTER @OWNERS OF ATLANTIS II;\n;\nNew Co;\n'.encode('utf-8-sig'))
+        csv_file.name = 'clients.csv'
+        self.client.post(reverse('import_data'), {'action': 'upload', 'kind': 'clients', 'file': csv_file})
+        page = self.client.get(reverse('import_data'))  # crashed before the fix
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.context['counts']['skip'], 1)
+        self.assertContains(page, 'MASTER @OWNERS OF ATLANTIS II')
+        mapping = {f'map_{x["key"]}': x['col'] if x['col'] is not None else '' for x in page.context['fields']}
+        done = self.client.post(reverse('import_data'), {'action': 'commit', **mapping})
+        self.assertEqual(done.status_code, 200)
+        self.assertEqual(Customer.objects.filter(name='MASTER @OWNERS OF ATLANTIS II').count(), 1)

@@ -26,7 +26,7 @@
 <section class="card">
     <div class="card-header"><div class="card-title">{% icon "alert" %}{% trans "Skipped rows" %}</div></div>
     <div class="table-wrap"><table class="table"><tbody>{% for p in skipped %}
-        <tr><td class="muted">{% trans "Row" %} {{ p.row }}</td><td>{{ p.name|default:p.code }}</td><td class="muted">{{ p.reason }}</td></tr>
+        <tr><td class="muted">{% trans "Row" %} {{ p.row }}</td><td>{{ p.name|default:"—" }}{% if p.code %} ({{ p.code }}){% endif %}</td><td class="muted">{{ p.reason }}</td></tr>
     {% endfor %}</tbody></table></div>
 </section>
 {% endif %}

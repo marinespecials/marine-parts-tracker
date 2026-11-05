@@ -108,7 +108,7 @@
         {% if skipped %}
         <div class="card-body" style="border-top:1px solid var(--border)">
             <div class="label" style="margin-bottom:6px">{% trans "Skipped rows" %}</div>
-            {% for p in skipped %}<div class="muted" style="font-size:12.5px">{% trans "Row" %} {{ p.row }}: {{ p.name|default:p.code }} — {{ p.reason }}</div>{% endfor %}
+            {% for p in skipped %}<div class="muted" style="font-size:12.5px">{% trans "Row" %} {{ p.row }}: {{ p.name|default:"—" }}{% if p.code %} ({{ p.code }}){% endif %} — {{ p.reason }}</div>{% endfor %}
         </div>
         {% endif %}
         <div class="card-footer">

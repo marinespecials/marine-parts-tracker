@@ -12,7 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&gl#=8nk77#ri2u5l2^e%3^kfxvx6l+sa(z&cg1k*onh-u6cx7')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # start_server.bat sets DEBUG=True locally
+# start_server.bat sets DEBUG=True locally. On Render it is always off: the debug error page
+# would show every visitor the settings, including the database password.
+DEBUG = os.environ.get('DEBUG', 'False') == 'True' and not os.environ.get('RENDER')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.144', 'marine-specials-tracker.onrender.com']
 # Add more hosts without editing code: set ALLOWED_HOSTS_EXTRA="host1,host2"

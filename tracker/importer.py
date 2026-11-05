@@ -303,7 +303,7 @@ def plan_clients(rows, mapping):
             continue
         key = _digits(values['tax_id']) or norm(values['code']) or norm(values['name'])
         if key in seen:
-            plan.append({'row': n, 'action': 'skip', 'name': values['name'], 'reason': _('Duplicate of an earlier row in the file')})
+            plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': values['name'], 'reason': _('Duplicate of an earlier row in the file')})
             continue
         seen.add(key)
         existing = (by_tax.get(_digits(values['tax_id'])) if _digits(values['tax_id']) else None) \
@@ -314,13 +314,13 @@ def plan_clients(rows, mapping):
                        if values[f] and _fit(f, values[f]) != getattr(existing, f)}
             if 'name' in changes and norm(changes['name']) in by_name and by_name[norm(changes['name'])] != existing:
                 changes.pop('name')  # another client already uses that name — keep both as they are
-            plan.append({'row': n, 'action': 'update' if changes else 'same', 'client': existing,
+            plan.append({'row': n, 'action': 'update' if changes else 'same', 'client': existing, 'code': values['code'],
                          'name': existing.name, 'changes': changes, 'values': values})
         elif not values['name']:
-            plan.append({'row': n, 'action': 'skip', 'name': '', 'reason': _('New client without a name')})
+            plan.append({'row': n, 'action': 'skip', 'code': values['code'], 'name': '', 'reason': _('New client without a name')})
         else:
             by_name[norm(values['name'])] = True  # reserve the name for this file
-            plan.append({'row': n, 'action': 'create', 'name': values['name'], 'values': values})
+            plan.append({'row': n, 'action': 'create', 'code': values['code'], 'name': values['name'], 'values': values})
     return plan
 
 
